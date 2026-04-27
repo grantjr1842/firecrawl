@@ -25,7 +25,13 @@ export async function scrapePDFWithFirePDF(
         logger.info("Using cached FirePDF result", {
           scrapeId: meta.id,
         });
-        return cached;
+        // Cache entries written before fire-pdf reported page counts won't
+        // carry pagesProcessed — fall back to the caller's value so billing
+        // doesn't regress on cache hits.
+        return {
+          ...cached,
+          pagesProcessed: cached.pagesProcessed ?? pagesProcessed,
+        };
       }
     } catch (error) {
       logger.warn("Error checking FirePDF cache, proceeding", { error });
@@ -111,9 +117,10 @@ export async function scrapePDFWithFirePDF(
     perPageMs: pages ? Math.round(durationMs / pages) : undefined,
   });
 
-  const processorResult = {
+  const processorResult: PDFProcessorResult & { markdown: string } = {
     markdown: resp.markdown,
     html: await safeMarkdownToHtml(resp.markdown, logger, meta.id),
+    ...(pages !== undefined && { pagesProcessed: pages }),
   };
 
   if (!maxPages && !meta.internalOptions.zeroDataRetention) {

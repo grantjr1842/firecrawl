@@ -1,4 +1,8 @@
-export type PDFProcessorResult = { html: string; markdown?: string };
+export type PDFProcessorResult = {
+  html: string;
+  markdown?: string;
+  pagesProcessed?: number;
+};
 
 export type PdfMetadata = { numPages: number; title?: string };
 

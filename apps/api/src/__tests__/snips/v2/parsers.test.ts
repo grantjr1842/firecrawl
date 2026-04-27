@@ -1,6 +1,7 @@
 import {
   ALLOW_TEST_SUITE_WEBSITE,
   describeIf,
+  HAS_FIRE_PDF,
   TEST_SUITE_WEBSITE,
 } from "../lib";
 import { scrape, scrapeRaw, scrapeTimeout, idmux, Identity } from "./lib";
@@ -419,6 +420,29 @@ describeIf(ALLOW_TEST_SUITE_WEBSITE)("Parsers parameter tests", () => {
         // Should bill based on limited pages (1 page = 1 credit)
         expect(response.metadata.creditsUsed).toBe(1);
         expect(response.metadata.numPages).toBe(1);
+      },
+      scrapeTimeout * 2,
+    );
+  });
+
+  describeIf(HAS_FIRE_PDF)("Fire PDF page count (regression)", () => {
+    // Guards against the billing regression where fire-pdf processed pages but
+    // pdfMetadata.numPages stayed 0 because scrapePDFWithFirePDF dropped the
+    // pages_processed value on the floor.
+    it.concurrent(
+      "reports numPages when fire-pdf is forced",
+      async () => {
+        const response = await scrape(
+          {
+            url: pdfUrl,
+            __forceFirePDF: true,
+          },
+          identity,
+        );
+
+        expect(response.markdown).toBeDefined();
+        expect(response.markdown).toContain("PDF Test File");
+        expect(response.metadata.numPages).toBeGreaterThan(0);
       },
       scrapeTimeout * 2,
     );

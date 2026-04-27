@@ -3,8 +3,14 @@ import { logger } from "./logger";
 import { config } from "../config";
 import crypto from "crypto";
 import { storage } from "./gcs-jobs";
+import type { PDFProcessorResult } from "../scraper/scrapeURL/engines/pdf/types";
 
 type PdfCacheProvider = "runpod" | "firepdf";
+
+type CachedPdfResult = Pick<
+  PDFProcessorResult,
+  "markdown" | "html" | "pagesProcessed"
+> & { markdown: string };
 
 const PROVIDER_PREFIXES: Record<PdfCacheProvider, string> = {
   runpod: "pdf-cache-v2/",
@@ -17,7 +23,7 @@ export function createPdfCacheKey(pdfContent: string | Buffer): string {
 
 export async function savePdfResultToCache(
   pdfContent: string,
-  result: { markdown: string; html: string },
+  result: CachedPdfResult,
   provider: PdfCacheProvider = "runpod",
 ): Promise<string | null> {
   try {
@@ -74,7 +80,7 @@ export async function savePdfResultToCache(
 export async function getPdfResultFromCache(
   pdfContent: string,
   provider: PdfCacheProvider = "runpod",
-): Promise<{ markdown: string; html: string } | null> {
+): Promise<CachedPdfResult | null> {
   try {
     if (!config.GCS_BUCKET_NAME) {
       return null;

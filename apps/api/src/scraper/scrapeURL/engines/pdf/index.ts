@@ -411,6 +411,16 @@ export async function scrapePDF(meta: Meta): Promise<EngineScrapeResult> {
             maxPages,
             effectivePageCount,
           );
+          // When processPdf threw (e.g. malformed xref/trailer),
+          // effectivePageCount was left at 0 and billing under-counts. Use
+          // fire-pdf's reported pages_processed to fill the gap, but never
+          // shrink a count that an upstream step already established.
+          if (
+            result?.pagesProcessed !== undefined &&
+            result.pagesProcessed > effectivePageCount
+          ) {
+            effectivePageCount = result.pagesProcessed;
+          }
         } catch (error) {
           if (
             error instanceof RemoveFeatureError ||
