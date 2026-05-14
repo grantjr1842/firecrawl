@@ -2,13 +2,12 @@
     "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
     "low": true,
     "allowlist": [
-        // GHSA-77vg-94rm-hx3p (devalue DoS via sparse array deserialization):
-        // devalue@5.8.1 fixes this, but it was published at 2026-05-14T18:46:14Z
-        // and is blocked by this app's 12-hour minimum-release-age until
-        // 2026-05-15T06:46:14Z. This app is a static Astro test fixture built
-        // from repo-controlled content, with no production/runtime devalue.parse
-        // path for attacker-supplied payloads. Owner: engineering-security.
-        // Tracking: this PR until a follow-up issue is created.
+        // Temporary deferment for GHSA-77vg-94rm-hx3p (devalue via astro).
+        // devalue@5.8.1 is the first patched release, but it remains inside this
+        // app's configured 12-hour minimum-release-age window. Do not bypass the
+        // age gate for this test-site dependency; retry after 2026-05-15T06:46Z.
+        // Owner: team-engineering-reviewers. Tracking: create internal ticket.
+        // Expires: 2026-05-16.
         "GHSA-77vg-94rm-hx3p"
     ]
 }
