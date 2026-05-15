@@ -2,6 +2,7 @@ import {
   ActionsNotSupportedError,
   CrawlDenialError,
   ErrorCodes,
+  MapFailedError,
   MapTimeoutError,
   RacedRedirectError,
   ScrapeJobTimeoutError,
@@ -26,10 +27,13 @@ import {
   ProxySelectionError,
   AgentIndexOnlyError,
   NoCachedDataError,
+  LockdownMissError,
   ScrapeJobCancelledError,
   ScrapeRetryLimitError,
   BrandingNotSupportedError,
   AudioUnsupportedUrlError,
+  VideoUnsupportedUrlError,
+  XTwitterConfigurationError,
 } from "../scraper/scrapeURL/error";
 
 // TODO: figure out correct typing for this
@@ -53,6 +57,7 @@ const errorMap: Record<ErrorCodes, any> = {
   SCRAPE_DOCUMENT_ANTIBOT_ERROR: DocumentAntibotError,
   SCRAPE_UNSUPPORTED_FILE_ERROR: UnsupportedFileError,
   SCRAPE_NO_CACHED_DATA: NoCachedDataError,
+  SCRAPE_LOCKDOWN_CACHE_MISS: LockdownMissError,
   SCRAPE_ACTION_ERROR: ActionError,
   SCRAPE_ACTIONS_NOT_SUPPORTED: ActionsNotSupportedError,
   SCRAPE_BRANDING_NOT_SUPPORTED: BrandingNotSupportedError,
@@ -61,10 +66,14 @@ const errorMap: Record<ErrorCodes, any> = {
   SCRAPE_SITEMAP_ERROR: SitemapError,
   CRAWL_DENIAL: CrawlDenialError,
   SCRAPE_AUDIO_UNSUPPORTED_URL: AudioUnsupportedUrlError,
+  SCRAPE_VIDEO_UNSUPPORTED_URL: VideoUnsupportedUrlError,
+  SCRAPE_X_TWITTER_CONFIGURATION_ERROR: XTwitterConfigurationError,
+  MAP_FAILED: MapFailedError,
 
   // Zod errors
   BAD_REQUEST: null,
   BAD_REQUEST_INVALID_JSON: null,
+  PARSE_UNSUPPORTED_OPTIONS: null,
 };
 
 export function serializeTransportableError(error: TransportableError) {

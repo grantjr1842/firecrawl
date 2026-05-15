@@ -84,7 +84,9 @@ export async function scrapeController(
       }
 
       const zeroDataRetention =
-        getScrapeZDR(req.acuc?.flags) === "forced" || (req.body.zeroDataRetention ?? false);
+        getScrapeZDR(req.acuc?.flags) === "forced" ||
+        (req.body.zeroDataRetention ?? false) ||
+        (req.body.lockdown ?? false);
       const billing: BillingMetadata = req.body.__agentInterop
         ? { endpoint: "agent" as const, jobId }
         : { endpoint: "scrape" as const, jobId };
@@ -314,6 +316,17 @@ export async function scrapeController(
             });
           }
 
+          if (e.code === "SCRAPE_LOCKDOWN_CACHE_MISS") {
+            setSpanAttributes(span, {
+              "scrape.status_code": 404,
+            });
+            return res.status(404).json({
+              success: false,
+              code: e.code,
+              error: e.message,
+            });
+          }
+
           if (e.code === "AGENT_INDEX_ONLY") {
             setSpanAttributes(span, {
               "scrape.status_code": 403,
@@ -409,6 +422,8 @@ export async function scrapeController(
         !!hasFormatOfType(req.body.formats, "json") ||
         !!hasFormatOfType(req.body.formats, "summary") ||
         !!hasFormatOfType(req.body.formats, "branding") ||
+        !!hasFormatOfType(req.body.formats, "question") ||
+        !!hasFormatOfType(req.body.formats, "highlights") ||
         !!hasFormatOfType(req.body.formats, "query");
 
       if (!usedLlm) {

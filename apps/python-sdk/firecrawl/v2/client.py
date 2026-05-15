@@ -5,9 +5,11 @@ This module provides the main client class that orchestrates all v2 functionalit
 """
 
 import os
-from typing import Optional, List, Dict, Any, Callable, Union, Literal
+from pathlib import Path
+from typing import Optional, List, Dict, Any, Callable, Union, Literal, BinaryIO
 from .types import (
     ClientConfig,
+    ParseOptions,
     ScrapeOptions,
     Document,
     SearchRequest,
@@ -39,10 +41,19 @@ from .types import (
     Location,
     PaginationConfig,
     AgentOptions,
+    Monitor,
+    MonitorCheck,
+    MonitorCheckDetail,
+    MonitorCreateRequest,
+    MonitorNotification,
+    MonitorSchedule,
+    MonitorTarget,
+    MonitorUpdateRequest,
 )
 from .utils.http_client import HttpClient
 from .utils.error_handler import FirecrawlError
 from .methods import scrape as scrape_module
+from .methods import parse as parse_module
 from .methods import crawl as crawl_module  
 from .methods import batch as batch_module
 from .methods import search as search_module
@@ -52,6 +63,7 @@ from .methods import usage as usage_methods
 from .methods import extract as extract_module
 from .methods import agent as agent_module
 from .methods import browser as browser_module
+from .methods import monitor as monitor_module
 from .watcher import Watcher
 
 class FirecrawlClient:
@@ -131,6 +143,8 @@ class FirecrawlClient:
         proxy: Optional[str] = None,
         max_age: Optional[int] = None,
         store_in_cache: Optional[bool] = None,
+        lockdown: Optional[bool] = None,
+        profile: Optional[Dict[str, Any]] = None,
         integration: Optional[str] = None,
     ) -> Document:
         """
@@ -156,6 +170,8 @@ class FirecrawlClient:
             proxy: Proxy to use
             max_age: Maximum age of the cache
             store_in_cache: Whether to store the result in the cache
+            lockdown: Serve only previously cached results; never make outbound requests. Returns 404 SCRAPE_LOCKDOWN_CACHE_MISS on cache miss.
+            profile: Browser profile for persistent state (e.g. {"name": "my-profile", "saveChanges": True})
         Returns:
             Document
         """
@@ -180,9 +196,11 @@ class FirecrawlClient:
                 proxy=proxy,
                 max_age=max_age,
                 store_in_cache=store_in_cache,
+                lockdown=lockdown,
+                profile=profile,
                 integration=integration,
             ).items() if v is not None}
-        ) if any(v is not None for v in [formats, headers, include_tags, exclude_tags, only_main_content, timeout, wait_for, mobile, parsers, actions, location, skip_tls_verification, remove_base64_images, fast_mode, use_mock, block_ads, proxy, max_age, store_in_cache, integration]) else None
+        ) if any(v is not None for v in [formats, headers, include_tags, exclude_tags, only_main_content, timeout, wait_for, mobile, parsers, actions, location, skip_tls_verification, remove_base64_images, fast_mode, use_mock, block_ads, proxy, max_age, store_in_cache, lockdown, profile, integration]) else None
         return scrape_module.scrape(self.http_client, url, options)
 
     def interact(
@@ -261,6 +279,36 @@ class FirecrawlClient:
         """Deprecated alias for stop_interaction()."""
         return self.stop_interaction(job_id)
 
+    def parse(
+        self,
+        file: Union[str, Path, bytes, bytearray, BinaryIO],
+        *,
+        filename: Optional[str] = None,
+        content_type: Optional[str] = None,
+        options: Optional[ParseOptions] = None,
+    ) -> Document:
+        """
+        Parse an uploaded file using the v2 parse endpoint.
+
+        Args:
+            file: File path, bytes, bytearray, or binary file-like object
+            filename: Optional explicit filename (required for raw bytes without extension)
+            content_type: Optional explicit MIME type
+            options: Parse-compatible options. Parse rejects change tracking and
+                browser-only options such as actions, wait_for, location, and mobile.
+
+        Returns:
+            Document
+        """
+        return parse_module.parse(
+            self.http_client,
+            file,
+            options=options,
+            filename=filename,
+            content_type=content_type,
+        )
+
+
     def search(
         self,
         query: str,
@@ -319,6 +367,7 @@ class FirecrawlClient:
         crawl_entire_domain: bool = False,
         allow_external_links: bool = False,
         allow_subdomains: bool = False,
+        ignore_robots_txt: bool = False,
         delay: Optional[int] = None,
         max_concurrency: Optional[int] = None,
         webhook: Optional[Union[str, WebhookConfig]] = None,
@@ -347,6 +396,7 @@ class FirecrawlClient:
             crawl_entire_domain: Follow parent directory links
             allow_external_links: Follow external domain links
             allow_subdomains: Follow subdomains
+            ignore_robots_txt: Whether to ignore robots.txt rules
             delay: Delay in seconds between scrapes
             max_concurrency: Maximum number of concurrent scrapes
             webhook: Webhook configuration for notifications
@@ -381,6 +431,7 @@ class FirecrawlClient:
             "crawl_entire_domain": crawl_entire_domain,
             "allow_external_links": allow_external_links,
             "allow_subdomains": allow_subdomains,
+            "ignore_robots_txt": ignore_robots_txt,
             "delay": delay,
             "max_concurrency": max_concurrency,
             "webhook": webhook,
@@ -418,6 +469,7 @@ class FirecrawlClient:
         crawl_entire_domain: bool = False,
         allow_external_links: bool = False,
         allow_subdomains: bool = False,
+        ignore_robots_txt: bool = False,
         delay: Optional[int] = None,
         max_concurrency: Optional[int] = None,
         webhook: Optional[Union[str, WebhookConfig]] = None,
@@ -443,6 +495,7 @@ class FirecrawlClient:
             crawl_entire_domain: Follow parent directory links
             allow_external_links: Follow external domain links
             allow_subdomains: Follow subdomains
+            ignore_robots_txt: Whether to ignore robots.txt rules
             delay: Delay in seconds between scrapes
             max_concurrency: Maximum number of concurrent scrapes
             webhook: Webhook configuration for notifications
@@ -450,7 +503,7 @@ class FirecrawlClient:
             regex_on_full_url: Apply includePaths/excludePaths regex to the full URL (including query parameters) instead of just the pathname
             deduplicate_similar_urls: Whether to deduplicate similar URLs during crawl (default: True)
             zero_data_retention: Whether to delete data after 24 hours
-            
+
         Returns:
             CrawlResponse with job information
             
@@ -473,6 +526,7 @@ class FirecrawlClient:
             "crawl_entire_domain": crawl_entire_domain,
             "allow_external_links": allow_external_links,
             "allow_subdomains": allow_subdomains,
+            "ignore_robots_txt": ignore_robots_txt,
             "delay": delay,
             "max_concurrency": max_concurrency,
             "webhook": webhook,
@@ -610,6 +664,112 @@ class FirecrawlClient:
         ) if any(v is not None for v in [search, include_subdomains, ignore_query_parameters, limit, sitemap, timeout, integration, location]) else None
 
         return map_module.map(self.http_client, url, options)
+
+    def create_monitor(
+        self,
+        name: str,
+        schedule: Union[MonitorSchedule, Dict[str, Any]],
+        targets: List[Union[MonitorTarget, Dict[str, Any]]],
+        *,
+        webhook: Optional[WebhookConfig] = None,
+        notification: Optional[MonitorNotification] = None,
+        retention_days: Optional[int] = None,
+    ) -> Monitor:
+        """Create a scheduled monitor."""
+        if isinstance(schedule, dict):
+            schedule = MonitorSchedule(**schedule)
+        request = MonitorCreateRequest(
+            name=name,
+            schedule=schedule,
+            targets=targets,
+            webhook=webhook,
+            notification=notification,
+            retention_days=retention_days,
+        )
+        return monitor_module.create_monitor(self.http_client, request)
+
+    def list_monitors(
+        self,
+        *,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+    ) -> List[Monitor]:
+        """List monitors for the authenticated team."""
+        return monitor_module.list_monitors(self.http_client, limit=limit, offset=offset)
+
+    def get_monitor(self, monitor_id: str) -> Monitor:
+        """Get a monitor by ID."""
+        return monitor_module.get_monitor(self.http_client, monitor_id)
+
+    def update_monitor(
+        self,
+        monitor_id: str,
+        *,
+        name: Optional[str] = None,
+        status: Optional[Literal["active", "paused"]] = None,
+        schedule: Optional[Union[MonitorSchedule, Dict[str, Any]]] = None,
+        webhook: Optional[Union[WebhookConfig, Dict[str, Any]]] = None,
+        notification: Optional[Union[MonitorNotification, Dict[str, Any]]] = None,
+        targets: Optional[List[Union[MonitorTarget, Dict[str, Any]]]] = None,
+        retention_days: Optional[int] = None,
+    ) -> Monitor:
+        """Update a monitor."""
+        if isinstance(schedule, dict):
+            schedule = MonitorSchedule(**schedule)
+        request = MonitorUpdateRequest(
+            name=name,
+            status=status,
+            schedule=schedule,
+            webhook=webhook,
+            notification=notification,
+            targets=targets,
+            retention_days=retention_days,
+        )
+        return monitor_module.update_monitor(self.http_client, monitor_id, request)
+
+    def delete_monitor(self, monitor_id: str) -> bool:
+        """Delete a monitor."""
+        return monitor_module.delete_monitor(self.http_client, monitor_id)
+
+    def run_monitor(self, monitor_id: str) -> MonitorCheck:
+        """Run a monitor manually."""
+        return monitor_module.run_monitor(self.http_client, monitor_id)
+
+    def list_monitor_checks(
+        self,
+        monitor_id: str,
+        *,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+    ) -> List[MonitorCheck]:
+        """List checks for a monitor."""
+        return monitor_module.list_monitor_checks(
+            self.http_client,
+            monitor_id,
+            limit=limit,
+            offset=offset,
+        )
+
+    def get_monitor_check(
+        self,
+        monitor_id: str,
+        check_id: str,
+        *,
+        limit: Optional[int] = None,
+        skip: Optional[int] = None,
+        status: Optional[Literal["same", "new", "changed", "removed", "error"]] = None,
+        pagination_config: Optional[PaginationConfig] = None,
+    ) -> MonitorCheckDetail:
+        """Get a monitor check with page results, auto-paginated by default."""
+        return monitor_module.get_monitor_check(
+            self.http_client,
+            monitor_id,
+            check_id,
+            limit=limit,
+            skip=skip,
+            status=status,
+            pagination_config=pagination_config,
+        )
     
     def cancel_crawl(self, crawl_id: str) -> bool:
         """
@@ -769,6 +929,7 @@ class FirecrawlClient:
         proxy: Optional[str] = None,
         max_age: Optional[int] = None,
         store_in_cache: Optional[bool] = None,
+        lockdown: Optional[bool] = None,
         webhook: Optional[Union[str, WebhookConfig]] = None,
         append_to_id: Optional[str] = None,
         ignore_invalid_urls: Optional[bool] = None,
@@ -789,7 +950,7 @@ class FirecrawlClient:
             timeout: Per-request timeout in milliseconds
             wait_for: Wait condition in milliseconds
             mobile: Emulate mobile viewport
-            parsers: Parser list (e.g., ["pdf"]) 
+            parsers: Parser list (e.g., ["pdf"])
             actions: Browser actions to perform
             location: Location settings
             skip_tls_verification: Skip TLS verification
@@ -800,6 +961,7 @@ class FirecrawlClient:
             proxy: Proxy setting
             max_age: Cache max age
             store_in_cache: Whether to store results in cache
+            lockdown: Serve only previously cached results; never make outbound requests.
             webhook: Webhook configuration
             append_to_id: Append to an existing batch job
             ignore_invalid_urls: Skip invalid URLs without failing
@@ -832,8 +994,9 @@ class FirecrawlClient:
                 proxy=proxy,
                 max_age=max_age,
                 store_in_cache=store_in_cache,
+                lockdown=lockdown,
             ).items() if v is not None}
-        ) if any(v is not None for v in [formats, headers, include_tags, exclude_tags, only_main_content, timeout, wait_for, mobile, parsers, actions, location, skip_tls_verification, remove_base64_images, fast_mode, use_mock, block_ads, proxy, max_age, store_in_cache]) else None
+        ) if any(v is not None for v in [formats, headers, include_tags, exclude_tags, only_main_content, timeout, wait_for, mobile, parsers, actions, location, skip_tls_verification, remove_base64_images, fast_mode, use_mock, block_ads, proxy, max_age, store_in_cache, lockdown]) else None
 
         return batch_module.start_batch_scrape(
             self.http_client,
@@ -1182,6 +1345,7 @@ class FirecrawlClient:
         proxy: Optional[str] = None,
         max_age: Optional[int] = None,
         store_in_cache: Optional[bool] = None,
+        lockdown: Optional[bool] = None,
         webhook: Optional[Union[str, WebhookConfig]] = None,
         append_to_id: Optional[str] = None,
         ignore_invalid_urls: Optional[bool] = None,
@@ -1216,8 +1380,9 @@ class FirecrawlClient:
                 proxy=proxy,
                 max_age=max_age,
                 store_in_cache=store_in_cache,
+                lockdown=lockdown,
             ).items() if v is not None}
-        ) if any(v is not None for v in [formats, headers, include_tags, exclude_tags, only_main_content, timeout, wait_for, mobile, parsers, actions, location, skip_tls_verification, remove_base64_images, fast_mode, use_mock, block_ads, proxy, max_age, store_in_cache]) else None
+        ) if any(v is not None for v in [formats, headers, include_tags, exclude_tags, only_main_content, timeout, wait_for, mobile, parsers, actions, location, skip_tls_verification, remove_base64_images, fast_mode, use_mock, block_ads, proxy, max_age, store_in_cache, lockdown]) else None
 
         return batch_module.batch_scrape(
             self.http_client,

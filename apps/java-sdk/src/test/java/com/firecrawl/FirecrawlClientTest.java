@@ -7,6 +7,7 @@ import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -24,6 +25,13 @@ class FirecrawlClientTest {
     void testBuilderRequiresApiKey() {
         assertThrows(FirecrawlException.class, () ->
                 FirecrawlClient.builder().apiKey("").build()
+        );
+    }
+
+    @Test
+    void testBuilderRejectsExplicitNullApiKey() {
+        assertThrows(FirecrawlException.class, () ->
+                FirecrawlClient.builder().apiKey(null).build()
         );
     }
 
@@ -52,17 +60,44 @@ class FirecrawlClientTest {
 
     @Test
     void testScrapeOptionsBuilder() {
+        QueryFormat queryFormat = QueryFormat.builder()
+                .prompt("What is Firecrawl?")
+                .mode(QueryFormat.Mode.DIRECT_QUOTE)
+                .build();
+
         ScrapeOptions options = ScrapeOptions.builder()
-                .formats(List.of("markdown", "html"))
+                .formats(List.of("markdown", "html", "video", queryFormat))
                 .onlyMainContent(true)
                 .timeout(30000)
                 .mobile(false)
                 .build();
 
-        assertEquals(List.of("markdown", "html"), options.getFormats());
+        assertEquals(List.of("markdown", "html", "video", queryFormat), options.getFormats());
+        assertEquals("query", queryFormat.getType());
+        assertEquals(QueryFormat.Mode.DIRECT_QUOTE, queryFormat.getMode());
         assertTrue(options.getOnlyMainContent());
         assertEquals(30000, options.getTimeout());
         assertFalse(options.getMobile());
+    }
+
+    @Test
+    void testQuestionAndHighlightsFormats() {
+        QuestionFormat questionFormat = QuestionFormat.builder()
+                .question("What is Firecrawl?")
+                .build();
+        HighlightsFormat highlightsFormat = HighlightsFormat.builder()
+                .query("What is Firecrawl?")
+                .build();
+
+        ScrapeOptions options = ScrapeOptions.builder()
+                .formats(List.of(questionFormat, highlightsFormat))
+                .build();
+
+        assertEquals(List.of(questionFormat, highlightsFormat), options.getFormats());
+        assertEquals("question", questionFormat.getType());
+        assertEquals("What is Firecrawl?", questionFormat.getQuestion());
+        assertEquals("highlights", highlightsFormat.getType());
+        assertEquals("What is Firecrawl?", highlightsFormat.getQuery());
     }
 
     @Test
@@ -160,6 +195,50 @@ class FirecrawlClientTest {
         );
     }
 
+    @Test
+    void testParseFileBuilder() {
+        ParseFile file = ParseFile.builder()
+                .filename("upload.html")
+                .content("<html><body>hello</body></html>".getBytes(StandardCharsets.UTF_8))
+                .contentType("text/html")
+                .build();
+
+        assertEquals("upload.html", file.getFilename());
+        assertEquals("text/html", file.getContentType());
+        assertTrue(file.getContent().length > 0);
+        byte[] firstRead = file.getContent();
+        firstRead[0] = 'X';
+        assertNotEquals(firstRead[0], file.getContent()[0]);
+    }
+
+    @Test
+    void testParseRequiresFile() {
+        FirecrawlClient client = FirecrawlClient.builder()
+                .apiKey("fc-test-key")
+                .build();
+        assertThrows(NullPointerException.class, () ->
+                client.parse(null)
+        );
+    }
+
+    @Test
+    void testParseOptionsRejectsChangeTrackingFormat() {
+        assertThrows(IllegalArgumentException.class, () ->
+                ParseOptions.builder()
+                        .formats(List.of("markdown", "changeTracking"))
+                        .build()
+        );
+    }
+
+    @Test
+    void testParseOptionsRejectsVideoFormat() {
+        assertThrows(IllegalArgumentException.class, () ->
+                ParseOptions.builder()
+                        .formats(List.of("video"))
+                        .build()
+        );
+    }
+
     // ================================================================
     // E2E TESTS (require FIRECRAWL_API_KEY)
     // ================================================================
@@ -236,5 +315,25 @@ class FirecrawlClientTest {
         CreditUsage usage = client.getCreditUsage();
 
         assertNotNull(usage);
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "FIRECRAWL_API_KEY", matches = ".*\\S.*")
+    void testParseE2E() {
+        FirecrawlClient client = FirecrawlClient.fromEnv();
+        ParseFile file = ParseFile.builder()
+                .filename("java-parse-e2e.html")
+                .content("<!DOCTYPE html><html><body><h1>Java SDK Parse E2E</h1></body></html>".getBytes(StandardCharsets.UTF_8))
+                .contentType("text/html")
+                .build();
+
+        Document doc = client.parse(file, ParseOptions.builder()
+                .formats(List.of("markdown"))
+                .build());
+
+        assertNotNull(doc);
+        assertNotNull(doc.getMarkdown());
+        assertFalse(doc.getMarkdown().isEmpty());
+        assertTrue(doc.getMarkdown().contains("Java SDK Parse E2E"));
     }
 }

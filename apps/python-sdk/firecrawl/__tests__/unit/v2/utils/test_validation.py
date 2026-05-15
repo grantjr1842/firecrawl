@@ -1,5 +1,12 @@
 import pytest
-from firecrawl.v2.types import JsonFormat, ScrapeOptions, PDFParser
+from firecrawl.v2.types import (
+    HighlightsFormat,
+    JsonFormat,
+    QueryFormat,
+    QuestionFormat,
+    ScrapeOptions,
+    PDFParser,
+)
 from firecrawl.v2.utils.validation import validate_scrape_options, prepare_scrape_options
 
 
@@ -95,7 +102,7 @@ class TestPrepareScrapeOptions:
     def test_prepare_basic_options(self):
         """Test preparation with basic options."""
         options = ScrapeOptions(
-            formats=["markdown"],
+            formats=["markdown", "video"],
             timeout=30000,
             wait_for=2000
         )
@@ -105,6 +112,7 @@ class TestPrepareScrapeOptions:
         assert "formats" in result
         assert "timeout" in result
         assert "waitFor" in result
+        assert result["formats"] == ["markdown", "video"]
         assert result["timeout"] == 30000
         assert result["waitFor"] == 2000
 
@@ -189,6 +197,74 @@ class TestPrepareScrapeOptions:
         with pytest.raises(ValueError, match="Timeout must be positive"):
             prepare_scrape_options(options)
 
+    def test_prepare_query_format_with_mode(self):
+        """Test query format mode is preserved."""
+        options = ScrapeOptions(
+            formats=[QueryFormat(prompt="What is Firecrawl?", mode="directQuote")]
+        )
+        result = prepare_scrape_options(options)
+
+        assert result["formats"] == [
+            {"type": "query", "prompt": "What is Firecrawl?", "mode": "directQuote"}
+        ]
+
+    def test_prepare_question_and_highlights_formats(self):
+        """Test question and highlights formats are preserved."""
+        options = ScrapeOptions(
+            formats=[
+                QuestionFormat(question="What is Firecrawl?"),
+                HighlightsFormat(query="What is Firecrawl?"),
+            ]
+        )
+        result = prepare_scrape_options(options)
+
+        assert result["formats"] == [
+            {"type": "question", "question": "What is Firecrawl?"},
+            {"type": "highlights", "query": "What is Firecrawl?"},
+        ]
+
+    def test_prepare_question_and_highlights_reject_empty_values(self):
+        """Test question and highlights validation."""
+        with pytest.raises(ValueError, match="question format requires"):
+            prepare_scrape_options(
+                ScrapeOptions(formats=[{"type": "question", "question": ""}])
+            )
+
+        with pytest.raises(ValueError, match="highlights format requires"):
+            prepare_scrape_options(
+                ScrapeOptions(formats=[{"type": "highlights", "query": ""}])
+            )
+
+    def test_prepare_query_format_rejects_direct_quote_boolean(self):
+        """Test old query directQuote layout is rejected."""
+        options = ScrapeOptions(
+            formats=[
+                {
+                    "type": "query",
+                    "prompt": "What is Firecrawl?",
+                    "directQuote": True,
+                }
+            ]
+        )
+
+        with pytest.raises(ValueError, match="uses 'mode' instead of 'directQuote'"):
+            prepare_scrape_options(options)
+
+    def test_prepare_query_format_rejects_invalid_mode(self):
+        """Test query mode validation."""
+        options = ScrapeOptions(
+            formats=[
+                {
+                    "type": "query",
+                    "prompt": "What is Firecrawl?",
+                    "mode": "quoted",
+                }
+            ]
+        )
+
+        with pytest.raises(ValueError, match="mode must be 'freeform' or 'directQuote'"):
+            prepare_scrape_options(options)
+
     def test_prepare_empty_options(self):
         """Test preparation with empty options."""
         options = ScrapeOptions()  # All defaults
@@ -248,13 +324,14 @@ class TestPrepareScrapeOptions:
             use_mock="test-mock",
             block_ads=False,
             store_in_cache=False,
+            lockdown=True,
             max_age=7200000,  # 2 hours
             actions=[screenshot_action],
             parsers=["pdf"]
         )
-        
+
         result = prepare_scrape_options(options)
-        
+
         # Check new field conversions
         assert "fastMode" in result
         assert result["fastMode"] is True
@@ -264,6 +341,8 @@ class TestPrepareScrapeOptions:
         assert result["blockAds"] is False
         assert "storeInCache" in result
         assert result["storeInCache"] is False
+        assert "lockdown" in result
+        assert result["lockdown"] is True
         assert "maxAge" in result
         assert result["maxAge"] == 7200000
         

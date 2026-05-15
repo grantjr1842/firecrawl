@@ -1,10 +1,16 @@
 import express from "express";
+import multer from "multer";
 import { config } from "../config";
 import { RateLimiterMode } from "../types";
 import expressWs from "express-ws";
 import { searchController } from "../controllers/v2/search";
+import { searchFeedbackController } from "../controllers/v2/search-feedback";
 import { x402SearchController } from "../controllers/v2/x402-search";
 import { scrapeController } from "../controllers/v2/scrape";
+import {
+  parseController,
+  parseMultipartPayloadMiddleware,
+} from "../controllers/v2/parse";
 import { batchScrapeController } from "../controllers/v2/batch-scrape";
 import { crawlController } from "../controllers/v2/crawl";
 import { crawlParamsPreviewController } from "../controllers/v2/crawl-params-preview";
@@ -40,6 +46,7 @@ import {
   createX402RouteConfig,
   isX402Enabled,
 } from "../lib/x402";
+import { deprecationMiddleware } from "../lib/deprecations";
 import { agentController } from "../controllers/v2/agent";
 import { agentStatusController } from "../controllers/v2/agent-status";
 import { agentCancelController } from "../controllers/v2/agent-cancel";
@@ -50,19 +57,57 @@ import {
   browserListController,
   browserWebhookDestroyedController,
 } from "../controllers/v2/browser";
-import { agentSignupController } from "../controllers/v2/agent-signup";
-import {
-  agentSignupConfirmController,
-  agentSignupBlockController,
-} from "../controllers/v2/agent-signup-confirm";
+import { activityController } from "../controllers/v1/activity";
+import { supportProxyController } from "../controllers/v2/support-proxy";
 import {
   scrapeInteractController,
   scrapeStopInteractiveBrowserController,
 } from "../controllers/v2/scrape-browser";
+import {
+  createMonitorController,
+  deleteMonitorController,
+  getMonitorCheckController,
+  getMonitorController,
+  listMonitorChecksController,
+  listMonitorsController,
+  runMonitorController,
+  updateMonitorController,
+} from "../controllers/v2/monitor";
 
 expressWs(express());
 
 export const v2Router = express.Router();
+
+const parseUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50 MB
+  },
+});
+
+const parseUploadMiddleware: express.RequestHandler = (req, res, next) => {
+  const upload = parseUpload.single("file");
+
+  upload(req, res, err => {
+    if (!err) {
+      return next();
+    }
+
+    if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        success: false,
+        code: "BAD_REQUEST",
+        error: "Uploaded file exceeds maximum size of 50MB.",
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      code: "BAD_REQUEST",
+      error: err.message || "Invalid multipart form-data request.",
+    });
+  });
+};
 
 // Add timing middleware to all v2 routes
 v2Router.use(requestTimingMiddleware("v2"));
@@ -189,6 +234,23 @@ v2Router.post(
   checkCreditsMiddleware(),
   blocklistMiddleware,
   wrap(searchController),
+);
+
+v2Router.post(
+  "/search/:jobId/feedback",
+  authMiddleware(RateLimiterMode.Account),
+  validateJobIdParam,
+  wrap(searchFeedbackController),
+);
+
+v2Router.post(
+  "/parse",
+  authMiddleware(RateLimiterMode.Scrape),
+  countryCheck,
+  parseUploadMiddleware,
+  parseMultipartPayloadMiddleware,
+  checkCreditsMiddleware(1),
+  wrap(parseController),
 );
 
 v2Router.post(
@@ -323,6 +385,7 @@ v2Router.get(
 v2Router.post(
   "/extract",
   authMiddleware(RateLimiterMode.Extract),
+  deprecationMiddleware("v2_extract"),
   countryCheck,
   checkCreditsMiddleware(20),
   blocklistMiddleware,
@@ -332,6 +395,7 @@ v2Router.post(
 v2Router.get(
   "/extract/:jobId",
   authMiddleware(RateLimiterMode.ExtractStatus),
+  deprecationMiddleware("v2_extract_status"),
   validateJobIdParam,
   wrap(extractStatusController),
 );
@@ -361,25 +425,25 @@ v2Router.delete(
 
 v2Router.get(
   "/team/credit-usage",
-  authMiddleware(RateLimiterMode.CrawlStatus),
+  authMiddleware(RateLimiterMode.Account),
   wrap(creditUsageController),
 );
 
 v2Router.get(
   "/team/credit-usage/historical",
-  authMiddleware(RateLimiterMode.CrawlStatus),
+  authMiddleware(RateLimiterMode.Account),
   wrap(creditUsageHistoricalController),
 );
 
 v2Router.get(
   "/team/token-usage",
-  authMiddleware(RateLimiterMode.ExtractStatus),
+  authMiddleware(RateLimiterMode.Account),
   wrap(tokenUsageController),
 );
 
 v2Router.get(
   "/team/token-usage/historical",
-  authMiddleware(RateLimiterMode.ExtractStatus),
+  authMiddleware(RateLimiterMode.Account),
   wrap(tokenUsageHistoricalController),
 );
 
@@ -391,8 +455,71 @@ v2Router.get(
 
 v2Router.get(
   "/team/queue-status",
-  authMiddleware(RateLimiterMode.CrawlStatus),
+  authMiddleware(RateLimiterMode.Account),
   wrap(queueStatusController),
+);
+
+v2Router.get(
+  "/team/activity",
+  authMiddleware(RateLimiterMode.Account),
+  wrap(activityController),
+);
+
+v2Router.post(
+  "/monitor",
+  authMiddleware(RateLimiterMode.Crawl),
+  countryCheck,
+  checkCreditsMiddleware(1),
+  blocklistMiddleware,
+  wrap(createMonitorController),
+);
+
+v2Router.get(
+  "/monitor",
+  authMiddleware(RateLimiterMode.CrawlStatus),
+  wrap(listMonitorsController),
+);
+
+v2Router.get(
+  "/monitor/:monitorId",
+  authMiddleware(RateLimiterMode.CrawlStatus),
+  wrap(getMonitorController),
+);
+
+v2Router.patch(
+  "/monitor/:monitorId",
+  authMiddleware(RateLimiterMode.Crawl),
+  countryCheck,
+  checkCreditsMiddleware(1),
+  blocklistMiddleware,
+  wrap(updateMonitorController),
+);
+
+v2Router.delete(
+  "/monitor/:monitorId",
+  authMiddleware(RateLimiterMode.CrawlStatus),
+  wrap(deleteMonitorController),
+);
+
+v2Router.post(
+  "/monitor/:monitorId/run",
+  authMiddleware(RateLimiterMode.Crawl),
+  countryCheck,
+  checkCreditsMiddleware(1),
+  blocklistMiddleware,
+  wrap(runMonitorController),
+);
+
+v2Router.get(
+  "/monitor/:monitorId/checks",
+  authMiddleware(RateLimiterMode.CrawlStatus),
+  wrap(listMonitorChecksController),
+);
+
+v2Router.get(
+  "/monitor/:monitorId/checks/:checkId",
+  authMiddleware(RateLimiterMode.CrawlStatus),
+  wrap(getMonitorCheckController),
 );
 
 v2Router.post(
@@ -426,10 +553,17 @@ v2Router.post(
   wrap(browserWebhookDestroyedController),
 );
 
-// Agent signup routes (public, no auth required — rate limiting is handled inside the controller)
-// v2Router.post("/agent-signup", wrap(agentSignupController));
-v2Router.post("/agent-signup/confirm", wrap(agentSignupConfirmController));
-v2Router.post("/agent-signup/block", wrap(agentSignupBlockController));
+// Support agent proxy — forwards to the support-agent service.
+v2Router.post(
+  "/support/ask",
+  authMiddleware(RateLimiterMode.SupportAsk),
+  wrap(supportProxyController),
+);
+v2Router.post(
+  "/support/docs-search",
+  authMiddleware(RateLimiterMode.SupportDocsSearch),
+  wrap(supportProxyController),
+);
 
 // Only register x402 routes if X402_PAY_TO_ADDRESS is configured
 if (isX402Enabled()) {

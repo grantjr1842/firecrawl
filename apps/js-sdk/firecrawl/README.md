@@ -1,6 +1,6 @@
 # Firecrawl Node SDK
 
-The Firecrawl Node SDK is a library that allows you to easily scrape and crawl websites, and output the data in a format ready for use with language models (LLMs). It provides a simple and intuitive interface for interacting with the Firecrawl API.
+The Firecrawl Node SDK is a library that allows you to easily search, scrape, and interact with the web, and output the data in a format ready for use with language models (LLMs). It provides a simple and intuitive interface for the Firecrawl API.
 
 ## Installation
 
@@ -44,6 +44,38 @@ To scrape a single URL with error handling, use the `scrape` method. It takes th
 ```js
 const url = 'https://example.com';
 const scrapedData = await app.scrape(url);
+```
+
+### Video extraction
+
+Use the `video` format on supported video URLs, including YouTube and TikTok. The returned `video` field is a signed URL to the extracted video file.
+
+```js
+const doc = await app.scrape('https://www.youtube.com/watch?v=dQw4w9WgXcQ', {
+  formats: ['video'],
+});
+
+console.log(doc.video);
+```
+
+### Parsing uploaded files
+
+Use `parse` to upload a file (`html`, `pdf`, `docx`, etc.) as multipart form data and process it through the same parsing pipeline.
+Parse does not support browser-only formats/options like `changeTracking`, `screenshot`, `branding`, `audio`, `video`, `actions`, `waitFor`, `location`, or `mobile`.
+
+```js
+const parsed = await app.parse(
+  {
+    data: '<html><body><h1>Hello parse</h1></body></html>',
+    filename: 'upload.html',
+    contentType: 'text/html',
+  },
+  {
+    formats: ['markdown'],
+  }
+);
+
+console.log(parsed.markdown);
 ```
 
 ### Crawling a Website

@@ -1,6 +1,7 @@
 import express from "express";
 import { config } from "../config";
 import { redisHealthController } from "../controllers/v0/admin/redis-health";
+import { autumnHealthController } from "../controllers/v0/admin/autumn-health";
 import { authMiddleware, checkCreditsMiddleware, wrap } from "./shared";
 import { acucCacheClearController } from "../controllers/v0/admin/acuc-cache-clear";
 import { checkFireEngine } from "../controllers/v0/admin/check-fire-engine";
@@ -14,10 +15,12 @@ import {
 } from "../controllers/v0/admin/metrics";
 import { realtimeSearchController } from "../controllers/v2/f-search";
 import { concurrencyQueueBackfillController } from "../controllers/v0/admin/concurrency-queue-backfill";
-import { integCreateUserController } from "../controllers/v0/admin/create-user";
-import { integValidateApiKeyController } from "../controllers/v0/admin/validate-api-key";
-import { integRotateApiKeyController } from "../controllers/v0/admin/rotate-api-key";
 import { crawlMonitorController } from "../controllers/v0/admin/crawl-monitor";
+import {
+  handleIntegrationAdminCreateUserProxy,
+  handleIntegrationAdminRotateProxy,
+  handleIntegrationAdminValidateProxy,
+} from "../lib/admin-integration-integrations-proxy";
 import { RateLimiterMode } from "../types";
 
 export const adminRouter = express.Router();
@@ -25,6 +28,11 @@ export const adminRouter = express.Router();
 adminRouter.get(
   `/admin/${config.BULL_AUTH_KEY}/redis-health`,
   redisHealthController,
+);
+
+adminRouter.get(
+  `/admin/${config.BULL_AUTH_KEY}/autumn-health`,
+  autumnHealthController,
 );
 
 adminRouter.post(
@@ -83,15 +91,15 @@ adminRouter.post(
 
 adminRouter.post(
   `/admin/integration/create-user`,
-  wrap(integCreateUserController),
+  wrap(handleIntegrationAdminCreateUserProxy),
 );
 
 adminRouter.post(
   `/admin/integration/validate-api-key`,
-  wrap(integValidateApiKeyController),
+  wrap(handleIntegrationAdminValidateProxy),
 );
 
 adminRouter.post(
   `/admin/integration/rotate-api-key`,
-  wrap(integRotateApiKeyController),
+  wrap(handleIntegrationAdminRotateProxy),
 );

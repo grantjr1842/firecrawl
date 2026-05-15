@@ -379,6 +379,23 @@ describe("Scrape tests", () => {
     scrapeTimeout,
   );
 
+  itIf(TEST_SELF_HOST && !HAS_FIRE_ENGINE && ALLOW_TEST_SUITE_WEBSITE)(
+    "does not reject empty actions array without fire-engine",
+    async () => {
+      const raw = await scrapeRaw(
+        {
+          url: base,
+          actions: [],
+        },
+        identity,
+      );
+
+      expect(raw.statusCode).toBe(200);
+      expect(raw.body.success).toBe(true);
+    },
+    scrapeTimeout,
+  );
+
   describeIf(ALLOW_TEST_SUITE_WEBSITE)("JSON scrape support", () => {
     it.concurrent(
       "returns parseable JSON",
@@ -2043,6 +2060,42 @@ describe("Attribute formats", () => {
         );
 
         expect(result.error).toMatch(/audio/i);
+      },
+      scrapeTimeout,
+    );
+  });
+
+  describeIf(!TEST_SELF_HOST)("Video format", () => {
+    it.concurrent(
+      "should return video field with signed GCS URL for a supported video URL",
+      async () => {
+        const data = await scrape(
+          {
+            url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            formats: ["video"],
+          },
+          identity,
+        );
+
+        expect(data.video).toBeDefined();
+        expect(typeof data.video).toBe("string");
+        expect(data.video).toMatch(/^https:\/\//);
+      },
+      scrapeTimeout * 2,
+    );
+
+    it.concurrent(
+      "should reject unsupported URL with video format",
+      async () => {
+        const result = await scrapeWithFailure(
+          {
+            url: "https://example.com",
+            formats: ["video"],
+          },
+          identity,
+        );
+
+        expect(result.error).toMatch(/video/i);
       },
       scrapeTimeout,
     );

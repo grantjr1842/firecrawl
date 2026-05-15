@@ -1,6 +1,6 @@
 # Firecrawl Java SDK
 
-Java SDK for the [Firecrawl](https://firecrawl.dev) v2 web scraping API.
+Java SDK for [Firecrawl](https://firecrawl.dev) — search, scrape, and interact with the web.
 
 ## Prerequisites
 
@@ -82,13 +82,13 @@ Before using the Java SDK, ensure you have the following installed:
 ### Gradle (Kotlin DSL)
 
 ```kotlin
-implementation("com.firecrawl:firecrawl-java:1.1.1")
+implementation("com.firecrawl:firecrawl-java:1.6.0")
 ```
 
 ### Gradle (Groovy)
 
 ```groovy
-implementation 'com.firecrawl:firecrawl-java:1.1.1'
+implementation 'com.firecrawl:firecrawl-java:1.6.0'
 ```
 
 ### Maven
@@ -97,7 +97,7 @@ implementation 'com.firecrawl:firecrawl-java:1.1.1'
 <dependency>
     <groupId>com.firecrawl</groupId>
     <artifactId>firecrawl-java</artifactId>
-    <version>1.1.1</version>
+    <version>1.6.0</version>
 </dependency>
 ```
 
@@ -145,6 +145,39 @@ Document doc = client.scrape("https://example.com",
 
 System.out.println(doc.getMarkdown());
 System.out.println(doc.getMetadata().get("title"));
+```
+
+### Video Extraction
+
+Use the `video` format on supported video URLs, including YouTube and TikTok. The returned `video` field is a signed URL to the extracted video file.
+
+```java
+Document doc = client.scrape("https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    ScrapeOptions.builder()
+        .formats(List.of("video"))
+        .build());
+
+System.out.println(doc.getVideo());
+```
+
+### Parse Uploaded Files
+
+Upload local files (`html`, `pdf`, `docx`, etc.) via multipart form data and parse them synchronously.
+Parse options intentionally exclude browser-only features like change tracking, screenshot, branding, audio, video, actions, waitFor, location, and mobile.
+
+```java
+ParseFile file = ParseFile.builder()
+    .filename("upload.html")
+    .content("<!DOCTYPE html><html><body><h1>Java Parse</h1></body></html>".getBytes())
+    .contentType("text/html")
+    .build();
+
+Document parsed = client.parse(file,
+    ParseOptions.builder()
+        .formats(List.of("markdown"))
+        .build());
+
+System.out.println(parsed.getMarkdown());
 ```
 
 #### JSON Extraction
@@ -268,7 +301,7 @@ for (Map<String, Object> link : data.getLinks()) {
 Search the web and optionally scrape results.
 
 ```java
-SearchData results = client.search("firecrawl web scraping",
+SearchData results = client.search("firecrawl",
     SearchOptions.builder()
         .limit(10)
         .build());
@@ -371,14 +404,14 @@ gradle build
 
 ```bash
 gradle jar
-# Output: build/libs/firecrawl-java-1.1.1.jar
+# Output: build/libs/firecrawl-java-1.6.0.jar
 ```
 
 ### Install Locally
 
 ```bash
 gradle publishToMavenLocal
-# Now available as: com.firecrawl:firecrawl-java:1.1.1 in local Maven repository
+# Now available as: com.firecrawl:firecrawl-java:1.6.0 in local Maven repository
 ```
 
 ## Running Tests

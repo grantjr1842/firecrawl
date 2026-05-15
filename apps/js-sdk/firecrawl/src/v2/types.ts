@@ -13,7 +13,8 @@ export type FormatString =
   | 'json'
   | 'attributes'
   | 'branding'
-  | 'audio';
+  | 'audio'
+  | 'video';
 
 export interface Viewport {
   width: number;
@@ -52,9 +53,21 @@ export interface AttributesFormat extends Format {
   }>;
 }
 
+export interface QuestionFormat {
+  type: 'question';
+  question: string;
+}
+
+export interface HighlightsFormat {
+  type: 'highlights';
+  query: string;
+}
+
+/** @deprecated Use QuestionFormat or HighlightsFormat instead. */
 export interface QueryFormat {
   type: 'query';
   prompt: string;
+  mode?: 'freeform' | 'directQuote';
 }
 
 export type FormatOption =
@@ -64,6 +77,26 @@ export type FormatOption =
   | ChangeTrackingFormat
   | ScreenshotFormat
   | AttributesFormat
+  | QuestionFormat
+  | HighlightsFormat
+  | QueryFormat;
+
+export type ParseFormatString = Exclude<
+  FormatString,
+  'screenshot' | 'changeTracking' | 'branding' | 'audio' | 'video'
+>;
+
+export interface ParseFormat {
+  type: ParseFormatString;
+}
+
+export type ParseFormatOption =
+  | ParseFormatString
+  | ParseFormat
+  | JsonFormat
+  | AttributesFormat
+  | QuestionFormat
+  | HighlightsFormat
   | QueryFormat;
 
 export interface LocationConfig {
@@ -164,6 +197,7 @@ export interface ScrapeOptions {
   maxAge?: number;
   minAge?: number;
   storeInCache?: boolean;
+  lockdown?: boolean;
   profile?: {
     name: string;
     saveChanges?: boolean;
@@ -171,6 +205,37 @@ export interface ScrapeOptions {
   integration?: string;
   origin?: string;
 }
+
+export type ParseFileData =
+  | Blob
+  | File
+  | Buffer
+  | Uint8Array
+  | ArrayBuffer
+  | string;
+
+export interface ParseFile {
+  data: ParseFileData;
+  filename: string;
+  contentType?: string;
+}
+
+export type ParseOptions = Omit<
+  ScrapeOptions,
+  | 'formats'
+  | 'waitFor'
+  | 'mobile'
+  | 'actions'
+  | 'location'
+  | 'maxAge'
+  | 'minAge'
+  | 'storeInCache'
+  | 'lockdown'
+  | 'proxy'
+> & {
+  formats?: ParseFormatOption[];
+  proxy?: 'basic' | 'auto';
+};
 
 export interface WebhookConfig {
   url: string;
@@ -394,6 +459,7 @@ export interface Document {
   images?: string[];
   screenshot?: string;
   audio?: string;
+  video?: string;
   attributes?: Array<{
     selector: string;
     attribute: string;
@@ -401,6 +467,7 @@ export interface Document {
   }>;
   actions?: Record<string, unknown>;
   answer?: string;
+  highlights?: string;
   warning?: string;
   changeTracking?: Record<string, unknown>;
   branding?: BrandingProfile;
@@ -460,6 +527,8 @@ export interface SearchRequest {
     'web' | 'news' | 'images' | { type: 'web' | 'news' | 'images' }
   >;
   categories?: Array<'github' | 'research' | 'pdf' | CategoryOption>;
+  includeDomains?: string[];
+  excludeDomains?: string[];
   limit?: number;
   tbs?: string;
   location?: string;
@@ -482,6 +551,8 @@ export interface CrawlOptions {
   crawlEntireDomain?: boolean;
   allowExternalLinks?: boolean;
   allowSubdomains?: boolean;
+  ignoreRobotsTxt?: boolean;
+  robotsUserAgent?: string | null;
   delay?: number | null;
   maxConcurrency?: number | null;
   webhook?: string | WebhookConfig | null;
@@ -553,6 +624,154 @@ export interface MapOptions {
   location?: LocationConfig;
 }
 
+export interface MonitorSchedule {
+  cron: string;
+  timezone?: string;
+}
+
+export interface MonitorEmailNotification {
+  enabled?: boolean;
+  recipients?: string[];
+  includeDiffs?: boolean;
+}
+
+export interface MonitorNotification {
+  email?: MonitorEmailNotification;
+}
+
+export interface MonitorWebhookConfig {
+  url: string;
+  headers?: Record<string, string>;
+  metadata?: Record<string, string>;
+  events?: string[];
+}
+
+export interface MonitorScrapeTarget {
+  id?: string;
+  type: 'scrape';
+  urls: string[];
+  scrapeOptions?: ScrapeOptions;
+}
+
+export interface MonitorCrawlTarget {
+  id?: string;
+  type: 'crawl';
+  url: string;
+  crawlOptions?: CrawlOptions;
+  scrapeOptions?: ScrapeOptions;
+}
+
+export type MonitorTarget = MonitorScrapeTarget | MonitorCrawlTarget;
+
+export interface CreateMonitorRequest {
+  name: string;
+  schedule: MonitorSchedule;
+  webhook?: MonitorWebhookConfig;
+  notification?: MonitorNotification;
+  targets: MonitorTarget[];
+  retentionDays?: number;
+}
+
+export interface UpdateMonitorRequest {
+  name?: string;
+  status?: 'active' | 'paused';
+  schedule?: MonitorSchedule;
+  webhook?: MonitorWebhookConfig | null;
+  notification?: MonitorNotification | null;
+  targets?: MonitorTarget[];
+  retentionDays?: number;
+}
+
+export interface MonitorSummary {
+  totalPages: number;
+  same: number;
+  changed: number;
+  new: number;
+  removed: number;
+  error: number;
+}
+
+export interface Monitor {
+  id: string;
+  name: string;
+  status: 'active' | 'paused' | 'deleted';
+  schedule: MonitorSchedule;
+  nextRunAt?: string | null;
+  lastRunAt?: string | null;
+  currentCheckId?: string | null;
+  targets: MonitorTarget[];
+  webhook?: MonitorWebhookConfig | null;
+  notification?: MonitorNotification | null;
+  retentionDays: number;
+  estimatedCreditsPerMonth?: number | null;
+  lastCheckSummary?: MonitorSummary | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MonitorCheck {
+  id: string;
+  monitorId: string;
+  status:
+    | 'queued'
+    | 'running'
+    | 'completed'
+    | 'failed'
+    | 'partial'
+    | 'skipped_overlap';
+  trigger: 'scheduled' | 'manual';
+  scheduledFor?: string | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  estimatedCredits?: number | null;
+  reservedCredits?: number | null;
+  actualCredits?: number | null;
+  billingStatus:
+    | 'not_applicable'
+    | 'reserved'
+    | 'confirmed'
+    | 'released'
+    | 'failed';
+  summary: MonitorSummary;
+  targetResults?: unknown;
+  notificationStatus?: unknown;
+  error?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MonitorCheckPage {
+  id: string;
+  targetId: string;
+  url: string;
+  status: 'same' | 'new' | 'changed' | 'removed' | 'error';
+  previousScrapeId?: string | null;
+  currentScrapeId?: string | null;
+  statusCode?: number | null;
+  error?: string | null;
+  metadata?: unknown;
+  diff?: unknown;
+  createdAt: string;
+}
+
+export interface MonitorCheckDetail extends MonitorCheck {
+  pages: MonitorCheckPage[];
+  next?: string | null;
+}
+
+export interface ListMonitorsOptions {
+  limit?: number;
+  offset?: number;
+}
+
+export type ListMonitorChecksOptions = ListMonitorsOptions;
+
+export type GetMonitorCheckOptions = PaginationConfig & {
+  limit?: number;
+  skip?: number;
+  status?: MonitorCheckPage["status"];
+};
+
 export interface ExtractResponse {
   success?: boolean;
   id?: string;
@@ -560,6 +779,8 @@ export interface ExtractResponse {
   data?: unknown;
   error?: string;
   warning?: string;
+  warnings?: string[];
+  replacement?: string;
   sources?: Record<string, unknown>;
   expiresAt?: string;
   creditsUsed?: number;
