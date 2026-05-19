@@ -33,5 +33,17 @@ export async function performRedactPII(
     // bailed out of above.
     options: meta.options.redactPII || undefined,
   });
+
+  // Swap raw markdown for the redacted version. Caller asked for PII
+  // redaction; leaving the leaky one in `document.markdown` next to
+  // `document.pii.redactedMarkdown` is a footgun. On `failed` /
+  // `skipped: too_large` (redactedMarkdown === null) we fail closed —
+  // no markdown at all rather than silently falling back to raw.
+  if (document.pii.redactedMarkdown === null) {
+    delete document.markdown;
+  } else {
+    document.markdown = document.pii.redactedMarkdown;
+  }
+
   return document;
 }

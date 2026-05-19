@@ -108,7 +108,7 @@ describeIf(ALLOW_TEST_SUITE_WEBSITE)("V2 Scrape redactPII (schema)", () => {
 
 describeIf(TEST_PRODUCTION)("V2 Scrape redactPII (e2e)", () => {
   it(
-    "returns pii block with spans and a redactedMarkdown when fire-privacy answers",
+    "returns pii block with spans and replaces document.markdown with redacted content",
     async () => {
       // A page with named entities and an email so heuristic recognizers fire
       // even when fire-privacy is in heuristics-only mode.
@@ -122,14 +122,14 @@ describeIf(TEST_PRODUCTION)("V2 Scrape redactPII (e2e)", () => {
       );
 
       // Scrape always succeeds regardless of fire-privacy outcome.
-      expect(typeof data.markdown).toBe("string");
-      expect((data.markdown ?? "").length).toBeGreaterThan(0);
-
       expect(data.pii).toBeDefined();
       expect(["ok", "skipped", "failed"]).toContain(data.pii!.status);
 
       if (data.pii!.status === "ok") {
         expect(typeof data.pii!.redactedMarkdown).toBe("string");
+        // document.markdown is the redacted version, not the raw one.
+        expect(data.markdown).toBe(data.pii!.redactedMarkdown);
+
         expect(data.pii!.spans.length).toBeGreaterThan(0);
         expect(data.pii!.spans[0]).toEqual(
           expect.objectContaining({
@@ -148,13 +148,15 @@ describeIf(TEST_PRODUCTION)("V2 Scrape redactPII (e2e)", () => {
       } else if (data.pii!.status === "failed") {
         expect(data.pii!.redactedMarkdown).toBeNull();
         expect(data.pii!.reason).toBeDefined();
+        // Fail closed: no raw markdown leaks through when redaction failed.
+        expect(data.markdown).toBeUndefined();
       }
     },
     scrapeTimeout,
   );
 
   it(
-    "fails soft when fire-privacy is unreachable — markdown still returned, status is failed",
+    "fails closed when fire-privacy is unreachable — pii.status is failed, markdown is absent",
     async () => {
       const data = await scrape(
         {
@@ -165,14 +167,25 @@ describeIf(TEST_PRODUCTION)("V2 Scrape redactPII (e2e)", () => {
         identity,
       );
 
-      expect(typeof data.markdown).toBe("string");
       expect(data.pii).toBeDefined();
       // We don't pin to a specific outcome — could be ok if fire-privacy
       // is reachable in this environment, or one of skipped/failed otherwise.
-      // The contract is: scrape still succeeds.
+      // The contract is: scrape still succeeds (no error response).
       expect(["ok", "skipped", "failed"]).toContain(data.pii!.status);
-      if (data.pii!.status !== "ok") {
+
+      if (data.pii!.status === "ok") {
+        expect(data.markdown).toBe(data.pii!.redactedMarkdown);
+      } else {
         expect(data.pii!.reason).toBeDefined();
+        // Markdown is absent on failed / skipped-with-null-redacted; on
+        // upstream_skipped / empty_input it passes through (equal to
+        // redactedMarkdown). Verify the invariant: markdown matches
+        // redactedMarkdown (or both absent).
+        if (data.pii!.redactedMarkdown === null) {
+          expect(data.markdown).toBeUndefined();
+        } else {
+          expect(data.markdown).toBe(data.pii!.redactedMarkdown);
+        }
       }
     },
     scrapeTimeout,

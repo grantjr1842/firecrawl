@@ -746,6 +746,15 @@ const extractTransformImpl = <T extends ScrapeOptionsBase | undefined>(
     result = { ...result, maxAge: 2 * 365 * 24 * 60 * 60 * 1000 };
   }
 
+  // redactPII implies onlyMainContent. Boilerplate (nav, footer, cookie
+  // banners) rarely contains real PII, and redacting it produces noisy
+  // `<PERSON>` tags on "Privacy Policy" / "About Us" links that look like
+  // false positives. Smaller surface is also faster + cheaper to redact.
+  // Silent precedence (matches lockdown) rather than schema rejection.
+  if (obj.redactPII && !obj.onlyMainContent) {
+    result = { ...result, onlyMainContent: true };
+  }
+
   return result as T extends undefined ? undefined : T;
 };
 
