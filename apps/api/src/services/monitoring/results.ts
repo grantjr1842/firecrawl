@@ -23,6 +23,24 @@ function getDocumentStatusCode(doc: any): number | null {
     : null;
 }
 
+interface PageJudgment {
+  meaningful: boolean;
+  confidence: "high" | "medium" | "low";
+  reason: string;
+  fields: string[];
+}
+
+function derivePageWebhookEvents(
+  status: string,
+  judgment: PageJudgment | null,
+): string[] {
+  const events: string[] = ["monitor.page"];
+  if (status === "changed" && judgment?.meaningful === true) {
+    events.push("monitor.page.meaningful");
+  }
+  return events;
+}
+
 async function sendMonitorPageWebhook(params: {
   teamId: string;
   monitorId: string;
@@ -32,6 +50,7 @@ async function sendMonitorPageWebhook(params: {
   previousScrapeId?: string | null;
   currentScrapeId?: string | null;
   error?: string | null;
+  judgment?: PageJudgment | null;
 }) {
   try {
     const monitor = await getMonitorForUpdate(params.teamId, params.monitorId);
@@ -44,7 +63,11 @@ async function sendMonitorPageWebhook(params: {
       v0: false,
     });
 
-    await sender?.send(WebhookEvent.MONITOR_PAGE, {
+    const eventNames = derivePageWebhookEvents(
+      params.status,
+      params.judgment ?? null,
+    );
+    const payload = {
       success: params.status !== "error",
       data: {
         monitorId: params.monitorId,
@@ -54,9 +77,13 @@ async function sendMonitorPageWebhook(params: {
         previousScrapeId: params.previousScrapeId ?? null,
         currentScrapeId: params.currentScrapeId ?? null,
         error: params.error ?? null,
+        judgment: params.judgment ?? null,
       },
       error: params.error ?? undefined,
-    });
+    };
+    for (const eventName of eventNames) {
+      await sender?.send(eventName as any, payload);
+    }
   } catch (error) {
     logger.warn("Failed to send monitor page webhook", {
       error,
@@ -66,6 +93,29 @@ async function sendMonitorPageWebhook(params: {
       status: params.status,
     });
   }
+}
+
+function extractJudgmentFromDoc(doc: any): PageJudgment | null {
+  const j = doc?.changeTracking?.judgment;
+  if (
+    !j ||
+    typeof j !== "object" ||
+    typeof j.meaningful !== "boolean" ||
+    typeof j.reason !== "string"
+  ) {
+    return null;
+  }
+  return {
+    meaningful: j.meaningful,
+    confidence:
+      j.confidence === "high" || j.confidence === "medium" || j.confidence === "low"
+        ? j.confidence
+        : "low",
+    reason: j.reason,
+    fields: Array.isArray(j.fields)
+      ? j.fields.filter((f: unknown) => typeof f === "string")
+      : [],
+  };
 }
 
 export async function recordMonitorScrapeSuccess(
@@ -125,6 +175,8 @@ export async function recordMonitorScrapeSuccess(
     },
   });
 
+  const judgment = extractJudgmentFromDoc(doc);
+
   await insertMonitorCheckPages([
     {
       check_id: monitoring.checkId,
@@ -144,6 +196,7 @@ export async function recordMonitorScrapeSuccess(
         title: doc?.metadata?.title ?? null,
         creditsUsed: doc?.metadata?.creditsUsed ?? null,
       },
+      judgment,
     },
   ]);
 
@@ -156,6 +209,7 @@ export async function recordMonitorScrapeSuccess(
     status,
     previousScrapeId: previous?.last_scrape_id ?? null,
     diffGcsKey,
+    judgmentMeaningful: judgment?.meaningful,
   });
 
   await sendMonitorPageWebhook({
@@ -166,6 +220,7 @@ export async function recordMonitorScrapeSuccess(
     status,
     previousScrapeId: previous?.last_scrape_id ?? null,
     currentScrapeId: job.id,
+    judgment,
   });
 }
 

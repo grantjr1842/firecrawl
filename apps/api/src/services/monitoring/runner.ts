@@ -111,13 +111,21 @@ function recoverScrapeTargetRunsFromMonitor(
 
 function withMonitorScrapeDefaults(
   options: Record<string, unknown>,
+  monitorGoal?: string | null,
 ): ScrapeOptions {
   // Monitor owns history: rewrite changeTracking-json to plain json before
   // handing the formats array to the scrape engine, so we always get back
   // current values to diff against the previous run.
-  const formats = Array.isArray(options.formats)
+  let formats = Array.isArray(options.formats)
     ? normalizeMonitorFormats(options.formats)
     : options.formats;
+
+  if (monitorGoal && Array.isArray(formats)) {
+    formats = formats.map((fmt: any) =>
+      fmt?.type === "changeTracking" ? { ...fmt, goal: monitorGoal } : fmt,
+    );
+  }
+
   return {
     maxAge: 0,
     ...withMarkdownFormat({ ...options, formats }),
@@ -155,7 +163,10 @@ async function runSingleScrape(params: {
   const scrapeId = uuidv7();
   const scrapeOptions = scrapeRequestSchema.parse({
     url: params.url,
-    ...withMonitorScrapeDefaults(params.target.scrapeOptions ?? {}),
+    ...withMonitorScrapeDefaults(
+      params.target.scrapeOptions ?? {},
+      params.monitor.goal,
+    ),
     origin: "monitor",
   });
 

@@ -41,6 +41,7 @@ const monitorTargetSchema = z.union([scrapeTargetSchema, crawlTargetSchema]);
 const monitorWebhookSchema = createWebhookSchema([
   "monitor.page",
   "monitor.check.completed",
+  "monitor.page.meaningful",
 ]);
 
 const monitorScheduleSchema = z
@@ -101,6 +102,7 @@ export const createMonitorSchema = z.strictObject({
   notification: monitorNotificationSchema,
   targets: z.array(monitorTargetSchema).min(1).max(50),
   retentionDays: z.number().int().positive().max(365).optional().default(30),
+  goal: z.string().max(2000).optional(),
 });
 
 export const updateMonitorSchema = createMonitorSchema
@@ -161,6 +163,7 @@ export type MonitorRow = {
   webhook: unknown | null;
   notification: MonitorNotification | null;
   last_check_summary: MonitorSummary | null;
+  goal: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -254,6 +257,12 @@ export type MonitorCheckPageInsert = {
   status_code?: number | null;
   error?: string | null;
   metadata?: unknown | null;
+  judgment?: {
+    meaningful: boolean;
+    confidence: "high" | "medium" | "low";
+    reason: string;
+    fields: string[];
+  } | null;
 };
 
 export function withMarkdownFormat(
