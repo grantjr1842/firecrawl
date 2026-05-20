@@ -64,7 +64,11 @@ const configSchema = z.object({
   SEARCH_PREVIEW_TOKEN: z.string().optional(),
   SEARCH_SERVICE_API_SECRET: z.string().optional(),
   SEARCH_FEEDBACK_MAX_AGE_SEC: z.coerce.number().int().positive().default(120),
-  SEARCH_FEEDBACK_DAILY_CAP_CREDITS: z.coerce.number().int().nonnegative().default(100),
+  SEARCH_FEEDBACK_DAILY_CAP_CREDITS: z.coerce
+    .number()
+    .int()
+    .nonnegative()
+    .default(100),
 
   // OAuth token introspection
   OAUTH_INTROSPECT_URL: z.string().optional(),
@@ -203,6 +207,8 @@ const configSchema = z.object({
   FIRECRAWL_LOG_TO_FILE: z.stringbool().optional(),
   FIRECRAWL_SAVE_MOCKS: z.stringbool().optional(),
   FIRECRAWL_INDEX_WRITE_ONLY: z.stringbool().optional(),
+  FIRECRAWL_USE_HTML_EXTRACTOR: z.stringbool().optional(),
+  FIRECRAWL_HTML_EXTRACTOR_SHADOW: z.stringbool().optional(),
   DISABLE_BLOCKLIST: z.stringbool().optional(),
   FORCED_ENGINE_DOMAINS: z.string().optional(),
   DEBUG_BRANDING: z.stringbool().optional(),

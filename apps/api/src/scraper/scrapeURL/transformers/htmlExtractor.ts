@@ -1,19 +1,17 @@
 import { extract } from "@firecrawl/html-extractor";
 import { Meta } from "..";
+import { config } from "../../../config";
 import { Document } from "../../../controllers/v2/types";
-
-const ENV_LIVE = process.env.FIRECRAWL_USE_HTML_EXTRACTOR === "1";
-const ENV_SHADOW = process.env.FIRECRAWL_HTML_EXTRACTOR_SHADOW === "1";
 
 export async function performHtmlExtractor(
   meta: Meta,
   document: Document,
 ): Promise<Document> {
   const live =
-    ENV_LIVE ||
+    config.FIRECRAWL_USE_HTML_EXTRACTOR === true ||
     meta.internalOptions.useHtmlExtractor === true ||
     meta.options.__experimental_htmlExtractor === true;
-  const shadow = !live && ENV_SHADOW;
+  const shadow = !live && config.FIRECRAWL_HTML_EXTRACTOR_SHADOW === true;
 
   if (!live && !shadow) return document;
   if (document.rawHtml === undefined) return document;
