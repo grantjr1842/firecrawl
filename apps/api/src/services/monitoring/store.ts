@@ -85,6 +85,7 @@ export async function createMonitor(params: {
       targets,
       webhook: params.input.webhook ?? null,
       notification: params.input.notification ?? null,
+      goal: params.input.goal ?? null,
     })
     .select("*")
     .single();
@@ -162,6 +163,9 @@ export async function updateMonitor(params: {
   }
   if (params.input.retentionDays !== undefined) {
     patch.retention_days = params.input.retentionDays;
+  }
+  if (params.input.goal !== undefined) {
+    patch.goal = params.input.goal ?? null;
   }
   if (params.input.targets !== undefined) {
     const targets = ensureTargetIds(params.input.targets);
