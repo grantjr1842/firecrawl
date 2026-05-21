@@ -71,17 +71,19 @@ async function sendMonitorPageWebhook(params: {
         : null;
     const payload = {
       success: params.status !== "error",
-      data: {
-        monitorId: params.monitorId,
-        checkId: params.checkId,
-        url: params.url,
-        status: params.status,
-        previousScrapeId: params.previousScrapeId ?? null,
-        currentScrapeId: params.currentScrapeId ?? null,
-        error: params.error ?? null,
-        judgment: params.judgment ?? null,
-        diff,
-      },
+      data: [
+        {
+          monitorId: params.monitorId,
+          checkId: params.checkId,
+          url: params.url,
+          status: params.status,
+          previousScrapeId: params.previousScrapeId ?? null,
+          currentScrapeId: params.currentScrapeId ?? null,
+          error: params.error ?? null,
+          judgment: params.judgment ?? null,
+          diff,
+        },
+      ],
       error: params.error ?? undefined,
     };
     if (sender) {

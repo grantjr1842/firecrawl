@@ -145,7 +145,7 @@ interface MonitorPageData extends BaseWebhookData {
     error?: string | null;
     judgment?: MonitorPageJudgment | null;
     diff?: MonitorPageDiff | null;
-  };
+  }[];
   error?: string;
 }
 
@@ -163,6 +163,6 @@ interface MonitorCheckCompletedData extends BaseWebhookData {
       removed: number;
       error: number;
     };
-  };
+  }[];
   error?: string;
 }
