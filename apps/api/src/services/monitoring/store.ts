@@ -284,7 +284,10 @@ export async function createMonitorCheck(params: {
   scheduledFor?: string | null;
   status?: MonitorCheckRow["status"];
 }): Promise<MonitorCheckRow> {
-  const estimated = estimateMonitorCreditsPerRun(params.monitor.targets);
+  const estimated = estimateMonitorCreditsPerRun(
+    params.monitor.targets,
+    Boolean(params.monitor.judge_enabled) && Boolean(params.monitor.goal),
+  );
   const { data, error } = await supabase_service
     .from("monitor_checks")
     .insert({
