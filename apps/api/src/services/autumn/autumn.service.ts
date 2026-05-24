@@ -617,8 +617,8 @@ export class AutumnService {
         customerId: resolvedOrgId,
         entityId: teamId,
       });
-      const granted = entity?.balances?.[CONCURRENCY_FEATURE_ID]?.granted;
-      const value = typeof granted === "number" ? granted : null;
+      const remaining = entity?.balances?.[CONCURRENCY_FEATURE_ID]?.remaining;
+      const value = typeof remaining === "number" ? remaining : null;
       this.concurrencyLimitCache.set(teamId, {
         value,
         expiresAt: now + AutumnService.CONCURRENCY_LIMIT_TTL_MS,
