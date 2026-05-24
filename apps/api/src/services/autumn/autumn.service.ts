@@ -590,43 +590,14 @@ export class AutumnService {
     string,
     { value: number | null; expiresAt: number }
   >(50_000);
-  private orgMultiTeamCache = new BoundedMap<
-    string,
-    { canHaveMultiple: boolean; expiresAt: number }
-  >(50_000);
   private static readonly CONCURRENCY_LIMIT_TTL_MS = 60_000;
-  private static readonly ORG_MULTI_TEAM_TTL_MS = 300_000;
 
   /**
-   * Reads `organizations.can_have_multiple_teams`, with a 5-minute cache.
-   * Used to gate Autumn-side concurrency lookups — multi-team orgs share an
-   * Autumn customer/balance, so per-team concurrency from Autumn isn't
-   * meaningful there yet and we should defer to ACUC.
-   */
-  private async orgCanHaveMultipleTeams(orgId: string): Promise<boolean> {
-    const now = Date.now();
-    const cached = this.orgMultiTeamCache.get(orgId);
-    if (cached && cached.expiresAt > now) return cached.canHaveMultiple;
-
-    const { data, error } = await supabase_rr_service
-      .from("organizations")
-      .select("can_have_multiple_teams")
-      .eq("id", orgId)
-      .single();
-    if (error) throw error;
-
-    const value = data?.can_have_multiple_teams === true;
-    this.orgMultiTeamCache.set(orgId, {
-      canHaveMultiple: value,
-      expiresAt: now + AutumnService.ORG_MULTI_TEAM_TTL_MS,
-    });
-    return value;
-  }
-
-  /**
-   * Reads the team's allowed concurrent-browser count from Autumn's CONCURRENCY
-   * feature. Returns null if Autumn is unavailable or doesn't have a balance —
-   * callers should fall back to (or take the max with) the ACUC value.
+   * Reads the team's allowed concurrent-browser count from Autumn's
+   * entity-scoped CONCURRENCY balance. Each team has its own Autumn entity, so
+   * the entity balance is per-team regardless of whether the org has one or
+   * many teams. Returns null when Autumn is unavailable, the entity is missing,
+   * or there's no balance — callers should take the max with the ACUC value.
    */
   async getConcurrencyLimit(
     teamId: string,
@@ -642,38 +613,11 @@ export class AutumnService {
       const resolvedOrgId = orgId ?? (await this.resolveOrgId(teamId));
       if (!resolvedOrgId) return null;
 
-      // Skip Autumn for multi-team orgs — the customer-level balance is
-      // shared across teams and ACUC remains authoritative there.
-      if (await this.orgCanHaveMultipleTeams(resolvedOrgId)) {
-        this.concurrencyLimitCache.set(teamId, {
-          value: null,
-          expiresAt: now + AutumnService.CONCURRENCY_LIMIT_TTL_MS,
-        });
-        return null;
-      }
-
-      let balances: Record<string, any> | undefined;
-      try {
-        const entity: any = await autumnClient.entities.get({
-          customerId: resolvedOrgId,
-          entityId: teamId,
-        });
-        balances = entity?.balances;
-      } catch (error) {
-        const status = this.getErrorStatus(error);
-        if (status !== 404) throw error;
-      }
-
-      if (!balances?.[CONCURRENCY_FEATURE_ID]) {
-        const customer: any = await autumnClient.customers.getOrCreate({
-          customerId: resolvedOrgId,
-          autoEnablePlanId: AUTUMN_DEFAULT_PLAN_ID,
-        });
-        balances = customer?.balances ?? balances;
-      }
-
-      const balance = balances?.[CONCURRENCY_FEATURE_ID];
-      const granted = balance?.granted;
+      const entity: any = await autumnClient.entities.get({
+        customerId: resolvedOrgId,
+        entityId: teamId,
+      });
+      const granted = entity?.balances?.[CONCURRENCY_FEATURE_ID]?.granted;
       const value = typeof granted === "number" ? granted : null;
       this.concurrencyLimitCache.set(teamId, {
         value,
@@ -681,6 +625,14 @@ export class AutumnService {
       });
       return value;
     } catch (error) {
+      const status = this.getErrorStatus(error);
+      if (status === 404) {
+        this.concurrencyLimitCache.set(teamId, {
+          value: null,
+          expiresAt: now + AutumnService.CONCURRENCY_LIMIT_TTL_MS,
+        });
+        return null;
+      }
       logger.error(
         "Autumn getConcurrencyLimit failed — billing API may be unavailable",
         { teamId, error },
