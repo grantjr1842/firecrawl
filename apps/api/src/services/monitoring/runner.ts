@@ -61,6 +61,8 @@ const logger = _logger.child({ module: "monitoring-runner" });
 const poll = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export { isMonitorCheckStale, MONITOR_CHECK_STALE_TIMEOUT_MS };
 
+const MONITOR_DEFAULT_WAIT_FOR_MS = 5000;
+
 type PageResult = MonitorCheckPageInsert & {
   emailStatus?: string;
 };
@@ -116,9 +118,14 @@ function withMonitorScrapeDefaults(
   const formats = Array.isArray(options.formats)
     ? normalizeMonitorFormats(options.formats)
     : options.formats;
+  const waitFor =
+    typeof options.waitFor === "number"
+      ? options.waitFor
+      : MONITOR_DEFAULT_WAIT_FOR_MS;
+
   return {
     maxAge: 0,
-    ...withMarkdownFormat({ ...options, formats }),
+    ...withMarkdownFormat({ ...options, formats, waitFor }),
   };
 }
 
@@ -351,7 +358,7 @@ async function runCrawlTarget(params: {
   const body = crawlRequestSchema.parse({
     url: params.target.url,
     ...(params.target.crawlOptions ?? {}),
-    scrapeOptions: withMarkdownFormat(params.target.scrapeOptions ?? {}),
+    scrapeOptions: withMonitorScrapeDefaults(params.target.scrapeOptions ?? {}),
     origin: "monitor",
   }) as CrawlRequest;
 
