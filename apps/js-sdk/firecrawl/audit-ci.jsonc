@@ -2,6 +2,12 @@
     "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
     "low": true,
     "allowlist": [
+        // GHSA-w5hq-g745-h8pq (uuid buffer bounds handling):
+        // Dev dependency is uuid@9.0.1; fix requires uuid>=11.1.1 (major
+        // version jump). Blocked pending explicit approval for the SDK major
+        // dependency upgrade.
+        // Owner: team-engineering-reviewers. Tracking: create internal ticket.
+        // Expires: 2026-06-22.
         "GHSA-w5hq-g745-h8pq"
     ]
 }
