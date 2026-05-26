@@ -377,6 +377,35 @@ export async function saveLlmsTxtToGCS(
   });
 }
 
+async function downloadJobFromGCS(
+  bucketName: string,
+  filename: string,
+  jobId: string,
+): Promise<Document[] | null> {
+  const blob = storage.bucket(bucketName).file(filename);
+
+  try {
+    const [content] = await blob.download();
+    return JSON.parse(content.toString());
+  } catch (error) {
+    if (
+      error instanceof ApiError &&
+      error.code === 404 &&
+      error.message.includes("No such object:")
+    ) {
+      return null;
+    }
+
+    logger.error(`Error getting job from GCS`, {
+      error,
+      jobId,
+      scrapeId: jobId,
+      filename,
+    });
+    throw error;
+  }
+}
+
 export async function getJobFromGCS(jobId: string): Promise<Document[] | null> {
   return await withSpan("firecrawl-gcs-get-job", async span => {
     setSpanAttributes(span, {
@@ -389,31 +418,28 @@ export async function getJobFromGCS(jobId: string): Promise<Document[] | null> {
       return null;
     }
 
-    const bucket = storage.bucket(config.GCS_BUCKET_NAME);
-    const blob = bucket.file(idToFilename(jobId));
+    const primaryFilename = idToFilename(jobId);
+    let result = await downloadJobFromGCS(
+      config.GCS_BUCKET_NAME,
+      primaryFilename,
+      jobId,
+    );
 
-    try {
-      const [content] = await blob.download();
-      const result = JSON.parse(content.toString());
-      setSpanAttributes(span, { "gcs.job_found": true });
-      return result;
-    } catch (error) {
-      if (
-        error instanceof ApiError &&
-        error.code === 404 &&
-        error.message.includes("No such object:")
-      ) {
-        setSpanAttributes(span, { "gcs.job_found": false });
-        return null;
-      }
-
-      logger.error(`Error getting job from GCS`, {
-        error,
+    // Fall back to the legacy `<id>.json` filename. Agent results are written
+    // by an external service that may still use the pre-cutover filename
+    // pattern, so the object can live under the legacy key even when
+    // idToFilename resolves to the new sha256-prefixed name.
+    const legacyFilename = `${jobId}.json`;
+    if (result === null && legacyFilename !== primaryFilename) {
+      result = await downloadJobFromGCS(
+        config.GCS_BUCKET_NAME,
+        legacyFilename,
         jobId,
-        scrapeId: jobId,
-      });
-      throw error;
+      );
     }
+
+    setSpanAttributes(span, { "gcs.job_found": result !== null });
+    return result;
   });
 }
 
