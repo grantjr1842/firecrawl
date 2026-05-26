@@ -43,11 +43,11 @@ export async function enqueueDueMonitorChecks(
 
   let enqueued = 0;
   for (let monitor of monitors) {
-    if (await deferForJitter(monitor)) continue;
-
     let check: Awaited<ReturnType<typeof createMonitorCheck>> | null = null;
     let dispatched = false;
     try {
+      if (await deferForJitter(monitor)) continue;
+
       if (monitor.current_check_id) {
         const cleared = await clearFinishedOrStaleCurrentCheck(monitor);
         if (cleared) {
