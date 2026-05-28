@@ -2,6 +2,11 @@
     "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
     "low": true,
     "allowlist": [
+        // GHSA-w5hq-g745-h8pq (uuid):
+        // Current dependency is on uuid 9.x; patched releases start at 11.1.1.
+        // Fix requires explicit approval for a direct major-version upgrade.
+        // Owner: team-engineering-reviewers. Tracking: create internal ticket.
+        // Expires: 2026-06-22.
         "GHSA-w5hq-g745-h8pq"
     ]
 }
