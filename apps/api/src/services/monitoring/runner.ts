@@ -31,6 +31,7 @@ import {
   getMonitorCheck,
   getMonitorForUpdate,
   getMonitorPage,
+  calculateMonitorCheckActualCredits,
   countMonitorCheckPages,
   hashMonitorUrl,
   insertMonitorCheckPages,
@@ -1331,7 +1332,9 @@ export async function reconcileRunningMonitorChecks(
         countMonitorCheckPages({ checkId: check.id, status: "error" }),
       ]);
       const totalPages = same + changed + newCount + removed + errorCount;
-      const actualCredits = totalPages;
+      const actualCredits = await calculateMonitorCheckActualCredits({
+        checkId: check.id,
+      });
 
       let finalized = await updateMonitorCheck(check.id, {
         status: errorCount > 0 ? "partial" : "completed",
