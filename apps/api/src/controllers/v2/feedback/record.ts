@@ -1,26 +1,218 @@
 import { v7 as uuidv7 } from "uuid";
+import { config } from "../../../config";
 import { logger as _logger } from "../../../lib/logger";
+import { autumnService } from "../../../services/autumn/autumn.service";
 import { captureExceptionWithZdrCheck } from "../../../services/sentry";
-import { RequestWithAuth } from "../types";
-import { validateFeedbackAccess } from "./access";
-import { POSTGRES_UNIQUE_VIOLATION } from "./constants";
-import { dailyCapFor } from "./daily-cap";
 import {
-  endpointInsertConflictResponse,
-  existingLegacySearchResponse,
-} from "./duplicates";
+  EndpointFeedbackErrorCode,
+  RequestWithAuth,
+  SearchFeedbackErrorCode,
+} from "../types";
 import {
+  findExistingEndpointFeedback,
   insertEndpointFeedback,
+  lookupFeedbackJob,
   updateEndpointFeedbackRefundDetails,
 } from "./endpoint-feedback-store";
-import { FeedbackRecordOptions, FeedbackRecordResult } from "./internal-types";
-import { lookupJobWithRetry, validateJobForFeedback } from "./job-validation";
-import { mirrorSearchFeedback } from "./legacy-search-feedback";
-import { refundFeedbackCredits } from "./refund";
+import {
+  FeedbackJobRow,
+  FeedbackLogger,
+  FeedbackRecordOptions,
+  FeedbackRecordResult,
+  RefundPolicySnapshot,
+} from "./internal-types";
 import { computeRefundPolicy } from "./refund-policy";
-import { sumEndpointCreditsRefundedToday } from "./refund-totals";
-import { fail } from "./responses";
-import { normalizeTeamId } from "./team";
+import { sumCreditsRefundedToday } from "./refund-totals";
+
+const PREVIEW_TEAM_ID = "3adefd26-77ec-5968-8dcf-c94b5630d1de";
+const POSTGRES_UNIQUE_VIOLATION = "23505";
+const LOOKUP_RACE_RETRY_MS = 250;
+
+function isPreviewTeam(teamId: string): boolean {
+  return teamId === "preview" || teamId.startsWith("preview_");
+}
+
+export function normalizeFeedbackTeamId(teamId: string): string {
+  return isPreviewTeam(teamId) ? PREVIEW_TEAM_ID : teamId;
+}
+
+function dailyCapFor(options: FeedbackRecordOptions): number {
+  return options.dailyCapCredits ?? config.FEEDBACK_DAILY_CAP_CREDITS;
+}
+
+function feedbackFailure(
+  status: number,
+  code: EndpointFeedbackErrorCode | SearchFeedbackErrorCode,
+  error: string,
+): FeedbackRecordResult {
+  return {
+    status,
+    body: {
+      success: false,
+      error,
+      feedbackErrorCode: code,
+    },
+  };
+}
+
+function validateAccess(
+  req: RequestWithAuth<any, any, any>,
+  options: FeedbackRecordOptions,
+  logger: FeedbackLogger,
+): FeedbackRecordResult | null {
+  if (config.USE_DB_AUTHENTICATION !== true) {
+    return feedbackFailure(
+      503,
+      "DB_DISABLED",
+      options.dbDisabledMessage ??
+        "Feedback requires database authentication and is unavailable on this deployment.",
+    );
+  }
+
+  if (isPreviewTeam(req.auth.team_id)) {
+    return feedbackFailure(
+      403,
+      "PREVIEW_TEAM_NOT_ALLOWED",
+      "Feedback is not available for preview teams.",
+    );
+  }
+
+  if (req.acuc?.flags?.searchFeedbackOptOut === true) {
+    logger.info("Rejected feedback: team opted out");
+    return feedbackFailure(
+      403,
+      "TEAM_OPTED_OUT",
+      "Feedback is disabled for this team. Contact support@firecrawl.com to re-enable.",
+    );
+  }
+
+  return null;
+}
+
+async function lookupJobWithRetry(
+  options: FeedbackRecordOptions,
+  dbTeamId: string,
+  logger: FeedbackLogger,
+): Promise<FeedbackJobRow | FeedbackRecordResult> {
+  try {
+    let job = await lookupFeedbackJob(
+      options.endpoint,
+      options.jobId,
+      dbTeamId,
+    );
+    if (!job) {
+      await new Promise(resolve => setTimeout(resolve, LOOKUP_RACE_RETRY_MS));
+      job = await lookupFeedbackJob(options.endpoint, options.jobId, dbTeamId);
+    }
+
+    if (!job) {
+      return feedbackFailure(
+        404,
+        options.notFoundCode ?? "JOB_NOT_FOUND",
+        `${options.endpoint} job not found for this team.`,
+      );
+    }
+
+    return job;
+  } catch (error) {
+    logger.error("Failed to look up job for feedback", { error });
+    return feedbackFailure(500, "INTERNAL", "Failed to look up job.");
+  }
+}
+
+function validateJob(
+  job: FeedbackJobRow,
+  options: FeedbackRecordOptions,
+  logger: FeedbackLogger,
+): FeedbackRecordResult | null {
+  if (options.requireSuccessfulJob && job.is_successful === false) {
+    return feedbackFailure(
+      409,
+      options.failedJobCode ?? "INTERNAL",
+      `Cannot submit feedback for a ${options.endpoint} job that did not succeed.`,
+    );
+  }
+
+  const maxAgeSec = options.maxAgeSec ?? config.FEEDBACK_MAX_AGE_SEC;
+  const createdAtMs = new Date(job.created_at).getTime();
+  if (Number.isNaN(createdAtMs)) {
+    logger.warn("Job row had unparseable created_at", {
+      created_at: job.created_at,
+    });
+    return null;
+  }
+
+  if (Date.now() - createdAtMs <= maxAgeSec * 1000) return null;
+
+  return feedbackFailure(
+    409,
+    "FEEDBACK_WINDOW_EXPIRED",
+    options.windowExpiredMessage ??
+      `Feedback must be submitted within ${maxAgeSec} seconds of the job.`,
+  );
+}
+
+async function duplicateEndpointResponse(
+  options: FeedbackRecordOptions,
+  dbTeamId: string,
+  logger: FeedbackLogger,
+): Promise<FeedbackRecordResult> {
+  const existing = await findExistingEndpointFeedback(
+    dbTeamId,
+    options.endpoint,
+    options.jobId,
+  );
+
+  return {
+    status: 200,
+    body: {
+      success: true,
+      feedbackId: existing?.id ?? "",
+      creditsRefunded: 0,
+      alreadySubmitted: true,
+      creditsRefundedToday: await sumCreditsRefundedToday(
+        dbTeamId,
+        options.endpoint,
+        logger,
+        { includeLegacySearch: options.source === "search_feedback" },
+      ),
+      dailyRefundCap: dailyCapFor(options),
+      warning:
+        "Feedback was already submitted for this job; no additional refund issued.",
+    },
+  };
+}
+
+async function refundCredits(params: {
+  req: RequestWithAuth<any, any, any>;
+  options: FeedbackRecordOptions;
+  feedbackId: string;
+  cappedRefund: number;
+  policy: RefundPolicySnapshot;
+  logger: FeedbackLogger;
+}): Promise<number> {
+  const { req, options, feedbackId, cappedRefund, policy, logger } = params;
+  if (cappedRefund <= 0) return 0;
+
+  try {
+    await autumnService.refundCredits({
+      teamId: req.auth.team_id,
+      value: cappedRefund,
+      properties: {
+        source: options.source,
+        endpoint: options.endpoint,
+        jobId: options.jobId,
+        feedbackId,
+        rating: options.feedback.rating,
+        refundPolicy: policy.matchedReason,
+      },
+    });
+    return cappedRefund;
+  } catch (error) {
+    logger.error("Feedback refund failed; feedback retained", { error });
+    return 0;
+  }
+}
 
 export async function recordEndpointFeedback(
   req: RequestWithAuth<any, any, any>,
@@ -34,28 +226,17 @@ export async function recordEndpointFeedback(
     teamId: req.auth.team_id,
   });
 
-  const accessFailure = validateFeedbackAccess(req, options, logger);
+  const accessFailure = validateAccess(req, options, logger);
   if (accessFailure) return accessFailure;
 
-  const dbTeamId = normalizeTeamId(req.auth.team_id);
+  const dbTeamId = normalizeFeedbackTeamId(req.auth.team_id);
 
   try {
     const jobOrFailure = await lookupJobWithRetry(options, dbTeamId, logger);
     if ("status" in jobOrFailure) return jobOrFailure;
 
-    const jobValidationFailure = validateJobForFeedback(
-      jobOrFailure,
-      options,
-      logger,
-    );
-    if (jobValidationFailure) return jobValidationFailure;
-
-    const legacySearchDuplicate = await existingLegacySearchResponse(
-      options,
-      dbTeamId,
-      logger,
-    );
-    if (legacySearchDuplicate) return legacySearchDuplicate;
+    const jobFailure = validateJob(jobOrFailure, options, logger);
+    if (jobFailure) return jobFailure;
 
     const feedbackId = uuidv7();
     const insertErr = await insertEndpointFeedback({
@@ -68,26 +249,28 @@ export async function recordEndpointFeedback(
 
     if (insertErr) {
       if (insertErr.code === POSTGRES_UNIQUE_VIOLATION) {
-        return await endpointInsertConflictResponse(options, dbTeamId, logger);
+        return await duplicateEndpointResponse(options, dbTeamId, logger);
       }
 
       logger.error("Failed to insert endpoint feedback", { error: insertErr });
-      return fail(500, "INTERNAL", "Failed to record feedback.");
+      return feedbackFailure(500, "INTERNAL", "Failed to record feedback.");
     }
 
     const dailyCap = dailyCapFor(options);
-    const refundedTodayBefore = await sumEndpointCreditsRefundedToday(
+    const refundedTodayBefore = await sumCreditsRefundedToday(
       dbTeamId,
       options.endpoint,
       logger,
+      { includeLegacySearch: options.source === "search_feedback" },
     );
-    const remainingDailyCap = Math.max(0, dailyCap - refundedTodayBefore);
-
     const { desiredRefund, policy } = computeRefundPolicy(
       jobOrFailure,
       options.feedback.rating,
     );
-    const cappedRefund = Math.min(desiredRefund, remainingDailyCap);
+    const cappedRefund = Math.min(
+      desiredRefund,
+      Math.max(0, dailyCap - refundedTodayBefore),
+    );
 
     let dailyCapReached = false;
     if (desiredRefund > 0 && cappedRefund === 0) {
@@ -98,7 +281,7 @@ export async function recordEndpointFeedback(
       );
     }
 
-    const creditsRefunded = await refundFeedbackCredits({
+    const creditsRefunded = await refundCredits({
       req,
       options,
       feedbackId,
@@ -120,21 +303,8 @@ export async function recordEndpointFeedback(
       });
     }
 
-    if (options.endpoint === "search") {
-      await mirrorSearchFeedback(
-        feedbackId,
-        options.jobId,
-        dbTeamId,
-        options.feedback,
-        creditsRefunded,
-        logger,
-      );
-    }
-
     const creditsRefundedToday = refundedTodayBefore + creditsRefunded;
-    if (!dailyCapReached && creditsRefundedToday >= dailyCap && dailyCap > 0) {
-      dailyCapReached = true;
-    }
+    dailyCapReached ||= creditsRefundedToday >= dailyCap && dailyCap > 0;
 
     logger.info("Endpoint feedback recorded", {
       feedbackId,
@@ -170,7 +340,7 @@ export async function recordEndpointFeedback(
     logger.error("Unhandled error while recording endpoint feedback", {
       error,
     });
-    return fail(
+    return feedbackFailure(
       500,
       "INTERNAL",
       error instanceof Error ? error.message : "Unknown error",

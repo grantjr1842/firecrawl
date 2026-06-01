@@ -1,3 +1,0 @@
-export const PREVIEW_TEAM_ID = "3adefd26-77ec-5968-8dcf-c94b5630d1de";
-export const POSTGRES_UNIQUE_VIOLATION = "23505";
-export const FEEDBACK_LOOKUP_RACE_RETRY_MS = 250;

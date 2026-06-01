@@ -5,40 +5,120 @@ import {
   RefundPolicySnapshot,
 } from "./internal-types";
 
-function hasJsonFormat(options: unknown): boolean {
-  const formats = (options as { formats?: unknown })?.formats;
-  if (!Array.isArray(formats)) return false;
-  return formats.some(format => {
-    if (format === "json") return true;
+type RefundablePolicy =
+  | {
+      mode: "flat";
+      reason: string;
+      ratings: FeedbackRating[];
+      credits: number;
+    }
+  | {
+      mode: "percentage_with_cap";
+      reason: string;
+      ratings: FeedbackRating[];
+      percent: number;
+      maxCredits: number;
+    };
+
+function optionListIncludes(
+  options: unknown,
+  key: string,
+  value: string,
+): boolean {
+  const list = (options as Record<string, unknown> | null)?.[key];
+  if (!Array.isArray(list)) return false;
+
+  return list.some(item => {
+    if (item === value) return true;
     return (
-      !!format &&
-      typeof format === "object" &&
-      (format as { type?: unknown }).type === "json"
+      !!item &&
+      typeof item === "object" &&
+      (item as { type?: unknown }).type === value
     );
   });
-}
-
-function hasScreenshotFormat(options: unknown): boolean {
-  const formats = (options as { formats?: unknown })?.formats;
-  if (!Array.isArray(formats)) return false;
-  return formats.some(format => {
-    if (format === "screenshot") return true;
-    return (
-      !!format &&
-      typeof format === "object" &&
-      (format as { type?: unknown }).type === "screenshot"
-    );
-  });
-}
-
-function hasPdfParser(options: unknown): boolean {
-  const parsers = (options as { parsers?: unknown })?.parsers;
-  return Array.isArray(parsers) && parsers.includes("pdf");
 }
 
 function hasActions(options: unknown): boolean {
-  const actions = (options as { actions?: unknown })?.actions;
+  const actions = (options as { actions?: unknown } | null)?.actions;
   return Array.isArray(actions) && actions.length > 0;
+}
+
+function none(
+  job: FeedbackJobRow,
+  matchedReason: string,
+  refundableRatings: FeedbackRating[] = [],
+): { desiredRefund: number; policy: RefundPolicySnapshot } {
+  return {
+    desiredRefund: 0,
+    policy: {
+      version: "feedback_refund_v1",
+      enabled: config.FEEDBACK_REFUND_ENABLED,
+      endpoint: job.endpoint,
+      mode: "none",
+      refundableRatings,
+      matchedReason,
+    },
+  };
+}
+
+function policyFor(job: FeedbackJobRow): RefundablePolicy {
+  switch (job.endpoint) {
+    case "search":
+      return {
+        mode: "flat",
+        reason: "search_feedback",
+        ratings: ["good", "partial", "bad"],
+        credits: 1,
+      };
+    case "map":
+      return {
+        mode: "flat",
+        reason: "map_feedback",
+        ratings: ["partial", "bad"],
+        credits: 1,
+      };
+    case "parse":
+      return {
+        mode: "percentage_with_cap",
+        reason: "parse_feedback",
+        ratings: ["partial", "bad"],
+        percent: 0.25,
+        maxCredits: 10,
+      };
+    case "scrape":
+      if (optionListIncludes(job.options, "parsers", "pdf")) {
+        return {
+          mode: "percentage_with_cap",
+          reason: "scrape_pdf_feedback",
+          ratings: ["partial", "bad"],
+          percent: 0.25,
+          maxCredits: 10,
+        };
+      }
+
+      if (
+        optionListIncludes(job.options, "formats", "json") ||
+        optionListIncludes(job.options, "formats", "screenshot") ||
+        hasActions(job.options)
+      ) {
+        return {
+          mode: "percentage_with_cap",
+          reason: optionListIncludes(job.options, "formats", "json")
+            ? "scrape_json_feedback"
+            : "scrape_addon_feedback",
+          ratings: ["partial", "bad"],
+          percent: 0.25,
+          maxCredits: 5,
+        };
+      }
+
+      return {
+        mode: "flat",
+        reason: "scrape_feedback",
+        ratings: ["partial", "bad"],
+        credits: 1,
+      };
+  }
 }
 
 export function computeRefundPolicy(
@@ -46,95 +126,45 @@ export function computeRefundPolicy(
   rating: FeedbackRating,
 ): { desiredRefund: number; policy: RefundPolicySnapshot } {
   const billedCredits = Math.max(0, job.credits_cost ?? 0);
+  if (!config.FEEDBACK_REFUND_ENABLED) return none(job, "refunds_disabled");
+  if (billedCredits <= 0) return none(job, "zero_billed_credits");
 
-  const none = (
-    matchedReason: string,
-    refundableRatings: FeedbackRating[] = [],
-  ) => ({
-    desiredRefund: 0,
+  const policy = policyFor(job);
+  if (!policy.ratings.includes(rating)) {
+    return none(job, "rating_not_refundable", policy.ratings);
+  }
+
+  if (policy.mode === "flat") {
+    return {
+      desiredRefund: Math.min(policy.credits, billedCredits),
+      policy: {
+        version: "feedback_refund_v1",
+        enabled: true,
+        endpoint: job.endpoint,
+        mode: "flat",
+        refundableRatings: policy.ratings,
+        matchedReason: policy.reason,
+        flatCredits: policy.credits,
+        maxCredits: policy.credits,
+      },
+    };
+  }
+
+  return {
+    desiredRefund: Math.min(
+      Math.ceil(billedCredits * policy.percent),
+      policy.maxCredits,
+      billedCredits,
+    ),
     policy: {
-      version: "feedback_refund_v1" as const,
-      enabled: config.FEEDBACK_REFUND_ENABLED,
+      version: "feedback_refund_v1",
+      enabled: true,
       endpoint: job.endpoint,
-      mode: "none" as const,
-      refundableRatings,
-      matchedReason,
+      mode: "percentage_with_cap",
+      refundableRatings: policy.ratings,
+      matchedReason: policy.reason,
+      percent: policy.percent,
+      maxCredits: policy.maxCredits,
     },
-  });
-
-  if (!config.FEEDBACK_REFUND_ENABLED) {
-    return none("refunds_disabled");
-  }
-
-  if (billedCredits <= 0) {
-    return none("zero_billed_credits");
-  }
-
-  const flat = (
-    flatCredits: number,
-    matchedReason: string,
-    refundableRatings: FeedbackRating[],
-  ) => {
-    if (!refundableRatings.includes(rating)) {
-      return none("rating_not_refundable", refundableRatings);
-    }
-    return {
-      desiredRefund: Math.min(flatCredits, billedCredits),
-      policy: {
-        version: "feedback_refund_v1" as const,
-        enabled: true,
-        endpoint: job.endpoint,
-        mode: "flat" as const,
-        refundableRatings,
-        matchedReason,
-        flatCredits,
-        maxCredits: flatCredits,
-      },
-    };
   };
-
-  const percentage = (
-    percent: number,
-    maxCredits: number,
-    matchedReason: string,
-    refundableRatings: FeedbackRating[],
-  ) => {
-    if (!refundableRatings.includes(rating)) {
-      return none("rating_not_refundable", refundableRatings);
-    }
-    const calculated = Math.ceil(billedCredits * percent);
-    return {
-      desiredRefund: Math.min(calculated, maxCredits, billedCredits),
-      policy: {
-        version: "feedback_refund_v1" as const,
-        enabled: true,
-        endpoint: job.endpoint,
-        mode: "percentage_with_cap" as const,
-        refundableRatings,
-        matchedReason,
-        percent,
-        maxCredits,
-      },
-    };
-  };
-
-  switch (job.endpoint) {
-    case "search":
-      return flat(1, "search_feedback", ["good", "partial", "bad"]);
-    case "map":
-      return flat(1, "map_feedback", ["partial", "bad"]);
-    case "parse":
-      return percentage(0.25, 10, "parse_feedback", ["partial", "bad"]);
-    case "scrape":
-      if (hasPdfParser(job.options)) {
-        return percentage(0.25, 10, "scrape_pdf_feedback", ["partial", "bad"]);
-      }
-      if (hasJsonFormat(job.options)) {
-        return percentage(0.25, 5, "scrape_json_feedback", ["partial", "bad"]);
-      }
-      if (hasActions(job.options) || hasScreenshotFormat(job.options)) {
-        return percentage(0.25, 5, "scrape_addon_feedback", ["partial", "bad"]);
-      }
-      return flat(1, "scrape_feedback", ["partial", "bad"]);
-  }
 }

@@ -8,10 +8,11 @@ function startOfUtcDay(now: Date = new Date()): Date {
   return start;
 }
 
-export async function sumEndpointCreditsRefundedToday(
+export async function sumCreditsRefundedToday(
   dbTeamId: string,
   endpoint: EndpointFeedbackEndpoint,
   logger: FeedbackLogger,
+  opts: { includeLegacySearch?: boolean } = {},
 ): Promise<number> {
   const since = startOfUtcDay().toISOString();
   const { data, error } = await supabase_rr_service
@@ -34,7 +35,7 @@ export async function sumEndpointCreditsRefundedToday(
     0,
   );
 
-  if (endpoint !== "search") {
+  if (endpoint !== "search" || opts.includeLegacySearch !== true) {
     return endpointTotal;
   }
 
