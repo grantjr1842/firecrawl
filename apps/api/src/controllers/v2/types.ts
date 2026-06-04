@@ -648,7 +648,14 @@ const baseScrapeOptions = z.strictObject({
       const hasChangeTracking = x.find(f => f.type === "changeTracking");
       const hasMarkdown = x.find(f => f.type === "markdown");
       return !hasChangeTracking || hasMarkdown;
-    }, "The changeTracking format requires the markdown format to be specified as well"),
+    }, "The changeTracking format requires the markdown format to be specified as well")
+    .refine(x => {
+      // Both json and deterministicJson populate the `json` field, so one would
+      // just clobber the other. Require choosing one.
+      const hasJson = x.some(f => f.type === "json");
+      const hasDeterministicJson = x.some(f => f.type === "deterministicJson");
+      return !(hasJson && hasDeterministicJson);
+    }, "Cannot specify both json and deterministicJson formats"),
   headers: z.record(z.string(), z.string()).optional(),
   includeTags: z
     .string()
