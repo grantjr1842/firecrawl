@@ -82,7 +82,36 @@ askLlm:
 - If a field has a fixed enum, include the allowed values in the askLlm prompt or schema.
 - Prefer askLlm(prompt, jsonSchema) for structured fields, enums, booleans, numbers, arrays, and objects.
 - Validate askLlm output before returning it. If invalid, return an allowed empty value for optional fields or throw for required fields.
-- When calling askLlm once per list item, run the calls concurrently with Promise.all.`;
+- When calling askLlm once per list item, run the calls concurrently with Promise.all.
+
+Good patterns:
+
+Required labeled value:
+const row = [...doc.querySelectorAll("tr")].find(r => r.textContent.includes("Balance"));
+if (!row) throw new Error("Missing Balance row");
+const text = row.querySelector("td:last-child")?.textContent?.trim();
+if (!text) throw new Error("Missing Balance value");
+const balance = Number(text.replace(/[^0-9.-]/g, ""));
+
+List item scoping:
+const cards = [...doc.querySelectorAll("[data-testid='product-card']");
+if (!cards.length) throw new Error("Missing product cards");
+const products = cards.map(card => {
+  const name = card.querySelector("h2")?.textContent?.trim();
+  if (!name) throw new Error("Missing product name");
+  const url = card.querySelector("a")?.getAttribute("href") ?? null;
+  return { name, url };
+});
+
+Raw JSON/plaintext page:
+const bodyText = doc.body.textContent?.trim() || "";
+const jsonMatch = bodyText.match(/\\{[\\s\\S]*\\}/);
+if (!jsonMatch) throw new Error("Missing JSON object in page text");
+const data = JSON.parse(jsonMatch[0]);
+// Read the requested schema fields from data here.
+// Throw if a required field is missing or has the wrong type.
+
+Return only the function source, beginning with \`async function extract\`.`;
 
 export function buildAnchorPickerMessages(args: {
   userPrompt: string;
