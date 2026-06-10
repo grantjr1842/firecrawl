@@ -96,6 +96,13 @@ const configSchema = z.object({
   NUQ_DATABASE_URL: z.string().optional(),
   NUQ_DATABASE_URL_LISTEN: z.string().optional(),
   NUQ_RABBITMQ_URL: z.string().optional(),
+  FDB_CLUSTER_FILE: z.string().optional(),
+  NUQ_BACKEND: z.enum(["pg", "fdb"]).optional(),
+  NUQ_FDB_READY_SHARDS: z.coerce.number().default(2048),
+  // 1 = strict (priority, FIFO) promotion order per team; raise for teams with
+  // extreme finish rates at the cost of approximate cross-shard ordering
+  NUQ_FDB_TEAM_PENDING_SHARDS: z.coerce.number().default(1),
+  NUQ_FDB_TIME_BUCKETS: z.coerce.number().default(16),
 
   // Google Cloud Storage
   GCS_BUCKET_NAME: z.string().optional(),
