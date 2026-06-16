@@ -135,6 +135,30 @@ docker compose up
 
 This will start Redis, the API server, and workers automatically in the correct configuration.
 
+## Pre-commit hooks
+
+This repo uses [Husky](https://typicode.github.io/husky/) to run a `pre-commit`
+hook on staged changes. The hook is defined in `apps/api/.husky/pre-commit`
+and runs:
+
+1. `pnpm knip --cache` — fails the commit on unused files, exports, or
+   dependencies. The allowlist is `apps/api/knip.config.ts`.
+2. `pnpm lint-staged` — runs `prettier --write` on staged
+   `*.{js,jsx,ts,tsx,json,css,md}` files.
+
+The knip pass is what previously forced contributors to use
+`git commit --no-verify`. The whitelist has since been tightened, so the
+hook passes cleanly on a clean tree. **Do not use `--no-verify`** — if the
+hook fails, either fix the flagged symbol or extend
+`apps/api/knip.config.ts` with a justification comment.
+
+To run the hook manually (e.g. to verify a fix lands clean before pushing):
+
+```bash
+# from the monorepo root
+bash apps/api/.husky/pre-commit
+```
+
 ## Tests:
 
 The best way to do this is run the test with `npm run test:snips`.

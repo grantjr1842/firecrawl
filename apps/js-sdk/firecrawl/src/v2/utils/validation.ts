@@ -105,34 +105,17 @@ export function ensureValidParseFormats(formats?: ParseFormatOption[]): void {
       if (fmt === "json") {
         throw new Error("json format must be an object with { type: 'json', prompt, schema }");
       }
-      if (fmt === "screenshot") {
-        throw new Error("parse does not support screenshot format");
-      }
-      if (fmt === "changeTracking") {
-        throw new Error("parse does not support changeTracking format");
-      }
-      if (fmt === "branding") {
-        throw new Error("parse does not support branding format");
-      }
-      if (fmt === "audio" || fmt === "video") {
-        throw new Error(`parse does not support ${fmt} format`);
-      }
+      // ParseFormatString already excludes "screenshot" | "changeTracking" | "branding" | "audio" | "video",
+      // so no other string branch is reachable here.
       continue;
     }
 
-    const type = (fmt as any).type;
-    if (type === "changeTracking") {
-      throw new Error("parse does not support changeTracking format");
-    }
-    if (type === "screenshot") {
-      throw new Error("parse does not support screenshot format");
-    }
-    if (type === "branding") {
-      throw new Error("parse does not support branding format");
-    }
-    if (type === "audio" || type === "video") {
-      throw new Error(`parse does not support ${type} format`);
-    }
+    // ParseFormatOption object form is restricted to JsonFormat | ParseFormat |
+    // AttributesFormat | QuestionFormat | HighlightsFormat | QueryFormat. None of
+    // those carry the banned types, so the previously-defensive changeTracking /
+    // screenshot / branding / audio / video object-form checks were dead code
+    // (tsc flagged the 5 string-form duplicates; the object-form counterparts are
+    // unreachable for the same reason).
 
     if ((fmt as JsonFormat).type === "json") {
       const j = fmt as JsonFormat;
