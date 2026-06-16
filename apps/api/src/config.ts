@@ -208,6 +208,50 @@ const configSchema = z.object({
   PROXY_USERNAME: z.string().optional(),
   PROXY_PASSWORD: z.string().optional(),
 
+  // Anti-bot tiered router (W3-SEC-001)
+  FIRECRAWL_ANTIBOT_ENABLED: z
+    .preprocess(v => {
+      if (v === undefined || v === null || v === "") return undefined;
+      return v;
+    }, z.stringbool())
+    .optional(),
+  FIRECRAWL_TOR_SOCKS_URL: z.string().optional(),
+  FIRECRAWL_PROXY_VENDOR_URL: z.string().optional(),
+  FIRECRAWL_PROXY_VENDOR_ROTATE: z
+    .preprocess(
+      v => (v === undefined || v === null || v === "" ? true : v),
+      z.stringbool(),
+    )
+    .default(true),
+  FIRECRAWL_ANTIBOT_TIERS: z.string().optional(),
+  FIRECRAWL_ANTIBOT_RETRY_ON_STATUS: z.string().default("403,429,503"),
+  FIRECRAWL_ANTIBOT_BYPASS_PREFIXES: z.string().optional(),
+  // TLS fingerprint rotation (W3-SEC-001)
+  FIRECRAWL_TLS_FINGERPRINT_ENABLED: z
+    .preprocess(
+      v => (v === undefined || v === null || v === "" ? false : v),
+      z.stringbool(),
+    )
+    .default(false),
+  FIRECRAWL_TLS_FINGERPRINT: z
+    .enum([
+      "chrome_120",
+      "chrome_119",
+      "firefox_120",
+      "safari_16_0",
+      "edge_101",
+      "opera_85",
+      "okhttp_4_10",
+    ])
+    .default("chrome_120"),
+  // Akamai H2 dispatcher (W3-SEC-001)
+  FIRECRAWL_AKAMAI_H2_ENABLED: z
+    .preprocess(
+      v => (v === undefined || v === null || v === "" ? false : v),
+      z.stringbool(),
+    )
+    .default(false),
+
   // External Services
   PLAYWRIGHT_MICROSERVICE_URL: z.string().optional(),
   HTML_TO_MARKDOWN_SERVICE_URL: z.string().optional(),
