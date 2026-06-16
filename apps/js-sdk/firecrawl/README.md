@@ -13,7 +13,7 @@ npm install firecrawl
 ## Usage
 
 1. Get an API key from [firecrawl.dev](https://firecrawl.dev)
-2. Set the API key as an environment variable named `FIRECRAWL_API_KEY` or pass it as a parameter to the `FirecrawlApp` class.
+2. Set the API key as an environment variable named `FIRECRAWL_API_KEY` or pass it as a parameter to the `Firecrawl` class.
 
 Here's an example of how to use the SDK with error handling:
 
@@ -36,6 +36,12 @@ const crawlResponse = await app.crawl('https://firecrawl.dev', {
 });
 console.log(crawlResponse);
 ```
+
+> **v2 is async-only.** The `Firecrawl` client (and its underlying `FirecrawlClient` in
+> `src/v2/client.ts`) is the async client — every method returns a `Promise`. There is no
+> separate `client_async.ts` file in this SDK; if you are migrating from v1, replace any
+> callback-style usage with `await`. The feature-frozen v1 client is still available under
+> `app.v1` for legacy code.
 
 ### Scraping a URL
 
