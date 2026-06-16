@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { checkTeamCredits } from "../../../src/services/billing/credit_billing";
 import { authenticateUser } from "../auth";
 import { RateLimiterMode } from "../../../src/types";
-import { addScrapeJob } from "../../../src/services/queue-jobs";
+import { addScrapeJob } from "../../../src/services/scrape-queue";
 import { isUrlBlocked } from "../../../src/scraper/WebScraper/utils/blocklist";
 import { validateIdempotencyKey } from "../../../src/services/idempotency/validate";
 import { createIdempotencyKey } from "../../../src/services/idempotency/create";

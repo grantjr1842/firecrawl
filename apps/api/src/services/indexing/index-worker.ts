@@ -36,7 +36,7 @@ import {
   toV0CrawlerOptions,
 } from "../../controllers/v2/types";
 import { StoredCrawl, crawlToCrawler, saveCrawl } from "../../lib/crawl-redis";
-import { _addScrapeJobToBullMQ } from "../queue-jobs";
+import { _addScrapeJobToBullMQ } from "../scrape-queue";
 import { withSpan, setSpanAttributes } from "../../lib/otel-tracer";
 import { crawlGroup, resolveNewGroupBackend } from "../worker/nuq-router";
 import { getACUCTeam } from "../../controllers/auth";

@@ -12,7 +12,7 @@ import { isUrlBlocked } from "../../scraper/WebScraper/utils/blocklist";
 import { v7 as uuidv7 } from "uuid";
 import { logger } from "../../lib/logger";
 import { redisEvictConnection } from "../../../src/services/redis";
-import { addScrapeJob, waitForJob } from "../../services/queue-jobs";
+import { addScrapeJob, waitForJob } from "../../services/scrape-queue";
 import * as Sentry from "@sentry/node";
 import { getJobPriority } from "../../lib/job-priority";
 import {

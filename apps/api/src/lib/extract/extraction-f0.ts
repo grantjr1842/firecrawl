@@ -3,42 +3,42 @@ import {
   ExtractRequest,
   TokenUsage,
   URLTrace,
-} from "../../../controllers/v2/types";
-import { logger as _logger } from "../../logger";
-import { scrapeDocument_F0 } from "./document-scraper-f0";
-import { billTeam } from "../../../services/billing/credit_billing";
-import { logExtract } from "../../../services/logging/log_job";
-import { spreadSchemas_F0 } from "./helpers/spread-schemas-f0";
+} from "../../controllers/v2/types";
+import { logger as _logger } from "../logger";
+import { scrapeDocument_F0 } from "./fire-0/document-scraper-f0";
+import { billTeam } from "../../services/billing/credit_billing";
+import { logExtract } from "../../services/logging/log_job";
+import { spreadSchemas_F0 } from "./fire-0/helpers/spread-schemas-f0";
 import Ajv from "ajv";
 const ajv = new Ajv();
-import { getErrorContactMessage } from "../../deployment";
+import { getErrorContactMessage } from "../deployment";
 
-import { ExtractStep, updateExtract } from "../extract-redis";
-import { CUSTOM_U_TEAMS } from "../config";
-import { normalizeUrl } from "../../canonical-url";
-import { search } from "../../../search";
-import { buildRephraseToSerpPrompt_F0 } from "./build-prompts-f0";
-import { processUrl_F0, generateBasicCompletion_FO } from "./url-processor-f0";
+import { ExtractStep, updateExtract } from "./extract-redis";
+import { CUSTOM_U_TEAMS } from "./config";
+import { normalizeUrl } from "../canonical-url";
+import { search } from "../../search";
+import { buildRephraseToSerpPrompt_F0 } from "./fire-0/build-prompts-f0";
+import { processUrl_F0, generateBasicCompletion_FO } from "./fire-0/url-processor-f0";
 import {
   generateCompletions_F0,
   generateSchemaFromPrompt_F0,
-} from "./llmExtract-f0";
-import { dereferenceSchema_F0 } from "./helpers/dereference-schema-f0";
-import { analyzeSchemaAndPrompt_F0 } from "./completions/analyzeSchemaAndPrompt-f0";
-import { checkShouldExtract_F0 } from "./completions/checkShouldExtract-f0";
-import { batchExtractPromise_F0 } from "./completions/batchExtract-f0";
-import { transformArrayToObject_F0 } from "./helpers/transform-array-to-obj-f0";
-import { deduplicateObjectsArray_F0 } from "./helpers/deduplicate-objs-array-f0";
-import { mergeNullValObjs_F0 } from "./helpers/merge-null-val-objs-f0";
-import { mixSchemaObjects_F0 } from "./helpers/mix-schema-objs-f0";
-import { singleAnswerCompletion_F0 } from "./completions/singleAnswer-f0";
+} from "./fire-0/llmExtract-f0";
+import { dereferenceSchema_F0 } from "./fire-0/helpers/dereference-schema-f0";
+import { analyzeSchemaAndPrompt_F0 } from "./fire-0/completions/analyzeSchemaAndPrompt-f0";
+import { checkShouldExtract_F0 } from "./fire-0/completions/checkShouldExtract-f0";
+import { batchExtractPromise_F0 } from "./fire-0/completions/batchExtract-f0";
+import { transformArrayToObject_F0 } from "./fire-0/helpers/transform-array-to-obj-f0";
+import { deduplicateObjectsArray_F0 } from "./fire-0/helpers/deduplicate-objs-array-f0";
+import { mergeNullValObjs_F0 } from "./fire-0/helpers/merge-null-val-objs-f0";
+import { mixSchemaObjects_F0 } from "./fire-0/helpers/mix-schema-objs-f0";
+import { singleAnswerCompletion_F0 } from "./fire-0/completions/singleAnswer-f0";
 import {
   calculateFinalResultCost_F0,
   estimateCost_F0,
   estimateTotalCost_F0,
-} from "./usage/llm-cost-f0";
-import { SourceTracker_F0 } from "./helpers/source-tracker-f0";
-import { getACUCTeam } from "../../../controllers/auth";
+} from "./fire-0/usage/llm-cost-f0";
+import { SourceTracker_F0 } from "./fire-0/helpers/source-tracker-f0";
+import { getACUCTeam } from "../../controllers/auth";
 
 interface ExtractServiceOptions {
   request: ExtractRequest;

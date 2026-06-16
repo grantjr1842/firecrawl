@@ -42,7 +42,7 @@ import {
   _addScrapeJobToBullMQ,
   addScrapeJob,
   addScrapeJobs,
-} from "../queue-jobs";
+} from "../scrape-queue";
 import psl from "psl";
 import { getJobPriority } from "../../lib/job-priority";
 import { Document, scrapeOptions, TeamFlags } from "../../controllers/v2/types";

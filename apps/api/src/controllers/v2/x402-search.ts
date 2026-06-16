@@ -10,7 +10,7 @@ import {
   TeamFlags,
 } from "./types";
 import { v7 as uuidv7 } from "uuid";
-import { addScrapeJob, waitForJob } from "../../services/queue-jobs";
+import { addScrapeJob, waitForJob } from "../../services/scrape-queue";
 import { logSearch, logRequest } from "../../services/logging/log_job";
 import { search } from "../../search/v2";
 import { isUrlBlocked } from "../../scraper/WebScraper/utils/blocklist";

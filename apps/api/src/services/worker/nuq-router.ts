@@ -224,7 +224,7 @@ export async function getCombinedTeamActiveCount(
   }
 }
 
-// === FDB enqueue (the whole gating block of queue-jobs collapses into this)
+// === FDB enqueue (the whole gating block of scrape-queue collapses into this)
 
 export function backlogTimeoutMsForGate(timeoutMs: number): Date {
   return new Date(Date.now() + timeoutMs);

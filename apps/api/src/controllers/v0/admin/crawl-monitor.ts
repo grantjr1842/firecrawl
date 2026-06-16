@@ -19,7 +19,7 @@ import {
   crawlGroup,
   resolveNewGroupBackend,
 } from "../../../services/worker/nuq-router";
-import { _addScrapeJobToBullMQ } from "../../../services/queue-jobs";
+import { _addScrapeJobToBullMQ } from "../../../services/scrape-queue";
 
 type ResponseType = {
   ok: boolean;

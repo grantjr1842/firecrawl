@@ -14,7 +14,7 @@ import {
   StoredCrawl,
   markCrawlActive,
 } from "../../lib/crawl-redis";
-import { _addScrapeJobToBullMQ } from "../../services/queue-jobs";
+import { _addScrapeJobToBullMQ } from "../../services/scrape-queue";
 import { logger as _logger } from "../../lib/logger";
 import { generateCrawlerOptionsFromPrompt } from "../../scraper/scrapeURL/transformers/llmExtract";
 import { CostTracking } from "../../lib/cost-tracking";

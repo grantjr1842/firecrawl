@@ -11,7 +11,7 @@ import {
   defaultTimeout,
   defaultOrigin,
 } from "../../lib/default-values";
-import { addScrapeJob, waitForJob } from "../../services/queue-jobs";
+import { addScrapeJob, waitForJob } from "../../services/scrape-queue";
 import { redisEvictConnection } from "../../../src/services/redis";
 import { v7 as uuidv7 } from "uuid";
 import { logger } from "../../lib/logger";

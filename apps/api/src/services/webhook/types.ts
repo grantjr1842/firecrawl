@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { webhookSchema } from "./schema";
-import { ExtractResult } from "../../lib/extract/extraction-service";
+import { ExtractResult } from "../../lib/extract/extraction-f1";
 import { Document } from "../../controllers/v2/types";
 
 export enum WebhookEvent {

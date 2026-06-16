@@ -9,8 +9,8 @@ import {
 import { addExtractJobToQueue } from "../../services/queue-service";
 import { saveExtract } from "../../lib/extract/extract-redis";
 import { getTeamIdSyncB } from "../../lib/extract/team-id-sync";
-import { ExtractResult } from "../../lib/extract/extraction-service";
-import { performExtraction_F0 } from "../../lib/extract/fire-0/extraction-service-f0";
+import { ExtractResult } from "../../lib/extract/extraction-f1";
+import { performExtraction_F0 } from "../../lib/extract/extraction-f0";
 import { UNSUPPORTED_SITE_MESSAGE } from "../../lib/strings";
 import { isUrlBlocked } from "../../scraper/WebScraper/utils/blocklist";
 import { logger as _logger } from "../../lib/logger";

@@ -23,7 +23,7 @@ import {
   saveCrawl,
   StoredCrawl,
 } from "../../lib/crawl-redis";
-import { _addScrapeJobToBullMQ, addScrapeJob } from "../queue-jobs";
+import { _addScrapeJobToBullMQ, addScrapeJob } from "../scrape-queue";
 import {
   CrawlRequest,
   type ScrapeOptions,

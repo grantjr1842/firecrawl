@@ -6,8 +6,8 @@ import {
   URLTrace,
   scrapeOptions as scrapeOptionsSchema,
 } from "../../../controllers/v2/types";
-import { waitForJob } from "../../../services/queue-jobs";
-import { addScrapeJob } from "../../../services/queue-jobs";
+import { waitForJob } from "../../../services/scrape-queue";
+import { addScrapeJob } from "../../../services/scrape-queue";
 import { getJobPriority } from "../../job-priority";
 import type { Logger } from "winston";
 import { isUrlBlocked } from "../../../scraper/WebScraper/utils/blocklist";

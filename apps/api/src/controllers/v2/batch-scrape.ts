@@ -20,7 +20,7 @@ import {
   StoredCrawl,
 } from "../../lib/crawl-redis";
 import { getJobPriority } from "../../lib/job-priority";
-import { addScrapeJobs } from "../../services/queue-jobs";
+import { addScrapeJobs } from "../../services/scrape-queue";
 import { createWebhookSender, WebhookEvent } from "../../services/webhook";
 import { logger as _logger } from "../../lib/logger";
 import { UNSUPPORTED_SITE_MESSAGE } from "../../lib/strings";
