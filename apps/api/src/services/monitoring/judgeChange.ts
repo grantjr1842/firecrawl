@@ -79,7 +79,8 @@ interface JudgeChangeArgs {
   };
 }
 
-function isMeaningfulChangeEvent(
+/** @public consumed by judgeChange.test.ts */
+export function isMeaningfulChangeEvent(
   value: unknown,
 ): value is MeaningfulChangeEvent {
   if (!value || typeof value !== "object") return false;
@@ -102,12 +103,144 @@ function isMeaningfulChangeEvent(
   return typeof item.before === "string" && typeof item.after === "string";
 }
 
-function sanitizeMeaningfulChanges(
+/** @public consumed by judgeChange.test.ts */
+export function sanitizeMeaningfulChanges(
   value: unknown,
   meaningful: boolean,
 ): MeaningfulChangeEvent[] {
   if (!meaningful || !Array.isArray(value)) return [];
   return value.filter(isMeaningfulChangeEvent);
+}
+
+/** @public consumed by judgeChange.test.ts */
+export type PreprocessOutcome =
+  | { kind: "no-diff"; result: JudgmentResult }
+  | { kind: "needs-judge"; userBlock: string };
+
+/**
+ * Deterministic preprocessing for `judgeChange`.
+ *
+ * - When no diff payload is supplied, returns a low-confidence "meaningful" default.
+ * - Otherwise, assembles the user block (goal + optional extraction prompt + diff text)
+ *   that would be sent to the judge LLM. This is pure string assembly with no
+ *   network or model calls, so it is safe to unit-test without API keys.
+ *
+ * Exported so callers (and tests) can inspect the prompt that would be sent.
+ */
+export function judgeChangePreprocess(args: {
+  goal: string;
+  extractionPrompt?: string;
+  jsonDiff?: Record<string, { previous: unknown; current: unknown }>;
+  markdownDiff?: { diffText?: string };
+}): PreprocessOutcome {
+  const { goal, extractionPrompt, jsonDiff, markdownDiff } = args;
+
+  if (!jsonDiff && !markdownDiff?.diffText) {
+    return {
+      kind: "no-diff",
+      result: {
+        meaningful: true,
+        confidence: "low",
+        reason: "No diff payload supplied to judge — defaulting to meaningful.",
+        meaningfulChanges: [],
+      },
+    };
+  }
+
+  const parts: string[] = [`MONITOR GOAL:\n${goal.trim()}`];
+  if (extractionPrompt?.trim()) {
+    parts.push(
+      `EXTRACTION PROMPT (context — what the scraper captures):\n${extractionPrompt.trim()}`,
+    );
+  }
+  if (markdownDiff) {
+    if (markdownDiff.diffText) {
+      parts.push(`PAGE DIFF (unified):\n${markdownDiff.diffText}`);
+    }
+  }
+  if (jsonDiff && Object.keys(jsonDiff).length > 0) {
+    parts.push(
+      `FIELD DIFFS (supplementary, from schema extraction):\n${JSON.stringify(jsonDiff, null, 2)}`,
+    );
+  }
+  return { kind: "needs-judge", userBlock: parts.join("\n\n") };
+}
+
+/** @public consumed by judgeChange.test.ts */
+export type ParseJudgeTextOutcome =
+  | { kind: "unparseable"; textPeek: string; result: JudgmentResult }
+  | {
+      kind: "json-error";
+      textPeek: string;
+      error: string;
+      result: JudgmentResult;
+    }
+  | { kind: "ok"; result: JudgmentResult };
+
+/**
+ * Pure parser/validator for the judge's text response. The model is expected to
+ * return strict JSON; this function is tolerant of the model wrapping the JSON in
+ * prose and falls back to a low-confidence "meaningful" default on any failure.
+ *
+ * Exported so the response-shaping logic is unit-testable without any LLM call.
+ */
+export function parseJudgeText(text: string): ParseJudgeTextOutcome {
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) {
+    return {
+      kind: "unparseable",
+      textPeek: text.slice(0, 200),
+      result: {
+        meaningful: true,
+        confidence: "low",
+        reason: "Judge response unparseable — defaulting to meaningful.",
+        meaningfulChanges: [],
+      },
+    };
+  }
+
+  let parsed: Partial<JudgmentResult>;
+  try {
+    parsed = JSON.parse(match[0]) as Partial<JudgmentResult>;
+  } catch (parseError) {
+    return {
+      kind: "json-error",
+      textPeek: match[0].slice(0, 200),
+      error:
+        parseError instanceof Error ? parseError.message : String(parseError),
+      result: {
+        meaningful: true,
+        confidence: "low",
+        reason: "Judge response not valid JSON — defaulting to meaningful.",
+        meaningfulChanges: [],
+      },
+    };
+  }
+
+  const meaningful =
+    parsed.meaningful === true || parsed.meaningful === false
+      ? parsed.meaningful
+      : true;
+  return {
+    kind: "ok",
+    result: {
+      meaningful,
+      confidence:
+        parsed.confidence === "high" ||
+        parsed.confidence === "medium" ||
+        parsed.confidence === "low"
+          ? parsed.confidence
+          : "low",
+      reason:
+        typeof parsed.reason === "string" && parsed.reason.length > 0
+          ? parsed.reason
+          : "No reason provided.",
+      meaningfulChanges: sanitizeMeaningfulChanges(
+        parsed.meaningfulChanges,
+        meaningful,
+      ),
+    },
+  };
 }
 
 const JUDGE_MODEL_NAME = "gemini-3-flash-preview";
@@ -153,84 +286,31 @@ export async function judgeChange(
 ): Promise<JudgmentResult> {
   const { logger, goal, extractionPrompt, jsonDiff, markdownDiff } = args;
 
-  const parts: string[] = [`MONITOR GOAL:\n${goal.trim()}`];
-  if (extractionPrompt?.trim()) {
-    parts.push(
-      `EXTRACTION PROMPT (context — what the scraper captures):\n${extractionPrompt.trim()}`,
-    );
+  const pre = judgeChangePreprocess({
+    goal,
+    extractionPrompt,
+    jsonDiff,
+    markdownDiff,
+  });
+  if (pre.kind === "no-diff") {
+    return pre.result;
   }
-  if (markdownDiff) {
-    if (markdownDiff.diffText) {
-      parts.push(`PAGE DIFF (unified):\n${markdownDiff.diffText}`);
-    }
-  }
-  if (jsonDiff && Object.keys(jsonDiff).length > 0) {
-    parts.push(
-      `FIELD DIFFS (supplementary, from schema extraction):\n${JSON.stringify(jsonDiff, null, 2)}`,
-    );
-  }
-  if (!jsonDiff && !markdownDiff?.diffText) {
-    return {
-      meaningful: true,
-      confidence: "low",
-      reason: "No diff payload supplied to judge — defaulting to meaningful.",
-      meaningfulChanges: [],
-    };
-  }
-  const userBlock = parts.join("\n\n");
+  const userBlock = pre.userBlock;
 
   try {
     const { text } = await callGemini({ userBlock });
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) {
+    const parsed = parseJudgeText(text);
+    if (parsed.kind === "unparseable") {
       logger.warn("Judge returned unparseable response", {
-        textPeek: text.slice(0, 200),
+        textPeek: parsed.textPeek,
       });
-      return {
-        meaningful: true,
-        confidence: "low",
-        reason: "Judge response unparseable — defaulting to meaningful.",
-        meaningfulChanges: [],
-      };
-    }
-
-    let parsed: Partial<JudgmentResult>;
-    try {
-      parsed = JSON.parse(match[0]) as Partial<JudgmentResult>;
-    } catch (parseError) {
+    } else if (parsed.kind === "json-error") {
       logger.warn("Judge JSON parse failed — defaulting to meaningful", {
-        textPeek: match[0].slice(0, 200),
-        parseError:
-          parseError instanceof Error ? parseError.message : String(parseError),
+        textPeek: parsed.textPeek,
+        parseError: parsed.error,
       });
-      return {
-        meaningful: true,
-        confidence: "low",
-        reason: "Judge response not valid JSON — defaulting to meaningful.",
-        meaningfulChanges: [],
-      };
     }
-    const meaningful =
-      parsed.meaningful === true || parsed.meaningful === false
-        ? parsed.meaningful
-        : true;
-    return {
-      meaningful,
-      confidence:
-        parsed.confidence === "high" ||
-        parsed.confidence === "medium" ||
-        parsed.confidence === "low"
-          ? parsed.confidence
-          : "low",
-      reason:
-        typeof parsed.reason === "string" && parsed.reason.length > 0
-          ? parsed.reason
-          : "No reason provided.",
-      meaningfulChanges: sanitizeMeaningfulChanges(
-        parsed.meaningfulChanges,
-        meaningful,
-      ),
-    };
+    return parsed.result;
   } catch (error) {
     logger.error("Judge call failed", { error });
     return {
