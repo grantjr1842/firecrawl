@@ -9,11 +9,11 @@
 // config module (vi.mock is hoisted above the import) and then dynamically
 // import the logger inside beforeAll so that the test is self-contained
 // and does not depend on whatever another test file cached in the module
-// graph. We redirect process.stdout to a custom in-memory Writable so the
-// vitest reporter does not swallow the writes.
+// graph. Winston's Console transport ultimately calls console._stdout.write
+// (the node module-level console), not process.stdout.write directly, so we
+// install a spy on console._stdout.write that buffers every emitted line.
 // ---------------------------------------------------------------------------
 
-import { Writable } from "node:stream";
 import * as fs from "node:fs";
 
 vi.mock("../config", () => ({
@@ -28,35 +28,19 @@ vi.mock("../config", () => ({
 
 describe("logger console transport (OBS-07)", () => {
   let captured: string[] = [];
-  let originalStdout: NodeJS.WriteStream;
+  let stdoutSpy: ReturnType<typeof vi.spyOn> | undefined;
 
   beforeAll(async () => {
     vi.resetModules();
-    // Re-route process.stdout to a custom in-memory Writable BEFORE the
-    // dynamic import so the freshly-constructed Console transport binds
-    // to our sink. Winston's Console transport reads `process.stdout` at
-    // construction time.
-    originalStdout = process.stdout;
 
-    const sink = new Writable({
-      write(chunk, _enc, cb) {
-        captured.push(chunk.toString("utf8"));
-        cb();
-      },
-    });
-    // Mimic just enough of the WriteStream surface that winston's
-    // Stream transport doesn't blow up.
-    Object.defineProperty(sink, "isTTY", { value: false, writable: false });
-    (sink as unknown as { writable: boolean }).writable = true;
-
-    // Replace process.stdout wholesale. The type cast is intentional: the
-    // public WriteStream surface and our Writable are compatible for
-    // winston's read-only use.
-    Object.defineProperty(process, "stdout", {
-      value: sink,
-      configurable: true,
-      writable: true,
-    });
+    // Install the stdout spy before the dynamic import so the
+    // freshly-constructed Console transport binds to the spy.
+    stdoutSpy = vi
+      .spyOn((console as unknown as { _stdout: NodeJS.WriteStream })._stdout, "write")
+      .mockImplementation((chunk: unknown) => {
+        captured.push(typeof chunk === "string" ? chunk : (chunk as Buffer).toString("utf8"));
+        return true;
+      });
 
     const loggerModule = (await import("./logger.js")) as {
       logger: import("winston").Logger;
@@ -75,11 +59,7 @@ describe("logger console transport (OBS-07)", () => {
   });
 
   afterAll(() => {
-    Object.defineProperty(process, "stdout", {
-      value: originalStdout,
-      configurable: true,
-      writable: true,
-    });
+    stdoutSpy?.mockRestore();
   });
 
   it("emits at least one line to stdout", () => {

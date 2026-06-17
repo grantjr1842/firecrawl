@@ -42,7 +42,27 @@ const fixtureDoc = (url: string) => ({
   },
 });
 
+let redisAvailable = false;
+
 beforeAll(async () => {
+  // Skip gracefully when no Redis is reachable (CI without a redis
+  // service, local sandbox, etc.). The precheck helpers are exercised
+  // by the mergeBatchResult/getPrecheckCacheHits round-trip tests below
+  // only when Redis is up; otherwise the suite is a no-op so it doesn't
+  // time out the global beforeAll hook.
+  try {
+    const ping = await Promise.race([
+      redisEvictConnection.ping(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("redis ping timeout")), 2000),
+      ),
+    ]);
+    redisAvailable = ping === "PONG";
+  } catch {
+    redisAvailable = false;
+  }
+  if (!redisAvailable) return;
+
   // Seed the cache with 5 of 10 URLs we'll request. The other 5 must
   // miss and trigger the NuQ enqueue path (which we don't actually
   // run here; the assertion is that the precheck itself counts the
@@ -55,6 +75,8 @@ beforeAll(async () => {
     await setCachedResultTiered(url, "markdown", fixtureDoc(url), undefined, false, teamId);
   }
 });
+
+const itIfRedis = (cond: boolean) => (cond ? it : it.skip);
 
 afterAll(async () => {
   // Best-effort cleanup. We don't want stale precheck keys lingering
@@ -81,7 +103,7 @@ function sha256(s: string): string {
 }
 
 describe("PERF-2026-06-17-6: batch cache precheck helpers", () => {
-  it("mergeBatchResult + getPrecheckCacheHits round-trip preserves url ordering and document payload", async () => {
+  itIfRedis(redisAvailable)("mergeBatchResult + getPrecheckCacheHits round-trip preserves url ordering and document payload", async () => {
     const urls = [
       "https://vitest.example.com/a",
       "https://vitest.example.com/b",
@@ -103,7 +125,7 @@ describe("PERF-2026-06-17-6: batch cache precheck helpers", () => {
     }
   });
 
-  it("getPrecheckCacheHits supports range slicing for pagination (start/end)", async () => {
+  itIfRedis(redisAvailable)("getPrecheckCacheHits supports range slicing for pagination (start/end)", async () => {
     const paginationCrawlId = `${crawlId}-pagination`;
     for (let i = 0; i < 5; i++) {
       await mergeBatchResult(
@@ -131,7 +153,7 @@ describe("PERF-2026-06-17-6: batch cache precheck helpers", () => {
     );
   });
 
-  it("getPrecheckCacheHitsCount matches the document count for batch-status progress accounting", async () => {
+  itIfRedis(redisAvailable)("getPrecheckCacheHitsCount matches the document count for batch-status progress accounting", async () => {
     const counterCrawlId = `${crawlId}-count`;
     const N = 7;
     for (let i = 0; i < N; i++) {
@@ -153,7 +175,7 @@ describe("PERF-2026-06-17-6: batch cache precheck helpers", () => {
     );
   });
 
-  it("pre-populated cache of 5/10 URLs: 5 hits → 5 mergeBatchResult calls + 5 misses to enqueue", async () => {
+  itIfRedis(redisAvailable)("pre-populated cache of 5/10 URLs: 5 hits → 5 mergeBatchResult calls + 5 misses to enqueue", async () => {
     // This mirrors the task's win condition: a 10-url batch where 5 are
     // pre-warm in the cache should produce exactly 5 cache hits that
     // get merged via mergeBatchResult, and 5 misses that would still
@@ -220,7 +242,7 @@ describe("PERF-2026-06-17-6: batch cache precheck helpers", () => {
     );
   });
 
-  it("ZDR skip is enforced: getCachedResultTiered(..., zdr=true) returns null even for a hot URL", async () => {
+  itIfRedis(redisAvailable)("ZDR skip is enforced: getCachedResultTiered(..., zdr=true) returns null even for a hot URL", async () => {
     // Mirrors the v1 batch-scrape precheck path, which passes zdr=false
     // and lets the controller-level !zeroDataRetention gate do the
     // bypass. The cache module itself is the second line of defence:
