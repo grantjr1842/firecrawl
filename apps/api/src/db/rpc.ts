@@ -26,6 +26,12 @@ function toNum(v: unknown): number | null {
 export type AuthCreditUsageChunkRow = Record<string, any> & {
   team_id: string | null;
   api_key: string;
+  // Plan name threaded from the auth_credit_usage_chunk_47 SQL
+  // function. `tierFromPlan(chunk.plan)` in services/team-rate-limits
+  // consumes this — NOT `price_id` (the opaque Stripe price identifier,
+  // which is the historical wrong field that fell through to "free").
+  // May be null when the team has no active subscription.
+  plan: string | null;
 };
 
 export async function authCreditUsageChunk(

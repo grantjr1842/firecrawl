@@ -1246,6 +1246,12 @@ export type AuthCreditUsageChunk = {
   sub_current_period_end: string | null;
   sub_user_id: string | null;
   price_id: string | null;
+  // Plan name (human-readable, e.g. "free", "growth", "scale"). Threaded
+  // through from the auth_credit_usage_chunk_47 SQL function. Distinct
+  // from `price_id` (the opaque Stripe price identifier) — callers that
+  // need a rate-limit tier should use tierFromPlan(chunk.plan), NOT
+  // tierFromPlan(chunk.price_id).
+  plan: string | null;
   price_credits: number; // credit limit with assoicated price, or free_credits (500) if free plan
   price_should_be_graceful: boolean;
   price_associated_auto_recharge_price_id: string | null;

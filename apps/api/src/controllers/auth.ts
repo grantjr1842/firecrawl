@@ -83,6 +83,7 @@ const mockPreviewACUC: (
   sub_current_period_end: null,
   sub_user_id: null,
   price_id: null,
+  plan: "free",
   rate_limits: {
     crawl: 2,
     scrape: 10,
@@ -123,6 +124,7 @@ const mockACUC: () => AuthCreditUsageChunk = () => ({
   ).toISOString(),
   sub_user_id: "bypass",
   price_id: "bypass",
+  plan: "scale",
   rate_limits: {
     crawl: 99999999,
     scrape: 99999999,
