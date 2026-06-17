@@ -12,6 +12,7 @@ import {
   resolveVendorCredentials,
   type VendorConfig,
 } from "./vendors";
+import { assertUrlNotInternal } from "../../scraper/scrapeURL/engines/utils/safeFetch";
 
 const DEFAULT_TIERS: AntiBotTier[] = [
   "datacenter",
@@ -202,6 +203,33 @@ export class AntiBotRouter {
       ctx.durationMs = Date.now() - start;
       return {
         response: new Response(null, { status: 599 }),
+        context: ctx,
+      };
+    }
+
+    // SEC-2026-01: belt-and-braces pre-flight. The per-provider
+    // dispatchers (datacenter/residential/tor/akamai-h2) already
+    // attach a connect-hook that destroys sockets dialing private IPs,
+    // and tls-fingerprint pre-resolves the hostname in its own fetch
+    // path. We also pre-check the URL here so a DNS rebinding race
+    // (resolve-public, dial-private) is caught before any tier is
+    // allowed to issue a request.
+    try {
+      await assertUrlNotInternal(input);
+    } catch (err) {
+      ctx.durationMs = Date.now() - start;
+      const body = JSON.stringify({
+        error:
+          "Antibot request blocked: URL resolves to a private / " +
+          "loopback / link-local address. If you are running self-hosted " +
+          "and need to target internal services, set ALLOW_LOCAL_WEBHOOKS=true.",
+      });
+      return {
+        response: new Response(body, {
+          status: 599,
+          statusText: "AntibotSSRFBlocked",
+          headers: { "content-type": "application/json" },
+        }),
         context: ctx,
       };
     }

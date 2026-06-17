@@ -81,6 +81,12 @@ export function authCreditUsageChunkFromTeam(
 export function getAgentFreeRequestsLeft(
   i_team_id: string,
 ): Promise<{ free_requests_left: number }[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] get_agent_free_requests_left called with i_team_id=${i_team_id} — self-host stub`,
+    );
+    return Promise.resolve([{ free_requests_left: 999 }]);
+  }
   return execRows(
     db,
     sql`select * from get_agent_free_requests_left(i_team_id => ${i_team_id})`,
@@ -90,6 +96,12 @@ export function getAgentFreeRequestsLeft(
 export function agentConsumeFreeRequestIfLeft(
   i_team_id: string,
 ): Promise<{ consumed: boolean }[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] agent_consume_free_request_if_left called with i_team_id=${i_team_id} — self-host stub`,
+    );
+    return Promise.resolve([{ consumed: true }]);
+  }
   return execRows(
     db,
     sql`select * from agent_consume_free_request_if_left(i_team_id => ${i_team_id})`,
@@ -104,6 +116,12 @@ export function billTeam6(params: {
   api_key_id: number | null;
   is_extract: boolean;
 }): Promise<{ api_key: string }[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] bill_team_6 called with team_id=${params.team_id} credits=${params.credits} — self-host stub`,
+    );
+    return Promise.resolve([{ api_key: "" }]);
+  }
   return execRows(
     db,
     sql`select * from bill_team_6(_team_id => ${params.team_id}, sub_id => ${params.subscription_id}, fetch_subscription => ${params.fetch_subscription}, credits => ${params.credits}, i_api_key_id => ${params.api_key_id}, is_extract_param => ${params.is_extract})`,
@@ -117,6 +135,12 @@ export async function changeTrackingInsertScrape(params: {
   change_tracking_tag: string | null;
   date_added: string;
 }): Promise<void> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] change_tracking_insert_scrape called with team_id=${params.team_id} url=${params.url} — self-host stub`,
+    );
+    return;
+  }
   await db.execute(
     sql`select change_tracking_insert_scrape(p_team_id => ${params.team_id}, p_url => ${params.url}, p_job_id => ${params.job_id}, p_change_tracking_tag => ${params.change_tracking_tag}, p_date_added => ${params.date_added}::timestamptz)`,
   );
@@ -125,6 +149,12 @@ export async function changeTrackingInsertScrape(params: {
 export function creditsBilledByCrawlId(
   i_crawl_id: string,
 ): Promise<{ credits_billed: number }[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] credits_billed_by_crawl_id_2 called with i_crawl_id=${i_crawl_id} — self-host stub`,
+    );
+    return Promise.resolve([{ credits_billed: 0 }]);
+  }
   return execRows(
     db,
     sql`select * from credits_billed_by_crawl_id_2(i_crawl_id => ${i_crawl_id})`,
@@ -136,6 +166,12 @@ export function diffGetLastScrape(
   i_url: string,
   i_tag: string | null,
 ): Promise<{ o_job_id: string; o_date_added: string }[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] diff_get_last_scrape_v7 called with i_team_id=${i_team_id} i_url=${i_url} — self-host stub`,
+    );
+    return Promise.resolve([]);
+  }
   return execRows(
     db,
     sql`select * from diff_get_last_scrape_v7(i_team_id => ${i_team_id}, i_url => ${i_url}, i_tag => ${i_tag})`,
@@ -145,6 +181,12 @@ export function diffGetLastScrape(
 export function getZdrCleanupBatch(
   p_limit: number,
 ): Promise<{ request_id: string; ids: string[] }[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] get_zdr_cleanup_batch_2 called with p_limit=${p_limit} — self-host stub`,
+    );
+    return Promise.resolve([]);
+  }
   return execRows(
     db,
     sql`select * from get_zdr_cleanup_batch_2(p_limit => ${p_limit})`,
@@ -156,6 +198,12 @@ export function monitoringClaimDueMonitors<T = Record<string, any>>(params: {
   limit: number;
   leaseSeconds: number;
 }): Promise<T[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] monitoring_claim_due_monitors called with worker_id=${params.workerId} — self-host stub`,
+    );
+    return Promise.resolve([]);
+  }
   return execRows(
     db,
     sql`select * from monitoring_claim_due_monitors(p_worker_id => ${params.workerId}, p_limit => ${params.limit}, p_lease_seconds => ${params.leaseSeconds})`,
@@ -163,6 +211,12 @@ export function monitoringClaimDueMonitors<T = Record<string, any>>(params: {
 }
 
 export async function updateTallyTeam(i_team_id: string): Promise<void> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] update_tally_10_team called with i_team_id=${i_team_id} — self-host stub`,
+    );
+    return;
+  }
   await db.execute(sql`select update_tally_10_team(i_team_id => ${i_team_id})`);
 }
 
@@ -174,6 +228,12 @@ export async function insertOmceJobIfNeeded(
   i_domain_level: number,
   i_domain_hash: Buffer,
 ): Promise<void> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] insert_omce_job_if_needed called with i_domain_level=${i_domain_level} — self-host stub`,
+    );
+    return;
+  }
   await dbIndex.execute(
     sql`select insert_omce_job_if_needed(i_domain_level => ${i_domain_level}, i_domain_hash => ${i_domain_hash})`,
   );
@@ -184,6 +244,12 @@ export function queryIndexAtSplitLevel(
   i_url_hash: Buffer,
   i_newer_than: string,
 ): Promise<{ resolved_url: string }[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] query_index_at_split_level called with i_level=${i_level} — self-host stub`,
+    );
+    return Promise.resolve([]);
+  }
   return execRows(
     dbIndex,
     sql`select * from query_index_at_split_level(i_level => ${i_level}, i_url_hash => ${i_url_hash}, i_newer_than => ${i_newer_than}::timestamptz)`,
@@ -195,6 +261,12 @@ export function queryIndexAtDomainSplitLevel(
   i_domain_hash: Buffer,
   i_newer_than: string,
 ): Promise<{ resolved_url: string }[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] query_index_at_domain_split_level called with i_level=${i_level} — self-host stub`,
+    );
+    return Promise.resolve([]);
+  }
   return execRows(
     dbIndex,
     sql`select * from query_index_at_domain_split_level(i_level => ${i_level}, i_domain_hash => ${i_domain_hash}, i_newer_than => ${i_newer_than}::timestamptz)`,
@@ -205,6 +277,10 @@ export function queryOmceSignatures(
   i_domain_hash: Buffer,
   i_newer_than: string,
 ): Promise<{ signatures: any[] }[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(`[stub] query_omce_signatures called — self-host stub`);
+    return Promise.resolve([{ signatures: [] }]);
+  }
   return execRows(
     dbIndex,
     sql`select * from query_omce_signatures(i_domain_hash => ${i_domain_hash}, i_newer_than => ${i_newer_than}::timestamptz)`,
@@ -214,6 +290,10 @@ export function queryOmceSignatures(
 export function queryEngpickerVerdict(
   i_domain_hash: Buffer,
 ): Promise<{ verdict: string }[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(`[stub] query_engpicker_verdict called — self-host stub`);
+    return Promise.resolve([{ verdict: "Unknown" }]);
+  }
   return execRows(
     dbIndex,
     sql`select * from query_engpicker_verdict(i_domain_hash => ${i_domain_hash})`,
@@ -227,6 +307,12 @@ export function queryIndexAtSplitLevelWithMeta(
 ): Promise<
   { resolved_url: string; title: string | null; description: string | null }[]
 > {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] query_index_at_split_level_with_meta called with i_level=${i_level} — self-host stub`,
+    );
+    return Promise.resolve([]);
+  }
   return execRows(
     dbIndex,
     sql`select * from query_index_at_split_level_with_meta(i_level => ${i_level}, i_url_hash => ${i_url_hash}, i_newer_than => ${i_newer_than}::timestamptz)`,
@@ -240,6 +326,12 @@ export function queryIndexAtDomainSplitLevelWithMeta(
 ): Promise<
   { resolved_url: string; title: string | null; description: string | null }[]
 > {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] query_index_at_domain_split_level_with_meta called with i_level=${i_level} — self-host stub`,
+    );
+    return Promise.resolve([]);
+  }
   return execRows(
     dbIndex,
     sql`select * from query_index_at_domain_split_level_with_meta(i_level => ${i_level}, i_domain_hash => ${i_domain_hash}, i_newer_than => ${i_newer_than}::timestamptz)`,
@@ -252,6 +344,12 @@ export function queryDomainPriority(
   p_lim: number,
   p_time: string,
 ): Promise<{ domain_hash: Buffer; priority: number }[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] query_domain_priority called with p_min_total=${p_min_total} — self-host stub`,
+    );
+    return Promise.resolve([]);
+  }
   return execRows(
     dbIndex,
     sql`select * from query_domain_priority(p_min_total => ${p_min_total}, p_min_priority => ${p_min_priority}, p_lim => ${p_lim}, p_time => ${p_time}::timestamptz)`,
@@ -264,6 +362,12 @@ export function queryIndexAtDomainSplitLevelOmce<T = Record<string, any>>(
   i_newer_than: string,
   limit?: number,
 ): Promise<T[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] query_index_at_domain_split_level_omce called with i_level=${i_level} — self-host stub`,
+    );
+    return Promise.resolve([]);
+  }
   return execRows(
     dbIndex,
     sql`select * from query_index_at_domain_split_level_omce(i_level => ${i_level}, i_domain_hash => ${i_domain_hash}, i_newer_than => ${i_newer_than}::timestamptz)${limit !== undefined ? sql` limit ${limit}` : sql``}`,
@@ -273,6 +377,10 @@ export function queryIndexAtDomainSplitLevelOmce<T = Record<string, any>>(
 export function queryMaxAge(
   i_domain_hash: Buffer,
 ): Promise<{ max_age: number | null }[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(`[stub] query_max_age called — self-host stub`);
+    return Promise.resolve([{ max_age: 0 }]);
+  }
   return execRows(
     dbIndex,
     sql`select * from query_max_age(i_domain_hash => ${i_domain_hash})`,
@@ -304,6 +412,10 @@ export async function indexGetRecent5(params: {
   is_stealth: boolean;
   min_age_ms: number | null;
 }): Promise<IndexGetRecentRow[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(`[stub] index_get_recent_5 called — self-host stub`);
+    return Promise.resolve([]);
+  }
   const rows = await execRows<IndexGetRecentRow>(
     dbIndex,
     sql`select * from index_get_recent_5(p_url_hash => ${params.url_hash}, p_max_age_ms => ${params.max_age_ms}, p_is_mobile => ${params.is_mobile}, p_block_ads => ${params.block_ads}, p_feature_screenshot => ${params.feature_screenshot}, p_feature_screenshot_fullscreen => ${params.feature_screenshot_fullscreen}, p_location_country => ${params.location_country}, p_location_languages => ${sql.param(params.location_languages)}::text[], p_wait_time_ms => ${params.wait_time_ms}, p_is_stealth => ${params.is_stealth}, p_min_age_ms => ${params.min_age_ms})`,
@@ -319,6 +431,12 @@ export function queryTopUrlsForDomain<T = Record<string, any>>(
   p_time_window: string,
   p_top_n: number,
 ): Promise<T[]> {
+  if (!config.USE_DB_AUTHENTICATION) {
+    logger.debug(
+      `[stub] query_top_urls_for_domain called with p_top_n=${p_top_n} — self-host stub`,
+    );
+    return Promise.resolve([]);
+  }
   return execRows(
     dbIndex,
     sql`select * from query_top_urls_for_domain(p_domain_hash => ${p_domain_hash}, p_time_window => ${p_time_window}::interval, p_top_n => ${p_top_n})`,

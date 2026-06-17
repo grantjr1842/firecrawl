@@ -373,6 +373,27 @@ export async function listMonitors(params: {
   return data as MonitorRow[];
 }
 
+// Cross-team listing used by the admin operator surface. The auth
+// middleware on the route (`requireAdmin`) is what gates this — the
+// store layer doesn't know about roles.
+export async function listAllMonitors(params: {
+  limit: number;
+  offset: number;
+}): Promise<MonitorRow[]> {
+  const data = await run(
+    () =>
+      dbRr
+        .select()
+        .from(schema.monitors)
+        .where(ne(schema.monitors.status, "deleted"))
+        .orderBy(desc(schema.monitors.created_at))
+        .limit(params.limit)
+        .offset(params.offset),
+    "Failed to list monitors (admin)",
+  );
+  return data as MonitorRow[];
+}
+
 export async function getMonitor(
   teamId: string,
   monitorId: string,

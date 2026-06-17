@@ -43,6 +43,20 @@ import { getFdbHealthMonitor } from "./nuq-fdb/health-monitor.js";
 //    default to PG so FDB outages do not affect non-FDB traffic
 //  - workers: production workers consume PG and FDB via separate entrypoints;
 //    this class still tracks in-flight backend for direct/router test consumers
+//
+// === QR-001 (production gap audit 2026-06-17) sub-gap status ===
+//   (a) drain path -- CLOSED. optionalFdb, isFdbTeam, and resolveJobBackend
+//       all consult getFdbHealthMonitor().isHealthy(). A forced-degraded
+//       monitor short-circuits optionalFdb to throw (caller falls back to PG),
+//       makes isFdbTeam return false for all teams, and makes resolveJobBackend
+//       return "pg" for new standalone work (crawl-pinned work still follows
+//       its StoredCrawl.queueBackend marker). When the monitor recovers, new
+//       enqueues for FDB-eligible teams route to "fdb" again.
+//   (b) API-edge load-shedding with 429+Retry-After -- TODO.
+//   (c) Retry helper centralization (lib/retry-utils.ts -> retry.ts + opossum)
+//       -- TODO.
+//   (d) NUQ DLQ + admin replay endpoints -- TODO.
+//   (e) Multi-pod RabbitMQ listener durability fix -- TODO.
 
 export type QueueBackend = "pg" | "fdb";
 

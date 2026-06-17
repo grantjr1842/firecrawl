@@ -33,9 +33,16 @@ Prometheus. A minimal job entry:
 ```yaml
 scrape_configs:
   - job_name: firecrawl-api
-    metrics_path: /admin/${BULL_AUTH_KEY}/metrics  # admin metrics (incl. queue depth)
+    # New (admin-ops-07): the unauthenticated /metrics path is gated on its
+    # own shared secret (METRICS_AUTH_KEY, min 16 chars). Unset -> 404.
+    # The legacy /admin/${BULL_AUTH_KEY}/metrics path still works and
+    # returns the same payload, but new scrapers should use /metrics so
+    # that the scraper does not share credentials with the bull-board UI
+    # and the destructive acuc-cache-clear endpoint.
+    metrics_path: /metrics
     static_configs:
       - targets: ["firecrawl-api:3002"]
+    bearer_token: ${METRICS_AUTH_KEY}
 
   - job_name: firecrawl-nuq-prefetch  # nuq pool gauges only
     metrics_path: /metrics
@@ -43,20 +50,29 @@ scrape_configs:
       - targets: ["nuq-prefetch-worker:3007"]
 ```
 
-The primary `/admin/:BULL_AUTH_KEY/metrics` endpoint exposes
-`concurrency_limit_queue_job_count_total`, `nuq_queue_scrape_job_count`,
-`http_request_duration_seconds`, `job_duration_seconds`, and the
-fire-pdf + index-cache counters. See
-`apps/api/src/controllers/v0/admin/metrics.ts` for the full list.
+The primary `/metrics` (and legacy `/admin/:BULL_AUTH_KEY/metrics`)
+endpoint exposes `concurrency_limit_queue_job_count_total`,
+`nuq_queue_scrape_job_count`, `http_request_duration_seconds`,
+`job_duration_seconds`, and the fire-pdf + index-cache counters. See
+`apps/api/src/controllers/v0/admin/metrics.ts` for the full list and
+**Metric provenance** below for the file/line each metric comes from.
 
 ## Metric provenance
+
+Which controller emits which gauge, and where the prom text is served
+(`/metrics`, gated on `METRICS_AUTH_KEY`; the legacy
+`/admin/:BULL_AUTH_KEY/metrics` path shares the same handler).
 
 | Panel | PromQL metric | Source |
 | --- | --- | --- |
 | Scrape p50 / p95 | `http_request_duration_seconds` | `apps/api/src/lib/http-metrics.ts` (labels: `version`, `method`, `route`, `status`) |
 | Error rate (5xx) | `http_request_duration_seconds_count` (5xx numerator / total denominator) | same |
-| Queue depth (concurrency-limit) | `concurrency_limit_queue_job_count_total` | `apps/api/src/controllers/v0/admin/metrics.ts` |
-| Queue depth (nuq scrape) | `nuq_queue_scrape_job_count{status="queued"|"active"}` | `apps/api/src/services/worker/nuq.ts` (`getMetrics()`) |
+| Queue depth (concurrency-limit) | `concurrency_limit_queue_job_count_total` | `apps/api/src/controllers/v0/admin/metrics.ts` (`metricsController`, lines 7–49) — computed from Redis `concurrency-limit-queues` set + per-team `zcard` |
+| Queue depth (nuq scrape) | `nuq_queue_scrape_job_count` (labels: `status=queued`, `status=active`) | `apps/api/src/services/worker/nuq.ts` (`getMetrics()`, surfaced by `nuqGetLocalMetrics()` in the same controller) |
+| Concurrent team semaphore | `team_concurrency_*` (per-team in-flight / max gauges) | `apps/api/src/services/worker/team-semaphore.ts` (`teamConcurrencySemaphore.getMetrics()`) |
+| Billed teams | `billed_teams_count` | `apps/api/src/controllers/v0/admin/metrics.ts` — `SCARD billed_teams` |
+| NUQ worker gauges (separate endpoint) | `nuq_pool_*`, `nuq_queue_*` | `apps/api/src/services/worker/nuq-router.ts` (`scrapeQueue.getMetrics()`) — mounted at `/metrics/nuq` |
+| Job duration (fire-pdf / index-cache / scrape) | `job_duration_seconds_*` | `apps/api/src/lib/http-metrics.ts` and per-job instrumentation in `apps/api/src/services/worker/` |
 
 The `route` label on `http_request_duration_seconds` is the matched
 Express route pattern (e.g. `/scrape`, `/crawl/:jobId`), not the full

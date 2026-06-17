@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { dbRr } from "../../db/connection";
 import * as schema from "../../db/schema";
 import { autumnClient } from "./client";
+import * as Sentry from "@sentry/node";
 import type {
   CreateEntityParams,
   CreateEntityResult,
@@ -15,6 +16,7 @@ import type {
   GetOrCreateCustomerParams,
   LockCreditsParams,
   LockCreditsResult,
+  RefundCreditsParams,
   TrackCreditsParams,
   TrackParams,
 } from "./types";
@@ -497,7 +499,12 @@ export class AutumnService {
   }
 
   /**
-   * Records a credit usage event directly in Autumn. Returns true on success.
+   * Records a credit usage event directly in Autumn. Returns a trackId uuid on
+   * success, or null when the call was skipped or failed.
+   *
+   * The returned trackId must be threaded into any subsequent refundCredits
+   * call so request-scoped Autumn charges can be reconciled against the
+   * eventual DB commit (see FIRE-BILL-001).
    *
    * For request-scoped tracking the AUTUMN_REQUEST_TRACK_EXPERIMENT gate is
    * evaluated using a stable bucket derived from the org UUID so the same
@@ -509,25 +516,28 @@ export class AutumnService {
     properties,
     requestScoped = false,
     featureId = CREDITS_FEATURE_ID,
-  }: TrackCreditsParams): Promise<boolean> {
-    if (requestScoped && !isAutumnRequestTrackEnabled()) return false;
-    if (!autumnClient) return false;
-    if (this.isPreviewTeam(teamId)) return false;
+  }: TrackCreditsParams): Promise<string | null> {
+    if (requestScoped && !isAutumnRequestTrackEnabled()) return null;
+    if (!autumnClient) return null;
+    if (this.isPreviewTeam(teamId)) return null;
+
+    const trackId = randomUUID();
 
     try {
       if (requestScoped) {
         const orgId = await this.resolveOrgId(teamId);
-        if (!isAutumnRequestTrackEnabled(orgId)) return false;
+        if (!isAutumnRequestTrackEnabled(orgId)) return null;
       }
 
       const customerId = await this.ensureTrackingContext(teamId);
-      return await this.track({
+      const ok = await this.track({
         customerId,
         entityId: teamId,
         featureId,
         value,
-        properties,
+        properties: { ...properties, trackId },
       });
+      return ok ? trackId : null;
     } catch (error) {
       logger.error(
         "Autumn trackCredits failed — billing API may be unavailable",
@@ -535,22 +545,29 @@ export class AutumnService {
           teamId,
           value,
           requestScoped,
+          trackId,
           error,
         },
       );
-      return false;
+      return null;
     }
   }
 
   /**
    * Reverses a prior trackCredits call by tracking a negative usage event.
+   *
+   * `trackId` is required so the refund can be correlated to the original
+   * request-scoped charge in Autumn + Sentry breadcrumbs. Callers that don't
+   * have a real trackId (e.g. one-shot feedback refunds) should generate one
+   * with `randomUUID()` before calling.
    */
   async refundCredits({
     teamId,
     value,
     properties,
     featureId = CREDITS_FEATURE_ID,
-  }: TrackCreditsParams): Promise<void> {
+    trackId,
+  }: RefundCreditsParams): Promise<void> {
     if (!autumnClient) return;
     if (this.isPreviewTeam(teamId)) return;
 
@@ -561,13 +578,35 @@ export class AutumnService {
         entityId: teamId,
         featureId,
         value: -value,
-        properties: { ...properties, source: "autumn_refund" },
+        properties: { ...properties, source: "autumn_refund", refundOf: trackId },
+      });
+      Sentry.addBreadcrumb({
+        category: "billing",
+        message: "Autumn refundCredits issued",
+        level: "info",
+        data: {
+          teamId,
+          value,
+          featureId,
+          trackId,
+        },
       });
     } catch (error) {
       logger.error(
         "Autumn refundCredits failed — billing API may be unavailable",
-        { teamId, value, error },
+        { teamId, value, trackId, error },
       );
+      Sentry.addBreadcrumb({
+        category: "billing",
+        message: "Autumn refundCredits failed",
+        level: "error",
+        data: {
+          teamId,
+          value,
+          featureId,
+          trackId,
+        },
+      });
     }
   }
 }

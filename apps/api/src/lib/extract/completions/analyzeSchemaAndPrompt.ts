@@ -11,6 +11,7 @@ import {
 import { getModel } from "../../../lib/generic-ai";
 import { Logger } from "winston";
 import { CostTracking } from "../../cost-tracking";
+import { extractConfig } from "../config";
 export async function analyzeSchemaAndPrompt(
   urls: string[],
   schema: any,
@@ -48,7 +49,7 @@ export async function analyzeSchemaAndPrompt(
 
   const schemaString = JSON.stringify(schema);
 
-  const model = getModel("gpt-4.1", "openai");
+  const model = getModel(extractConfig.SCHEMA_ANALYSIS_MODEL);
 
   const checkSchema = z
     .object({

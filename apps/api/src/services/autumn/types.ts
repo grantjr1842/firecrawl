@@ -74,6 +74,15 @@ export type TrackCreditsParams = {
   featureId?: string;
 };
 
+/**
+ * Params for refundCredits. `trackId` MUST correspond to the trackId returned
+ * by a prior trackCredits call so refunds can be correlated to their original
+ * charge when investigating Autumn / DB drift (FIRE-BILL-001).
+ */
+export type RefundCreditsParams = TrackCreditsParams & {
+  trackId: string;
+};
+
 export type CreateEntityResult =
   | { ok: true; entity: unknown }
   | { ok: false; conflict: true }

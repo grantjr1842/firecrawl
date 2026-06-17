@@ -85,6 +85,19 @@ pub struct SearchFeedbackRequest {
     pub origin: Option<String>,
 }
 
+impl Default for SearchFeedbackRequest {
+    fn default() -> Self {
+        Self {
+            rating: FeedbackRating::Good,
+            valuable_sources: None,
+            missing_content: None,
+            query_suggestions: None,
+            integration: None,
+            origin: None,
+        }
+    }
+}
+
 /// Request body for `POST /v2/feedback`.
 ///
 /// Mirrors the JS SDK `EndpointFeedbackRequest`, which extends
@@ -134,6 +147,27 @@ pub struct EndpointFeedbackRequest {
 
     /// Integration identifier for tracking.
     pub integration: Option<String>,
+}
+
+impl Default for EndpointFeedbackRequest {
+    fn default() -> Self {
+        Self {
+            endpoint: FeedbackEndpoint::Scrape,
+            job_id: String::new(),
+            rating: FeedbackRating::Bad,
+            issues: None,
+            tags: None,
+            note: None,
+            valuable_sources: None,
+            missing_content: None,
+            query_suggestions: None,
+            url: None,
+            page_numbers: None,
+            metadata: None,
+            origin: None,
+            integration: None,
+        }
+    }
 }
 
 /// Response from a feedback submission.

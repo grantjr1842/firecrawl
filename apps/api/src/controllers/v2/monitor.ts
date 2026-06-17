@@ -20,6 +20,7 @@ import {
   getMonitor,
   getMonitorCheck,
   getMonitorForUpdate,
+  listAllMonitors,
   listMonitorCheckPages,
   listMonitorChecks,
   listMonitors,
@@ -243,6 +244,25 @@ export async function listMonitorsController(
   const query = listMonitorsQuerySchema.parse(req.query);
   const monitors = await listMonitors({
     teamId: req.auth.team_id,
+    limit: query.limit,
+    offset: query.offset,
+  });
+
+  res.status(200).json({
+    success: true,
+    data: monitors.map(monitor => serializeMonitor(monitor)),
+  });
+}
+
+// Cross-team admin view. Gated by `authMiddleware` + `requireAdmin` at
+// the route layer; the controller just calls `listAllMonitors` and
+// serializes with the same shape as the per-team listing.
+export async function listAdminMonitorsController(
+  req: RequestWithAuth<{}, any, unknown>,
+  res: Response,
+) {
+  const query = listMonitorsQuerySchema.parse(req.query);
+  const monitors = await listAllMonitors({
     limit: query.limit,
     offset: query.offset,
   });
