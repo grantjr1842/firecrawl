@@ -446,21 +446,21 @@ describe("checkCredits", () => {
 // ---------------------------------------------------------------------------
 
 describe("trackCredits", () => {
-  it("returns false when autumnClient is null", async () => {
+  it("returns null when autumnClient is null", async () => {
     state.autumnClientRef = null;
     const svc = makeService();
     const result = await svc.trackCredits({ teamId: "team-1", value: 10 });
-    expect(result).toBe(false);
+    expect(result).toBeNull();
     expect(mockTrack).not.toHaveBeenCalled();
   });
 
-  it("returns false for preview teams", async () => {
+  it("returns null for preview teams", async () => {
     const svc = makeService();
     const result = await svc.trackCredits({
       teamId: "preview_abc",
       value: 10,
     });
-    expect(result).toBe(false);
+    expect(result).toBeNull();
     expect(mockTrack).not.toHaveBeenCalled();
   });
 
@@ -473,7 +473,9 @@ describe("trackCredits", () => {
       properties: { source: "test", endpoint: "extract" },
     });
 
-    expect(result).toBe(true);
+    // FIRE-BILL-001: trackCredits now returns the trackId uuid on success.
+    expect(typeof result).toBe("string");
+    expect((result as string).length).toBeGreaterThan(0);
     // track should have been called for the actual usage event (at minimum).
     const trackCalls = mockTrack.mock.calls;
     const usageCall = trackCalls.find(
@@ -483,11 +485,11 @@ describe("trackCredits", () => {
     expect((usageCall as any[])[0].properties?.endpoint).toBe("extract");
   });
 
-  it("returns false when the Autumn track request fails", async () => {
+  it("returns null when the Autumn track request fails", async () => {
     mockTrack.mockRejectedValueOnce(new Error("track failed"));
     const svc = makeService();
 
-    expect(await svc.trackCredits({ teamId: "team-1", value: 42 })).toBe(false);
+    expect(await svc.trackCredits({ teamId: "team-1", value: 42 })).toBeNull();
   });
 
   it("tracks against SEARCH_CREDITS when featureId is provided", async () => {
@@ -500,7 +502,7 @@ describe("trackCredits", () => {
       featureId: "SEARCH_CREDITS",
     });
 
-    expect(result).toBe(true);
+    expect(typeof result).toBe("string");
     const usageCall = mockTrack.mock.calls.find((c: any[]) => c[0].value === 7);
     expect(usageCall).toBeDefined();
     expect((usageCall as any[])[0].featureId).toBe("SEARCH_CREDITS");

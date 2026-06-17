@@ -17,9 +17,13 @@ import {
   getPrecheckCacheHits,
   getPrecheckCacheHitsCount,
 } from "../../../services/worker/crawl-logic";
-import { setCachedResultTiered } from "../../../services/result-cache";
+import {
+  setCachedResultTiered,
+  getCachedResultTiered,
+} from "../../../services/result-cache";
 import { redisEvictConnection } from "../../../services/redis";
 import { redisRateLimitClient } from "../../../services/rate-limiter";
+import { createHash } from "node:crypto";
 
 // A unique crawl id per test run so we don't collide with other tests
 // or with leftover state from previous runs.
@@ -72,8 +76,7 @@ afterAll(async () => {
   }
 });
 
-async function sha256(s: string): Promise<string> {
-  const { createHash } = await import("node:crypto");
+function sha256(s: string): string {
   return createHash("sha256").update(s).digest("hex");
 }
 
@@ -163,9 +166,6 @@ describe("PERF-2026-06-17-6: batch cache precheck helpers", () => {
 
     const cachedResults = await Promise.all(
       allUrls.map(async url => {
-        const { getCachedResultTiered } = await import(
-          "../../../services/result-cache"
-        );
         const cached = await getCachedResultTiered(
           url,
           "markdown",
@@ -225,9 +225,6 @@ describe("PERF-2026-06-17-6: batch cache precheck helpers", () => {
     // and lets the controller-level !zeroDataRetention gate do the
     // bypass. The cache module itself is the second line of defence:
     // even if a caller forgets the gate, the read returns null.
-    const { getCachedResultTiered } = await import(
-      "../../../services/result-cache"
-    );
     const cached = await getCachedResultTiered(
       "https://vitest.example.com/cached-0",
       "markdown",
