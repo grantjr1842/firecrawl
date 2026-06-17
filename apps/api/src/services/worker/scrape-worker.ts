@@ -150,13 +150,14 @@ async function billScrapeJob(
       config.USE_DB_AUTHENTICATION
     ) {
       try {
-        trackedInRequest = await autumnService.trackCredits({
+        const scrapeTrackId = await autumnService.trackCredits({
           teamId: job.data.team_id,
           value: creditsToBeBilled,
           properties: autumnProperties,
           requestScoped: true,
           featureId,
         });
+        trackedInRequest = scrapeTrackId !== null;
         const billingJobId = uuidv7();
         logger.debug(
           `Adding billing job to queue for team ${job.data.team_id}`,
@@ -181,6 +182,7 @@ async function billScrapeJob(
             originating_job_id: job.id,
             api_key_id: job.data.apiKeyId,
             autumnTrackInRequest: trackedInRequest,
+            trackId: scrapeTrackId ?? undefined,
           },
           {
             jobId: billingJobId,
@@ -200,6 +202,10 @@ async function billScrapeJob(
             value: creditsToBeBilled,
             properties: autumnProperties,
             featureId,
+            // FIRE-BILL-001: thread the original trackId back into the refund
+            // so the batch worker can correlate. If the track call failed we
+            // still synthesize a stable id for Autumn breadcrumbs.
+            trackId: scrapeTrackId ?? `scrape_refund_${job.id ?? ""}`,
           });
         }
         captureExceptionWithZdrCheck(error, {

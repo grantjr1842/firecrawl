@@ -64,7 +64,7 @@ describe("requireAdmin", () => {
   });
 
   it("returns 403 when header is missing and email is not in ADMIN_EMAILS", () => {
-    const req = buildReq();
+    const req = buildReq({ email: "user@firecrawl.dev" });
     const { res } = buildRes();
     const next = vi.fn() as unknown as NextFunction;
 
@@ -79,9 +79,7 @@ describe("requireAdmin", () => {
   });
 
   it("lets through when JWT email matches an entry in ADMIN_EMAILS", () => {
-    const req = buildReq({
-      acuc: { email: "ops@firecrawl.dev" } as any,
-    });
+    const req = buildReq({ email: "ops@firecrawl.dev" });
     const { res } = buildRes();
     const next = vi.fn() as unknown as NextFunction;
 
@@ -92,9 +90,7 @@ describe("requireAdmin", () => {
   });
 
   it("still returns 403 when the JWT email is wrong even if the header is absent", () => {
-    const req = buildReq({
-      acuc: { email: "user@firecrawl.dev" } as any,
-    });
+    const req = buildReq({ email: "user@firecrawl.dev" });
     const { res } = buildRes();
     const next = vi.fn() as unknown as NextFunction;
 
