@@ -11,6 +11,13 @@ const nextConfig = {
   // stays scoped to admin-panel.
   typescript: { ignoreBuildErrors: false },
   eslint: { ignoreDuringBuilds: true },
+  // Expose the admin-panel API key (if set) to the client runtime so
+  // `lib/api.ts` can forward it on the `/v2/monitor/admin/list` call.
+  // When unset, the panel falls back to a best-effort probe that
+  // gracefully reports "controller unavailable".
+  env: {
+    NEXT_PUBLIC_ADMIN_PANEL_API_KEY: process.env.ADMIN_PANEL_API_KEY ?? "",
+  },
 };
 
 export default nextConfig;

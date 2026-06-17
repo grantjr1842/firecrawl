@@ -10,9 +10,9 @@ export const metricsRouter = express.Router();
 
 // admin-ops-07: /metrics is mounted outside of /admin and gated on its own
 // shared secret (METRICS_AUTH_KEY). When the env var is unset, the endpoint
-// is disabled (404) so self-hosted operators do not accidentally expose the
-// prom text to the network. The legacy /admin/:BULL_AUTH_KEY/metrics path
-// is preserved for back-compat — see routes/admin.ts.
+// returns 404 so self-hosted operators do not accidentally expose the prom
+// text to the network. The legacy /admin/:BULL_AUTH_KEY/metrics path is
+// preserved for back-compat — see routes/admin.ts.
 const metricsAuthMiddleware = (
   req: Request,
   res: Response,
@@ -38,11 +38,9 @@ const metricsAuthMiddleware = (
   return next();
 };
 
-if (config.METRICS_AUTH_KEY) {
-  metricsRouter.get("/metrics", metricsAuthMiddleware, wrap(metricsController));
-  metricsRouter.get(
-    "/metrics/nuq",
-    metricsAuthMiddleware,
-    wrap(nuqMetricsController),
-  );
-}
+metricsRouter.get("/metrics", metricsAuthMiddleware, wrap(metricsController));
+metricsRouter.get(
+  "/metrics/nuq",
+  metricsAuthMiddleware,
+  wrap(nuqMetricsController),
+);

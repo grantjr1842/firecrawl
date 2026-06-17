@@ -505,6 +505,18 @@ v2Router.get(
   wrap(listMonitorsController),
 );
 
+// Cross-team admin listing. Registered before /monitor/:monitorId so
+// the static `admin` segment wins the route match. `requireAdmin` runs
+// after `authMiddleware` so a JWT-less operator call can still pass via
+// the X-Admin-Role header. Intentionally NOT cloud-only — the admin
+// panel needs this on self-hosted clusters too.
+v2Router.get(
+  "/monitor/admin/list",
+  authMiddleware(RateLimiterMode.CrawlStatus),
+  requireAdmin,
+  wrap(listAdminMonitorsController),
+);
+
 // Public, unauthenticated — token in body is the credential. Registered
 // before /monitor/:monitorId so "email" isn't parsed as a monitor UUID.
 v2Router.post(

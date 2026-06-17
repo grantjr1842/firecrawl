@@ -89,10 +89,21 @@ export async function listAdminMonitors(
   apiKey?: string,
 ): Promise<ApiResult<MonitorSummary[]>> {
   const url = `${baseUrl.replace(/\/$/, "")}/v2/monitor/admin/list`;
+  // The server-side requireAdmin middleware accepts either the operator
+  // header alone, or the header + a bearer token whose key matches
+  // ADMIN_API_KEYS on the api. We always send the header so the api can
+  // short-circuit the JWT decode path; the bearer token is read from
+  // NEXT_PUBLIC_ADMIN_PANEL_API_KEY (exposed by next.config.mjs) so
+  // operators only have to set the env var once.
+  const envKey =
+    typeof process !== "undefined"
+      ? process.env.NEXT_PUBLIC_ADMIN_PANEL_API_KEY
+      : undefined;
+  const effectiveKey = apiKey ?? (envKey && envKey.length > 0 ? envKey : undefined);
   const headers: Record<string, string> = {
     "X-Admin-Role": "admin",
   };
-  if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+  if (effectiveKey) headers["Authorization"] = `Bearer ${effectiveKey}`;
   try {
     const response = await fetch(url, { headers, cache: "no-store" });
     if (response.status === 404) {

@@ -471,6 +471,18 @@ const configSchema = z.object({
   // high-hit-rate shared global cache for self-hosted installs.
   // ---------------------------------------------------------------------------
   RESULT_CACHE_TEAM_ISOLATION: z.coerce.boolean().default(false),
+
+  // ---------------------------------------------------------------------------
+  // PERF-2026-06-17-6: Batch cache precheck. When true (default), the v1
+  // batch-scrape controller does an O(n) Redis lookup against the tiered
+  // result cache BEFORE enqueuing any URL into NuQ. URLs that hit the
+  // cache are merged into the batch result store directly and never
+  // enqueued, saving the queue-add + lock-acquire + team-semaphore cost
+  // for cache-warm URLs. ZDR requests bypass the precheck entirely, and
+  // the v1 batch controller already sets `disableSmartWaitCache: true`,
+  // which the precheck path flips back off for the cache-hit URLs only.
+  // ---------------------------------------------------------------------------
+  RESULT_CACHE_PRECHECK_BATCH: z.coerce.boolean().default(true),
 });
 
 export const config = configSchema.parse(process.env);

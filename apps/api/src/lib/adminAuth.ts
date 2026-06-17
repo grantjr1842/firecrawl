@@ -84,7 +84,7 @@ function recordAdminAudit(entry: {
   // small and well-tagged.
   logger.info("admin_action", {
     module: "adminAuth",
-    method: "adminAuthMiddleware",
+    fn: "adminAuthMiddleware",
     canonicalLog: "admin/action",
     actor: entry.actor,
     action: entry.action,

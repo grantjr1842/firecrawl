@@ -35,6 +35,12 @@ interface BillingOperation {
   timestamp: string;
   api_key_id: number | null;
   autumnTrackInRequest: boolean;
+  /**
+   * The trackId uuid returned by autumnService.trackCredits when
+   * autumnTrackInRequest is true. Required so the batch refund can be
+   * correlated back to the original request-scoped charge (FIRE-BILL-001).
+   */
+  trackId?: string;
 }
 
 // Grouped billing operations for batch processing
@@ -68,38 +74,46 @@ async function releaseLock() {
 }
 
 async function refundRequestTrackedCredits(group: GroupedBillingOperation) {
-  const requestTrackedCredits = group.operations
-    .filter(op => op.autumnTrackInRequest)
-    .reduce((sum, op) => sum + op.credits, 0);
+  const requestTrackedOps = group.operations.filter(
+    op => op.autumnTrackInRequest,
+  );
 
-  if (requestTrackedCredits <= 0) return;
+  if (requestTrackedOps.length === 0) return;
 
-  try {
-    await autumnService.refundCredits({
-      teamId: group.team_id,
-      value: requestTrackedCredits,
-      properties: {
-        source: "processBillingBatch",
-        ...toAutumnBillingProperties(group.billing),
-        apiKeyId: group.api_key_id,
-        subscriptionId: group.subscription_id,
-      },
-      featureId: featureIdForBillingEndpoint(group.billing.endpoint),
-    });
-  } catch (error) {
-    logger.warn("Failed to refund Autumn request-tracked credits", {
-      error,
-      team_id: group.team_id,
-      credits: requestTrackedCredits,
-      billing: group.billing,
-    });
-    Sentry.captureException(error, {
-      data: {
-        operation: "batch_billing_refund",
+  // Per-op refund so each one carries the original trackId for Autumn +
+  // Sentry correlation. Operations without a trackId (legacy queue entries
+  // or batched refund path) get a synthesized one so the refund still
+  // surfaces a stable correlation id even when the request-scoped tracking
+  // didn't produce one.
+  for (const op of requestTrackedOps) {
+    try {
+      await autumnService.refundCredits({
+        teamId: group.team_id,
+        value: op.credits,
+        properties: {
+          source: "processBillingBatch",
+          ...toAutumnBillingProperties(group.billing),
+          apiKeyId: group.api_key_id,
+          subscriptionId: group.subscription_id,
+        },
+        featureId: featureIdForBillingEndpoint(group.billing.endpoint),
+        trackId: op.trackId ?? randomUUID(),
+      });
+    } catch (error) {
+      logger.warn("Failed to refund Autumn request-tracked credits", {
+        error,
         team_id: group.team_id,
-        credits: requestTrackedCredits,
-      },
-    });
+        credits: op.credits,
+        billing: group.billing,
+      });
+      Sentry.captureException(error, {
+        data: {
+          operation: "batch_billing_refund",
+          team_id: group.team_id,
+          credits: op.credits,
+        },
+      });
+    }
   }
 }
 
@@ -212,6 +226,54 @@ export async function processBillingBatch() {
           continue;
         }
 
+        // FIRE-BILL-001: detect divergence between the credits that were
+        // request-scoped-tracked into Autumn and what the DB RPC actually
+        // committed. When they differ we refund the delta so Autumn stays
+        // in sync and emit a Sentry breadcrumb for investigation.
+        const creditsApplied =
+          typeof billingResult.creditsApplied === "number"
+            ? billingResult.creditsApplied
+            : group.total_credits;
+        const expectedTracked = group.operations
+          .filter(op => op.autumnTrackInRequest)
+          .reduce((sum, op) => sum + op.credits, 0);
+        const divergence = expectedTracked - creditsApplied;
+        if (divergence > 0) {
+          logger.warn(
+            `⚠️ Autumn/DB divergence for team ${group.team_id}: requested ${expectedTracked}, applied ${creditsApplied}`,
+            {
+              team_id: group.team_id,
+              operation_count: group.operations.length,
+              expected_tracked: expectedTracked,
+              actual_applied: creditsApplied,
+            },
+          );
+          Sentry.addBreadcrumb({
+            category: "billing",
+            message: "Autumn/DB credit divergence",
+            level: "warning",
+            data: {
+              team_id: group.team_id,
+              op_count: group.operations.length,
+              expected_tracked: expectedTracked,
+              actual_applied: creditsApplied,
+              billing: group.billing,
+            },
+          });
+          await autumnService.refundCredits({
+            teamId: group.team_id,
+            value: divergence,
+            properties: {
+              source: "divergence_reconcile",
+              ...toAutumnBillingProperties(group.billing),
+              apiKeyId: group.api_key_id,
+              subscriptionId: group.subscription_id,
+            },
+            featureId: featureIdForBillingEndpoint(group.billing.endpoint),
+            trackId: randomUUID(),
+          });
+        }
+
         logger.info(
           `✅ Successfully billed team ${group.team_id} for ${group.total_credits} credits`,
         );
@@ -279,6 +341,11 @@ export function startBillingBatchProcessing() {
  * Enqueues a billing operation for async batch processing.
  *
  * Internal billing operations are batched and committed to Supabase.
+ *
+ * `trackId` is the uuid returned from autumnService.trackCredits when
+ * `autumnTrackInRequest` is true. It is threaded through the queue so the
+ * batch refund path can correlate back to the original request-scoped charge
+ * (FIRE-BILL-001).
  */
 export async function queueBillingOperation(
   team_id: string,
@@ -288,6 +355,7 @@ export async function queueBillingOperation(
   billing: BillingMetadata,
   is_extract: boolean = false,
   autumnTrackInRequest: boolean = false,
+  trackId?: string,
 ) {
   // Skip queuing for preview teams
   if (team_id === "preview" || team_id.startsWith("preview_")) {
@@ -313,6 +381,7 @@ export async function queueBillingOperation(
       timestamp: new Date().toISOString(),
       api_key_id,
       autumnTrackInRequest,
+      trackId,
     };
 
     // Add operation to Redis list
@@ -406,8 +475,12 @@ async function supaBillTeam(
 
   _logger.info(`Batch billing team ${team_id} for ${credits} credits`);
 
-  // Perform the actual database operation
-  let data: { api_key: string }[];
+  // Perform the actual database operation. billTeam6 returns
+  // `{ api_key, credits_applied? }[]`. `credits_applied` is only populated
+  // when the SQL function (bill_team_6 / bill_team_7) is the cloud parity
+  // version that emits it; for self-host it will be undefined and we fall
+  // back to assuming the requested `credits` were applied.
+  let data: { api_key: string; credits_applied?: number }[];
   try {
     data = await billTeam6({
       team_id,
@@ -422,6 +495,15 @@ async function supaBillTeam(
     _logger.error("Failed to bill team.", { error });
     return { success: false, error };
   }
+
+  // Sum credits_applied across all returned rows. When the RPC doesn't
+  // emit it we fall back to the requested `credits` value (self-host default).
+  const creditsApplied = data.reduce<number>((sum, row) => {
+    if (typeof row.credits_applied === "number") {
+      return sum + row.credits_applied;
+    }
+    return sum + credits;
+  }, 0);
 
   // Fire-and-forget — a Redis failure here must not trigger a false Autumn refund
   // after bill_team_6 has already committed.
@@ -459,7 +541,7 @@ async function supaBillTeam(
     _logger.error("Failed to update cached credits", { error, team_id });
   });
 
-  return { success: true, data };
+  return { success: true, data, creditsApplied };
 }
 
 // Cleanup on exit

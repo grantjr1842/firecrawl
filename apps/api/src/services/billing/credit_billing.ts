@@ -1,5 +1,6 @@
 import { withAuth } from "../../lib/withAuth";
 import { logger } from "../../lib/logger";
+import * as Sentry from "@sentry/node";
 import { AuthCreditUsageChunk } from "../../controllers/v1/types";
 import { queueBillingOperation } from "./batch_billing";
 import {
@@ -8,6 +9,28 @@ import {
 } from "../autumn/autumn.service";
 import { toAutumnBillingProperties, type BillingMetadata } from "./types";
 import type { Logger } from "winston";
+
+/**
+ * Result shape returned by `billTeam` to the controller.
+ *
+ * - `success`: whether the DB commit (or no-DB bypass) completed.
+ * - `trackId`: the uuid returned by autumnService.trackCredits when
+ *   request-scoped tracking succeeded. Callers may use it for downstream
+ *   reconciliation; not required by any current caller.
+ * - `divergent`: true when trackCredits succeeded but the DB commit
+ *   applied a different number of credits. The batch worker will reconcile
+ *   the delta; this flag is surfaced for telemetry only.
+ *
+ * Callers that don't read the new fields are unaffected — TypeScript
+ * structural typing keeps existing destructuring compatible.
+ */
+export type BillTeamResult = {
+  success: boolean;
+  message?: string;
+  trackId?: string;
+  divergent?: boolean;
+  error?: unknown;
+};
 
 /**
  * If you do not know the subscription_id in the current context, pass subscription_id as undefined.
@@ -19,7 +42,7 @@ export async function billTeam(
   api_key_id: number | null,
   billing: BillingMetadata,
   logger?: Logger,
-) {
+): Promise<BillTeamResult> {
   return withAuth(
     async (
       team_id: string,
@@ -35,13 +58,14 @@ export async function billTeam(
         apiKeyId: api_key_id,
       };
       const featureId = featureIdForBillingEndpoint(billing.endpoint);
-      const trackedInRequest = await autumnService.trackCredits({
+      const trackId = await autumnService.trackCredits({
         teamId: team_id,
         value: credits,
         properties: autumnProperties,
         requestScoped: true,
         featureId,
       });
+      const trackedInRequest = trackId !== null;
 
       const result = await queueBillingOperation(
         team_id,
@@ -51,20 +75,62 @@ export async function billTeam(
         billing,
         false,
         trackedInRequest,
+        trackId ?? undefined,
       );
 
-      if (!result.success && trackedInRequest) {
+      // FIRE-BILL-001: if Autumn tracked the request-scoped charge but the
+      // queue refused to enqueue, refund that single op immediately so the
+      // caller is not silently over-charged.
+      if (!result.success && trackedInRequest && trackId) {
         await autumnService.refundCredits({
           teamId: team_id,
           value: credits,
           properties: autumnProperties,
           featureId,
+          trackId,
+        });
+        Sentry.addBreadcrumb({
+          category: "billing",
+          message: "billTeam queue failure after Autumn track",
+          level: "warning",
+          data: {
+            team_id,
+            credits,
+            trackId,
+          },
         });
       }
 
-      return result;
+      // FIRE-BILL-001: when the request scope silently failed to track
+      // (trackId === null but queue succeeded), emit a breadcrumb so the
+      // batch worker can flag this team as under-counted in Autumn.
+      let divergent: boolean | undefined;
+      if (result.success && !trackedInRequest) {
+        divergent = true;
+        Sentry.addBreadcrumb({
+          category: "billing",
+          message: "Autumn track skipped while DB bill succeeded",
+          level: "warning",
+          data: {
+            team_id,
+            credits,
+            billing,
+          },
+        });
+      }
+
+      return {
+        success: result.success,
+        message: (result as { message?: string }).message,
+        error: (result as { error?: unknown }).error,
+        trackId: trackId ?? undefined,
+        divergent,
+      };
     },
-    { success: true, message: "No DB, bypassed." },
+    {
+      success: true,
+      message: "No DB, bypassed.",
+    } as BillTeamResult,
   )(team_id, subscription_id, credits, api_key_id, billing, logger);
 }
 

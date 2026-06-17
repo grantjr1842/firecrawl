@@ -2,12 +2,12 @@ import { vi } from "vitest";
 import express from "express";
 import request from "supertest";
 
-// admin-ops-07: when METRICS_AUTH_KEY is unset, the /metrics endpoint is
-// not registered at all (404). When it is set, the endpoint requires a
-// Bearer or X-Metrics-Key header that matches the configured secret.
-// These tests cover both paths plus the legacy /admin/:BULL_AUTH_KEY/metrics
-// back-compat route. The controller is mocked so we don't touch Redis or the
-// team-semaphore module.
+// admin-ops-07: when METRICS_AUTH_KEY is unset, the /metrics endpoint
+// returns 404. When it is set, the endpoint requires a Bearer or
+// X-Metrics-Key header that matches the configured secret. These tests
+// cover both paths plus the legacy /admin/:BULL_AUTH_KEY/metrics
+// back-compat route. The controller is mocked so we don't touch Redis
+// or the team-semaphore module.
 
 const {
   metricsController,
@@ -34,7 +34,7 @@ vi.mock("../controllers/v0/admin/metrics", () => ({
   nuqMetricsController,
 }));
 
-// Minimal Sentry / logger stubs so the route module can import config's
+// Sentry / logger stubs so the route module can import config's
 // transitive deps without booting the real SDK.
 vi.mock("@sentry/node", () => ({
   addBreadcrumb: vi.fn(),
@@ -48,22 +48,31 @@ vi.mock("@sentry/node", () => ({
 }));
 
 vi.mock("../lib/logger", () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    child: () => ({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      child: () => ({
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+      }),
+    }),
+  },
 }));
 
 // Configurable config so we can flip METRICS_AUTH_KEY / BULL_AUTH_KEY per test.
-const configState: {
-  BULL_AUTH_KEY?: string;
-  METRICS_AUTH_KEY?: string;
-  SENTRY_DSN?: string;
-  SENTRY_ENVIRONMENT?: string;
-  SENTRY_ERROR_SAMPLE_RATE?: number;
-  SENTRY_TRACE_SAMPLE_RATE?: number;
-  NUQ_POD_NAME?: string;
-} = vi.hoisted(() => ({
-  BULL_AUTH_KEY: "test-bull-key",
-  METRICS_AUTH_KEY: undefined,
-  SENTRY_DSN: undefined,
+const configState = vi.hoisted(() => ({
+  BULL_AUTH_KEY: "test-bull-key" as string | undefined,
+  METRICS_AUTH_KEY: undefined as string | undefined,
+  SENTRY_DSN: undefined as string | undefined,
   SENTRY_ENVIRONMENT: "test",
   SENTRY_ERROR_SAMPLE_RATE: 0,
   SENTRY_TRACE_SAMPLE_RATE: 0,
@@ -72,19 +81,50 @@ const configState: {
 
 vi.mock("../config", () => ({ config: configState }));
 
-async function loadAppWithConfig(): Promise<express.Express> {
-  // The router registers routes conditionally at import time based on
-  // config.METRICS_AUTH_KEY, so each test that wants a different config
-  // needs a fresh module graph.
-  vi.resetModules();
-  // Re-apply the hoisted mocks (vi.resetModules clears module state but
-  // hoisted mocks persist on the vi.mock side).
-  const { metricsRouter } = await import("./metrics");
-  const { adminRouter } = await import("./admin");
+// Side-effecting transitive deps (redis, prom-client metrics, etc.) that the
+// real route module graph would pull in. Stub them so the test doesn't boot
+// a real registry or connection.
+vi.mock("../services/queue-service", () => ({
+  getRedisConnection: () => ({
+    sscan: async () => ["0", []],
+    srem: async () => 0,
+    zcard: async () => 0,
+    scard: async () => 0,
+  }),
+  getGenerateLlmsTxtQueue: () => ({}),
+  getDeepResearchQueue: () => ({}),
+  getBillingQueue: () => ({}),
+  getPrecrawlQueue: () => ({}),
+}));
 
+vi.mock("../services/worker/nuq", () => ({
+  nuqGetLocalMetrics: () => "",
+}));
+
+vi.mock("../services/worker/team-semaphore", () => ({
+  teamConcurrencySemaphore: { getMetrics: async () => "" },
+}));
+
+vi.mock("../services/worker/nuq-router", () => ({
+  scrapeQueue: { getMetrics: async () => "" },
+}));
+
+vi.mock("../lib/http-metrics", () => ({
+  httpRequestDurationSeconds: { startTimer: () => () => {} },
+  getRoutePattern: () => "/",
+}));
+
+vi.mock("../scraper/scrapeURL/lib/cacheableLookup", () => ({
+  cacheableLookup: { install: () => {} },
+}));
+
+vi.mock("../services/otel", () => ({ shutdownOtel: () => Promise.resolve() }));
+
+import { metricsRouter } from "./metrics.js";
+import { adminRouter } from "./admin.js";
+
+function buildApp(): express.Express {
   const app = express();
-  // The legacy /admin/:BULL_AUTH_KEY/metrics route lives in adminRouter.
-  // We re-mount both so a regression in either is caught.
   app.use(metricsRouter);
   app.use(adminRouter);
   return app;
@@ -101,7 +141,7 @@ describe("metrics router (admin-ops-07)", () => {
 
   it("returns 404 for GET /metrics when METRICS_AUTH_KEY is unset", async () => {
     configState.METRICS_AUTH_KEY = undefined;
-    const app = await loadAppWithConfig();
+    const app = buildApp();
 
     const res = await request(app).get("/metrics");
 
@@ -111,7 +151,7 @@ describe("metrics router (admin-ops-07)", () => {
 
   it("returns 401 for GET /metrics with METRICS_AUTH_KEY set but no auth header", async () => {
     configState.METRICS_AUTH_KEY = VALID_KEY;
-    const app = await loadAppWithConfig();
+    const app = buildApp();
 
     const res = await request(app).get("/metrics");
 
@@ -122,7 +162,7 @@ describe("metrics router (admin-ops-07)", () => {
 
   it("returns 401 for GET /metrics with METRICS_AUTH_KEY set but a wrong key", async () => {
     configState.METRICS_AUTH_KEY = VALID_KEY;
-    const app = await loadAppWithConfig();
+    const app = buildApp();
 
     const res = await request(app)
       .get("/metrics")
@@ -134,7 +174,7 @@ describe("metrics router (admin-ops-07)", () => {
 
   it("returns 200 + prom text for GET /metrics with the correct Bearer token", async () => {
     configState.METRICS_AUTH_KEY = VALID_KEY;
-    const app = await loadAppWithConfig();
+    const app = buildApp();
 
     const res = await request(app)
       .get("/metrics")
@@ -148,7 +188,7 @@ describe("metrics router (admin-ops-07)", () => {
 
   it("accepts the X-Metrics-Key header as an alternative to Authorization", async () => {
     configState.METRICS_AUTH_KEY = VALID_KEY;
-    const app = await loadAppWithConfig();
+    const app = buildApp();
 
     const res = await request(app)
       .get("/metrics")
@@ -160,7 +200,7 @@ describe("metrics router (admin-ops-07)", () => {
 
   it("gates the /metrics/nuq endpoint the same way", async () => {
     configState.METRICS_AUTH_KEY = VALID_KEY;
-    const app = await loadAppWithConfig();
+    const app = buildApp();
 
     const unauthorized = await request(app).get("/metrics/nuq");
     expect(unauthorized.status).toBe(401);
@@ -176,7 +216,7 @@ describe("metrics router (admin-ops-07)", () => {
   it("preserves the legacy /admin/:BULL_AUTH_KEY/metrics back-compat path", async () => {
     configState.METRICS_AUTH_KEY = VALID_KEY;
     configState.BULL_AUTH_KEY = "legacy-bull-key";
-    const app = await loadAppWithConfig();
+    const app = buildApp();
 
     const res = await request(app).get("/admin/legacy-bull-key/metrics");
 
@@ -188,7 +228,7 @@ describe("metrics router (admin-ops-07)", () => {
   it("rejects the legacy /admin path when BULL_AUTH_KEY is wrong", async () => {
     configState.METRICS_AUTH_KEY = VALID_KEY;
     configState.BULL_AUTH_KEY = "legacy-bull-key";
-    const app = await loadAppWithConfig();
+    const app = buildApp();
 
     const res = await request(app).get("/admin/wrong-key/metrics");
 

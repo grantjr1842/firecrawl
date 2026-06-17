@@ -152,7 +152,21 @@ describe("self-hosted ACUC mocks (DB-RPC-006)", () => {
   });
 
   it("SelfHostACUC type and the mocks agree on every key (no rename, no extra, no missing)", () => {
-    const typeKeys = Object.keys({} as SelfHostACUC["rate_limits"]).sort();
+    // Drive Object.keys off a populated object so the keyof mapping
+    // resolves at runtime, not just at the type level.
+    const sample: SelfHostACUC["rate_limits"] = {
+      crawl: 0,
+      scrape: 0,
+      extract: 0,
+      search: 0,
+      map: 0,
+      preview: 0,
+      crawlStatus: 0,
+      extractStatus: 0,
+      extractAgentPreview: 0,
+      scrapeAgentPreview: 0,
+    };
+    const typeKeys = Object.keys(sample).sort();
     expect(typeKeys).toEqual([...expectedKeys].sort());
   });
 

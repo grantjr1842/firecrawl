@@ -36,6 +36,9 @@ vi.mock("undici", async () => {
     emit(event: string, ...args: any[]) {
       for (const fn of this.listeners[event] ?? []) fn(...args);
     }
+    compose() {
+      return this;
+    }
   }
   class FakeSocks5ProxyAgent {
     url: unknown;
@@ -48,6 +51,9 @@ vi.mock("undici", async () => {
     }
     emit(event: string, ...args: any[]) {
       for (const fn of this.listeners[event] ?? []) fn(...args);
+    }
+    compose() {
+      return this;
     }
   }
   class FakeAgent {
@@ -62,12 +68,16 @@ vi.mock("undici", async () => {
     emit(event: string, ...args: any[]) {
       for (const fn of this.listeners[event] ?? []) fn(...args);
     }
+    compose() {
+      return this;
+    }
   }
   const fetch = vi.fn(async (_input: any, _init: any) => {
     return new Response("ok", { status: 200 });
   });
   return {
     ...actual,
+    interceptors: { redirect: () => undefined },
     ProxyAgent: FakeProxyAgent,
     Socks5ProxyAgent: FakeSocks5ProxyAgent,
     Agent: FakeAgent,
