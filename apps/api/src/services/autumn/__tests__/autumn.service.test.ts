@@ -547,6 +547,7 @@ describe("refundCredits", () => {
       teamId: "team-1",
       value: 30,
       properties: { endpoint: "extract" },
+      trackId: "track-uuid-test-1",
     });
 
     const refundCall = mockTrack.mock.calls.find(
@@ -565,6 +566,7 @@ describe("refundCredits", () => {
       value: 1,
       properties: { endpoint: "search" },
       featureId: "SEARCH_CREDITS",
+      trackId: "track-uuid-test-2",
     });
 
     const refundCall = mockTrack.mock.calls.find(
@@ -577,13 +579,21 @@ describe("refundCredits", () => {
   it("is a no-op when autumnClient is null", async () => {
     state.autumnClientRef = null;
     const svc = makeService();
-    await svc.refundCredits({ teamId: "team-1", value: 30 });
+    await svc.refundCredits({
+      teamId: "team-1",
+      value: 30,
+      trackId: "track-uuid-test-3",
+    });
     expect(mockTrack).not.toHaveBeenCalled();
   });
 
   it("is a no-op for preview teams", async () => {
     const svc = makeService();
-    await svc.refundCredits({ teamId: "preview_abc", value: 30 });
+    await svc.refundCredits({
+      teamId: "preview_abc",
+      value: 30,
+      trackId: "track-uuid-test-4",
+    });
     expect(mockTrack).not.toHaveBeenCalled();
   });
 });

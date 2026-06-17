@@ -6,6 +6,7 @@ import { vi } from "vitest";
 // stub below stays module-level: its factory only captures it lazily.
 const {
   captureException,
+  addBreadcrumb,
   logger,
   withAuth,
   trackCredits,
@@ -22,11 +23,12 @@ const {
   };
   return {
     captureException: vi.fn(),
+    addBreadcrumb: vi.fn(),
     logger,
     withAuth: vi.fn((fn: any) => fn),
-    trackCredits: vi.fn<(args: any) => Promise<boolean>>(),
+    trackCredits: vi.fn<(args: any) => Promise<string | null>>(),
     refundCredits: vi.fn<(args: any) => Promise<void>>(),
-    billTeam6: vi.fn<(params: any) => Promise<{ api_key: string }[]>>(),
+    billTeam6: vi.fn<(params: any) => Promise<{ api_key: string; credits_applied?: number }[]>>(),
     setCachedACUC: vi.fn(),
     setCachedACUCTeam: vi.fn(),
   };
@@ -34,6 +36,7 @@ const {
 
 vi.mock("@sentry/node", () => ({
   captureException,
+  addBreadcrumb,
 }));
 
 vi.mock("../../../lib/logger", () => ({
@@ -146,7 +149,7 @@ beforeEach(() => {
   billedTeams.clear();
   locks.clear();
   billTeam6.mockResolvedValue([]);
-  trackCredits.mockResolvedValue(true);
+  trackCredits.mockResolvedValue("batch-track-uuid");
   refundCredits.mockResolvedValue(undefined);
 });
 
@@ -180,7 +183,7 @@ describe("processBillingBatch", () => {
   });
 
   it("continues when billing returns success false", async () => {
-    queue = [makeOp({ autumnTrackInRequest: true })];
+    queue = [makeOp({ autumnTrackInRequest: true, trackId: "op-track-1" })];
     billTeam6.mockRejectedValueOnce(new Error("db failed"));
 
     await processBillingBatch();
@@ -194,12 +197,13 @@ describe("processBillingBatch", () => {
         apiKeyId: 123,
         subscriptionId: "sub-1",
       },
+      trackId: "op-track-1",
     });
     expect(captureException).toHaveBeenCalled();
   });
 
   it("captures exceptions when billing throws", async () => {
-    queue = [makeOp({ autumnTrackInRequest: true })];
+    queue = [makeOp({ autumnTrackInRequest: true, trackId: "op-track-2" })];
     billTeam6.mockRejectedValueOnce(new Error("rpc exploded"));
 
     await processBillingBatch();
@@ -213,6 +217,7 @@ describe("processBillingBatch", () => {
         apiKeyId: 123,
         subscriptionId: "sub-1",
       },
+      trackId: "op-track-2",
     });
     expect(captureException).toHaveBeenCalled();
   });
@@ -223,6 +228,7 @@ describe("processBillingBatch", () => {
         team_id: "team-1",
         subscription_id: "sub-1",
         autumnTrackInRequest: true,
+        trackId: "op-track-3",
       }),
       makeOp({
         team_id: "team-2",
@@ -232,7 +238,7 @@ describe("processBillingBatch", () => {
     ];
     billTeam6
       .mockRejectedValueOnce(new Error("db failed"))
-      .mockResolvedValueOnce([]);
+      .mockResolvedValueOnce([{ api_key: "", credits_applied: 10 }]);
     refundCredits.mockRejectedValueOnce(new Error("refund failed"));
 
     await processBillingBatch();
@@ -246,6 +252,7 @@ describe("processBillingBatch", () => {
         apiKeyId: 123,
         subscriptionId: "sub-1",
       },
+      trackId: "op-track-3",
     });
     expect(billTeam6).toHaveBeenCalledTimes(2);
     expect(trackCredits).toHaveBeenCalledWith({
@@ -259,5 +266,88 @@ describe("processBillingBatch", () => {
       },
     });
     expect(captureException).toHaveBeenCalled();
+  });
+
+  it("emits a Sentry breadcrumb + delta refund when Autumn tracked but DB applied less (FIRE-BILL-001)", async () => {
+    // Autumn tracked the request for 10 credits (trackId "drift-track-1")
+    // but the DB RPC only applied 4. The batch worker should detect the
+    // divergence, refund the 6-credit delta, and surface a breadcrumb.
+    queue = [
+      makeOp({
+        team_id: "drift-team",
+        credits: 10,
+        autumnTrackInRequest: true,
+        trackId: "drift-track-1",
+      }),
+    ];
+    billTeam6.mockResolvedValueOnce([
+      { api_key: "", credits_applied: 4 },
+    ]);
+
+    await processBillingBatch();
+
+    // Delta refund: 10 - 4 = 6 credits.
+    expect(refundCredits).toHaveBeenCalledWith(
+      expect.objectContaining({
+        teamId: "drift-team",
+        value: 6,
+        featureId: "CREDITS",
+        properties: expect.objectContaining({
+          source: "divergence_reconcile",
+        }),
+      }),
+    );
+
+    expect(addBreadcrumb).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: "billing",
+        message: "Autumn/DB credit divergence",
+        level: "warning",
+        data: expect.objectContaining({
+          team_id: "drift-team",
+          op_count: 1,
+          expected_tracked: 10,
+          actual_applied: 4,
+        }),
+      }),
+    );
+  });
+
+  it("does not refund or breadcrumb when Autumn tracked and DB applied the same amount", async () => {
+    queue = [
+      makeOp({
+        team_id: "ok-team",
+        credits: 7,
+        autumnTrackInRequest: true,
+        trackId: "ok-track-1",
+      }),
+    ];
+    billTeam6.mockResolvedValueOnce([
+      { api_key: "", credits_applied: 7 },
+    ]);
+
+    await processBillingBatch();
+
+    expect(refundCredits).not.toHaveBeenCalled();
+    expect(addBreadcrumb).not.toHaveBeenCalled();
+  });
+
+  it("falls back to total_credits when billTeam6 does not emit credits_applied (self-host default)", async () => {
+    // Self-host SQL function doesn't return credits_applied — divergence
+    // detection should treat requested == applied and not fire.
+    queue = [
+      makeOp({
+        team_id: "self-host-team",
+        credits: 5,
+        autumnTrackInRequest: true,
+        trackId: "self-host-track-1",
+      }),
+    ];
+    billTeam6.mockResolvedValueOnce([{ api_key: "" }]);
+
+    await processBillingBatch();
+
+    expect(refundCredits).not.toHaveBeenCalled();
+    expect(addBreadcrumb).not.toHaveBeenCalled();
   });
 });
