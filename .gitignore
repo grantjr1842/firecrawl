@@ -66,3 +66,10 @@ apps/api/src/lib/scrape-interact/*.md
 # video + logs are operator-managed and should not be checked in)
 .selenoid/video/
 .selenoid/logs/
+# workflow scratch restored after 28-item post-ultracode workflow (3b4d97b29
+# accidentally stripped these; re-added so the .audit/ tree, mimocode cache,
+# and per-run .claude orchestration scripts don't show up as untracked)
+/.audit/
+/.mimocode/
+/.claude/*.js
+/.claude/projects/
