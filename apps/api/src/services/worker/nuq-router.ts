@@ -31,6 +31,7 @@ import {
   NuQFdbQueue,
   NuQFdbJob,
 } from "./nuq-fdb";
+import { getFdbHealthMonitor } from "./nuq-fdb/health-monitor.js";
 
 // Dual-backend router for the NuQ migration to FoundationDB. Exports the same
 // `scrapeQueue` / `crawlFinishedQueue` / `crawlGroup` names as ./nuq so call
@@ -76,10 +77,27 @@ function logFdbFallback(
 
 async function optionalFdb<T>(operation: () => Promise<T>): Promise<T> {
   if (fdbForced()) return operation();
-  if (!(await nuqFdbHealthCheck(FDB_OPTIONAL_OP_TIMEOUT_MS))) {
+  // T4.1: consult the sliding-window health monitor first — if FDB is
+  // degraded, fail fast and let the caller fall back to PG. Otherwise run
+  // a one-shot probe and feed the result back into the monitor.
+  const monitor = getFdbHealthMonitor();
+  if (!monitor.isHealthy()) {
+    throw new Error("FDB health monitor reports degraded");
+  }
+  const ok = await nuqFdbHealthCheck(FDB_OPTIONAL_OP_TIMEOUT_MS).catch(
+    () => false,
+  );
+  if (ok) monitor.recordSuccess();
+  else monitor.recordFailure();
+  if (!ok) {
     throw new Error("FDB health check failed before optional operation");
   }
-  return await withFdbTimeout(operation(), FDB_OPTIONAL_OP_TIMEOUT_MS);
+  try {
+    return await withFdbTimeout(operation(), FDB_OPTIONAL_OP_TIMEOUT_MS);
+  } catch (error) {
+    monitor.recordFailure();
+    throw error;
+  }
 }
 
 // Whether NEW work for this team should go to FDB. Existing crawls follow
@@ -87,6 +105,11 @@ async function optionalFdb<T>(operation: () => Promise<T>): Promise<T> {
 export async function isFdbTeam(teamId: string | undefined): Promise<boolean> {
   if (!fdbQueueEnabled()) return false;
   if (fdbForced()) return true;
+  // T4.1 auto-failover: if the FDB health monitor reports degraded, new work
+  // drains to PG (BullMQ). Existing crawls still follow their backend marker.
+  if (!getFdbHealthMonitor().isHealthy()) {
+    return false;
+  }
   if (!teamId) return false;
   try {
     const acuc = await getACUCTeam(teamId, false, true, RateLimiterMode.Crawl);
@@ -152,6 +175,16 @@ export async function resolveJobBackend(
 ): Promise<QueueBackend> {
   if (!fdbQueueEnabled()) return "pg";
   if (fdbForced()) return "fdb";
+  // T4.1 auto-failover: if the FDB health monitor reports degraded, new
+  // standalone jobs route to PG (BullMQ). Crawl-pinned jobs keep following
+  // their StoredCrawl.queueBackend marker (an in-flight FDB crawl cannot
+  // migrate mid-flight; its finishers stay on FDB).
+  if (!getFdbHealthMonitor().isHealthy()) {
+    if (data.crawl_id) {
+      return (await getCrawlQueueBackend(data.crawl_id)) ?? "pg";
+    }
+    return "pg";
+  }
   if (data.crawl_id) {
     return (await getCrawlQueueBackend(data.crawl_id)) ?? "pg";
   }

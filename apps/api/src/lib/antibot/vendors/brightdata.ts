@@ -27,6 +27,7 @@ export const BRIGHTDATA_DEFAULT_ZONE = "residential";
 export class BrightDataVendorAdapter implements VendorAdapter {
   readonly id = "brightdata" as const;
   readonly label = "Bright Data";
+  readonly defaultZone = BRIGHTDATA_DEFAULT_ZONE;
 
   validate(creds: VendorCredentials): void {
     if (!creds.username) {
@@ -46,10 +47,7 @@ export class BrightDataVendorAdapter implements VendorAdapter {
     }
   }
 
-  buildProxyUrl(
-    creds: VendorCredentials,
-    opts: VendorBuildOptions,
-  ): string {
+  buildProxyUrl(creds: VendorCredentials, opts: VendorBuildOptions): string {
     // We treat the `customer_id` part of the username as opaque — it is
     // whatever the operator configured in FIRECRAWL_BRIGHTDATA_USERNAME
     // (typically "<customerId>-zone-<zone>"). We append additional

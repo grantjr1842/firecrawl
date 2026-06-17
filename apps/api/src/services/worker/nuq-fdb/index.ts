@@ -17,6 +17,18 @@ export type { NuQFdbJobGroupInstance, NuQFdbGroupStatus } from "./groups";
 export { NuqFdbSweeper } from "./sweeper";
 export { NuqFdbExternalSlots } from "./slots";
 export { isFdbConfigured, nuqFdbHealthCheck, withFdbTimeout } from "./client";
+export {
+  FdbHealthMonitor,
+  getFdbHealthMonitor,
+  setFdbHealthMonitor,
+  startFdbHealthMonitor,
+  stopFdbHealthMonitor,
+} from "./health-monitor.js";
+export type {
+  FdbHealthDecision,
+  FdbHealthSnapshot,
+  FdbHealthMonitorConfig,
+} from "./health-monitor.js";
 
 export const scrapeQueueFdb = new NuQFdbQueue<ScrapeJobData, any>("scrape", {
   hasGroups: true,

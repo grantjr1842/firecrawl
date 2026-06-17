@@ -31,6 +31,10 @@ import {
 } from "./monitoring/runner";
 import { enqueueDueMonitorChecks } from "./monitoring/scheduler";
 import { consumeMonitorCheckJobs } from "./monitoring/queue";
+import {
+  startFdbHealthMonitor,
+  stopFdbHealthMonitor,
+} from "./worker/nuq-fdb/index.js";
 
 configDotenv();
 
@@ -459,6 +463,11 @@ app.listen(workerPort, () => {
 
   initializeEngineForcing();
 
+  // T4.1: start the FDB queue health monitor so the router can auto-failover
+  // new work to PG/BullMQ when FDB becomes unhealthy. The monitor is a no-op
+  // when FDB is not configured; the process will still boot.
+  startFdbHealthMonitor();
+
   if (config.USE_DB_AUTHENTICATION && !config.DISABLE_MONITORING) {
     monitorSchedulerInterval = setInterval(() => {
       enqueueDueMonitorChecks().catch(error => {
@@ -495,6 +504,8 @@ app.listen(workerPort, () => {
   if (monitorSchedulerInterval) {
     clearInterval(monitorSchedulerInterval);
   }
+
+  stopFdbHealthMonitor();
 
   _logger.info("All workers exited. Waiting for all jobs to finish...");
 
