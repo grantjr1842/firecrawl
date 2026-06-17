@@ -282,6 +282,11 @@ describe("SEC-2026-01: public IPs still pass through the router", () => {
       }
       const router = new AntiBotRouter([provider]);
       const { response, context } = await router.fetchWithContext(PUBLIC_URL);
+      if (response.status !== 200) {
+        const body = await response.text();
+        // eslint-disable-next-line no-console
+        console.log(`${tier} body:`, response.status, response.statusText, body);
+      }
       expect(response.status).toBe(200);
       expect(context.provider).toBe(tier);
     });
