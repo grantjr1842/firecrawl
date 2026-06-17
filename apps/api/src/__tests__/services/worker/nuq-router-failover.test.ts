@@ -40,7 +40,6 @@ function makeData(overrides: Partial<ScrapeJobData> = {}): ScrapeJobData {
 
 describe("nuq-router QR-001(a) drain path: FdbHealthMonitor.isHealthy()", () => {
   let monitor: FdbHealthMonitor;
-  let original: FdbHealthMonitor | null;
 
   beforeEach(() => {
     // Build a monitor that won't probe the network (no live FDB in CI).
@@ -50,8 +49,6 @@ describe("nuq-router QR-001(a) drain path: FdbHealthMonitor.isHealthy()", () => 
       decisionTtlMs: 50,
       skipProbe: () => true,
     });
-    // Save the existing singleton so we can restore it after the suite.
-    original = (monitor as any).constructor ? null : null;
     setFdbHealthMonitor(monitor);
   });
 

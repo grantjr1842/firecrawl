@@ -195,6 +195,7 @@ export class AntiBotRouter {
   async fetchWithContext(
     input: string | URL,
     init: RequestInit = {},
+    options: { scopeKey?: string } = {},
   ): Promise<{ response: Response; context: AntiBotContext }> {
     const ctx = emptyContext();
     const start = Date.now();
@@ -236,7 +237,22 @@ export class AntiBotRouter {
 
     for (const provider of this.providers) {
       try {
-        const response = await provider.fetch(input, init);
+        // ANTI-BOT-6: forward the optional scope key (e.g. crawl id)
+        // to the residential provider so sticky-session scoping works
+        // for the configured `stickyScope`. Other providers ignore
+        // the 3rd arg via the AntiBotProvider interface; we use a
+        // runtime length check to keep the call site type-safe.
+        const fetchFn = provider.fetch as (
+          i: string | URL,
+          init: RequestInit,
+          fetchOpts?: { scopeKey?: string },
+        ) => Promise<Response>;
+        const response =
+          options.scopeKey && provider.tier === "residential"
+            ? await fetchFn.call(provider, input, init, {
+                scopeKey: options.scopeKey,
+              })
+            : await provider.fetch(input, init);
         const status = response.status;
         ctx.tried.push({
           provider: provider.name,

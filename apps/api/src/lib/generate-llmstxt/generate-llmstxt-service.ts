@@ -10,6 +10,7 @@ import {
 import { billTeam } from "../../services/billing/credit_billing";
 import { logLlmsTxt } from "../../services/logging/log_job";
 import { getModel } from "../generic-ai";
+import { extractConfig } from "../extract/config";
 import { generateCompletions } from "../../scraper/scrapeURL/transformers/llmExtract";
 import { CostTracking } from "../cost-tracking";
 import { getACUCTeam } from "../../controllers/auth";
@@ -184,7 +185,7 @@ export async function performGenerateLlmsTxt(
 
             const { extract } = await generateCompletions({
               logger,
-              model: getModel("gpt-4o-mini", "openai"),
+              model: getModel(extractConfig.MODEL),
               options: {
                 systemPrompt: "",
                 schema: descriptionSchema,

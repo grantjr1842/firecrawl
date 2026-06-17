@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { logger } from "../../lib/logger";
 import { config } from "../../config";
 import { getRedisConnection } from "../queue-service";
