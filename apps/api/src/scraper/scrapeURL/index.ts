@@ -12,7 +12,7 @@ import {
   type TeamFlags,
 } from "../../controllers/v2/types";
 import { ScrapeOptions as ScrapeOptionsV1 } from "../../controllers/v1/types";
-import { logger as _logger } from "../../lib/logger";
+import { logger as _logger, devTrace } from "../../lib/logger";
 import {
   buildFallbackList,
   Engine,
@@ -1138,6 +1138,15 @@ export async function scrapeURL(
 
     meta.logger.info("scrapeURL entered");
 
+    devTrace("scrape.preflight", {
+      jobId: id,
+      teamId: internalOptions.teamId,
+      crawlId: internalOptions.crawlId,
+      url,
+      features: Array.from(meta.featureFlags),
+      isPreCrawl: internalOptions.isPreCrawl === true,
+    });
+
     if (meta.rewrittenUrl) {
       meta.logger.info("Rewriting URL");
       setSpanAttributes(span, {
@@ -1168,6 +1177,12 @@ export async function scrapeURL(
         !!internalOptions.zeroDataRetention,
         internalOptions.teamId,
       );
+      devTrace("scrape.cache.lookup", {
+        jobId: id,
+        url: cacheableUrl,
+        tier,
+        hit: !!cached,
+      });
       if (cached) {
         meta.logger.debug("scrapeURL result cache hit", { tier });
         setSpanAttributes(span, {
@@ -1430,6 +1445,14 @@ export async function scrapeURL(
         });
       }
 
+      devTrace("scrape.complete", {
+        jobId: id,
+        teamId: internalOptions.teamId,
+        success: !!result.success,
+        winnerEngine: meta.winnerEngine,
+        timeMs: Date.now() - startTime,
+      });
+
       return result;
     } catch (error) {
       // if (Object.values(meta.results).length > 0 && Object.values(meta.results).every(x => x.state === "error" && x.error instanceof FEPageLoadFailed)) {
@@ -1566,6 +1589,14 @@ export async function scrapeURL(
         "scrape.error": error instanceof Error ? error.message : String(error),
         "scrape.error_type": errorType,
         "scrape.duration_ms": Date.now() - startTime,
+      });
+
+      devTrace("scrape.complete", {
+        jobId: id,
+        teamId: internalOptions.teamId,
+        success: false,
+        errorType,
+        timeMs: Date.now() - startTime,
       });
 
       return {

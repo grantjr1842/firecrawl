@@ -15,7 +15,7 @@ import {
   markCrawlActive,
 } from "../../lib/crawl-redis";
 import { _addScrapeJobToBullMQ } from "../../services/scrape-queue";
-import { logger as _logger } from "../../lib/logger";
+import { logger as _logger, devTrace } from "../../lib/logger";
 import { generateCrawlerOptionsFromPrompt } from "../../scraper/scrapeURL/transformers/llmExtract";
 import { CostTracking } from "../../lib/cost-tracking";
 import { checkPermissions } from "../../lib/permissions";
@@ -54,6 +54,14 @@ export async function crawlController(
     module: "api/v2",
     method: "crawlController",
     teamId: req.auth.team_id,
+    zeroDataRetention,
+  });
+
+  devTrace("crawl.queue.received", {
+    crawlId: id,
+    teamId: req.auth.team_id,
+    url: req.body.url,
+    apiKeyId: req.acuc?.api_key_id,
     zeroDataRetention,
   });
 
@@ -257,6 +265,12 @@ export async function crawlController(
   );
 
   const protocol = req.protocol;
+
+  devTrace("crawl.complete", {
+    crawlId: id,
+    teamId: req.auth.team_id,
+    success: true,
+  });
 
   return res.status(200).json({
     success: true,

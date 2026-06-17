@@ -1,6 +1,6 @@
 import { Response } from "express";
 import { config } from "../../config";
-import { logger as _logger } from "../../lib/logger";
+import { logger as _logger, devTrace } from "../../lib/logger";
 import {
   Document,
   FormatObject,
@@ -49,6 +49,16 @@ export async function scrapeController(
 
       const jobId = uuidv7();
       const preNormalizedBody = { ...req.body };
+
+      devTrace("scrape.received", {
+        jobId,
+        teamId: req.auth.team_id,
+        url: req.body.url,
+        apiKeyId: req.acuc?.api_key_id,
+        zeroDataRetention: req.body.zeroDataRetention ?? false,
+        lockdown: req.body.lockdown ?? false,
+        isAgentInterop: !!req.body.__agentInterop,
+      });
 
       // Set initial span attributes
       setSpanAttributes(span, {
@@ -398,6 +408,13 @@ export async function scrapeController(
           setSpanAttributes(span, {
             "scrape.status_code": statusCode,
           });
+          devTrace("scrape.complete", {
+            jobId,
+            teamId: req.auth.team_id,
+            success: false,
+            errorCode: e.code,
+            statusCode,
+          });
           return res.status(statusCode).json({
             success: false,
             code: e.code,
@@ -427,6 +444,14 @@ export async function scrapeController(
           setSpanAttributes(span, {
             "scrape.status_code": 500,
             "scrape.error_id": id,
+          });
+          devTrace("scrape.complete", {
+            jobId,
+            teamId: req.auth.team_id,
+            success: false,
+            errorCode: "UNKNOWN_ERROR",
+            statusCode: 500,
+            errorId: id,
           });
           return res.status(500).json({
             success: false,
@@ -506,6 +531,14 @@ export async function scrapeController(
         formats,
         concurrencyLimited,
         concurrencyQueueDurationMs: lockTime || undefined,
+      });
+
+      devTrace("scrape.complete", {
+        jobId,
+        teamId: req.auth.team_id,
+        success: true,
+        creditsUsed: doc?.metadata?.creditsUsed,
+        totalRequestTime,
       });
 
       return res.status(200).json({

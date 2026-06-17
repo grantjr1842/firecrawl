@@ -4,6 +4,8 @@ import { config } from "../config";
 import { configDotenv } from "dotenv";
 configDotenv();
 
+const DEV_TRACE_BODY_MAX_BYTES = 4 * 1024; // 4KB cap on body preview
+
 const logFormat = winston.format.printf(
   info =>
     `${info.timestamp} ${info.level} [${info.metadata.module ?? ""}:${info.metadata.method ?? ""}]: ${info.message} ${
@@ -85,3 +87,66 @@ export const logger = winston.createLogger({
     }),
   ],
 });
+
+/**
+ * Cheap, structured lifecycle logger for scrape/crawl events.
+ *
+ * Routes through the shared winston `logger.info` so log formatters,
+ * transports, and the OBS-07 JSON output apply uniformly. Designed
+ * to be safe on the hot path: when FIRECRAWL_DEV_TRACE is disabled
+ * (or the env is production), the function returns early before any
+ * object construction. The function name is intentionally short so
+ * call sites read like `devTrace("scrape.received", { jobId })`.
+ *
+ * - `event`: short dotted event name, e.g. "scrape.received",
+ *   "scrape.cache.lookup", "crawl.complete".
+ * - `fields`: arbitrary structured fields; do NOT include large
+ *   payloads. When FIRECRAWL_DEV_TRACE_BODY is set, a "body" field
+ *   is truncated to the first 4KB to keep volume bounded.
+ */
+export function devTrace(
+  event: string,
+  fields: Record<string, unknown> = {},
+): void {
+  if (!isDevTraceEnabled()) {
+    return;
+  }
+
+  const payload: Record<string, unknown> = {
+    event,
+    ts: new Date().toISOString(),
+    ...fields,
+  };
+
+  if (config.FIRECRAWL_DEV_TRACE_BODY && "body" in payload) {
+    payload.body = truncateBody(payload.body);
+  }
+
+  logger.info("devTrace", payload);
+}
+
+function isDevTraceEnabled(): boolean {
+  if (config.FIRECRAWL_DEV_TRACE === undefined) {
+    return config.ENV !== "production";
+  }
+  return config.FIRECRAWL_DEV_TRACE;
+}
+
+function truncateBody(body: unknown): unknown {
+  if (typeof body === "string") {
+    return body.length > DEV_TRACE_BODY_MAX_BYTES
+      ? body.slice(0, DEV_TRACE_BODY_MAX_BYTES) + "...[truncated]"
+      : body;
+  }
+  try {
+    const serialized = JSON.stringify(body);
+    if (serialized === undefined) {
+      return body;
+    }
+    return serialized.length > DEV_TRACE_BODY_MAX_BYTES
+      ? serialized.slice(0, DEV_TRACE_BODY_MAX_BYTES) + "...[truncated]"
+      : body;
+  } catch {
+    return "[unserializable]";
+  }
+}

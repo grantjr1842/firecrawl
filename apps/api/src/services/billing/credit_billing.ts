@@ -1,5 +1,5 @@
 import { withAuth } from "../../lib/withAuth";
-import { logger } from "../../lib/logger";
+import { logger, devTrace } from "../../lib/logger";
 import * as Sentry from "@sentry/node";
 import { AuthCreditUsageChunk } from "../../controllers/v1/types";
 import { queueBillingOperation } from "./batch_billing";
@@ -118,6 +118,17 @@ export async function billTeam(
           },
         });
       }
+
+      devTrace("scrape.billing.charged", {
+        teamId: team_id,
+        credits,
+        apiKeyId: api_key_id,
+        endpoint: billing.endpoint,
+        jobId: billing.jobId,
+        success: result.success,
+        divergent,
+        trackId: trackId ?? undefined,
+      });
 
       return {
         success: result.success,

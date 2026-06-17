@@ -236,7 +236,11 @@ const configSchema = z.object({
   // across requests. Sites that fingerprint on exit IP (Amazon,
   // Yelp, LinkedIn) otherwise see a fresh IP faster than the
   // rate-limit window and trigger CAPTCHAs.
-  FIRECRAWL_PROXY_STICKY_TTL_MS: z.coerce.number().int().min(0).default(600_000),
+  FIRECRAWL_PROXY_STICKY_TTL_MS: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .default(600_000),
   FIRECRAWL_PROXY_STICKY_SCOPE: z
     .enum(["session", "crawl", "domain"])
     .default("crawl"),
@@ -332,6 +336,14 @@ const configSchema = z.object({
   // Firecrawl Features
   FIRECRAWL_DEBUG_FILTER_LINKS: z.stringbool().optional(),
   FIRECRAWL_LOG_TO_FILE: z.stringbool().optional(),
+  // Dev-only structured lifecycle tracing. Default ON outside of
+  // production so scrape/crawl events surface in the local JSON log
+  // stream; set FIRECRAWL_DEV_TRACE=false in CI or noisy envs to
+  // silence it. FIRECRAWL_DEV_TRACE_BODY, when set, includes the
+  // first 4KB of any 'body' field passed to devTrace (handy for
+  // debugging transform failures, off by default to keep logs small).
+  FIRECRAWL_DEV_TRACE: z.stringbool().optional(),
+  FIRECRAWL_DEV_TRACE_BODY: z.stringbool().optional(),
   // Console log format for stdout. Default 'json' so docker/k8s logs and
   // downstream log shippers (Loki promtail, fluentbit, Vector, etc.) can
   // parse every line. Set to 'text' for a human-readable printf format

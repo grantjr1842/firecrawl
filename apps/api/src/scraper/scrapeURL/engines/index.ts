@@ -30,6 +30,7 @@ import { getPDFMaxPages } from "../../../controllers/v2/types";
 import type { PdfMetadata } from "./pdf/types";
 import { BrandingProfile } from "../../../types/branding";
 import { BrandingNotSupportedError } from "../error";
+import { devTrace } from "../../../lib/logger";
 
 export type Engine =
   | "fire-engine;chrome-cdp"
@@ -684,6 +685,14 @@ export async function buildFallbackList(meta: Meta): Promise<
 
   meta.logger.info("Selected engines", {
     selectedEngines,
+  });
+
+  devTrace("scrape.engine.chosen", {
+    scrapeId: meta.id,
+    url: meta.url,
+    engines: selectedEngines.map(x => x.engine),
+    forced: meta.internalOptions.forceEngine,
+    featureFlags: Array.from(meta.featureFlags),
   });
 
   if (meta.featureFlags.has("branding")) {

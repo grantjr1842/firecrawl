@@ -9,7 +9,7 @@ import {
   getRedisConnection,
 } from "./queue-service";
 import { Job, Queue, Worker } from "bullmq";
-import { logger as _logger } from "../lib/logger";
+import { logger as _logger, devTrace } from "../lib/logger";
 import systemMonitor from "./system-monitor";
 import { v7 as uuidv7 } from "uuid";
 import { configDotenv } from "dotenv";
@@ -309,11 +309,19 @@ const workerFun = async (
     if (job) {
       if (job.id) {
         runningJobs.add(job.id);
+        devTrace("crawl.page.dispatched", {
+          jobId: job.id,
+          queue: queue.name,
+        });
       }
 
       processJobInternal(token, job).finally(() => {
         if (job.id) {
           runningJobs.delete(job.id);
+          devTrace("crawl.page.complete", {
+            jobId: job.id,
+            queue: queue.name,
+          });
         }
       });
 

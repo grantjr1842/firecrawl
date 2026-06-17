@@ -1,4 +1,4 @@
-import { logger as _logger } from "../../lib/logger";
+import { logger as _logger, devTrace } from "../../lib/logger";
 import { config } from "../../config";
 import { v7 as uuidv7 } from "uuid";
 import {
@@ -63,10 +63,7 @@ export async function mergeBatchResult(
     pipeline.expire(`crawl:${crawlId}:precheck_cache_hits`, 24 * 60 * 60);
     // 2) Ordered insertion so list-by-time stays stable.
     pipeline.zadd(`crawl:${crawlId}:precheck_cache_hits:order`, ts, url);
-    pipeline.expire(
-      `crawl:${crawlId}:precheck_cache_hits:order`,
-      24 * 60 * 60,
-    );
+    pipeline.expire(`crawl:${crawlId}:precheck_cache_hits:order`, 24 * 60 * 60);
     // 3) Mirror the existing addCrawlJobDone bookkeeping so the in-flight
     //    progress counter (scard :jobs_done vs :jobs) closes correctly.
     //    Note: we do NOT add to :jobs (we never enqueued), so this is a
@@ -171,15 +168,12 @@ export async function getPrecheckCacheHitsCount(
       `crawl:${crawlId}:precheck_cache_hits:order`,
     );
   } catch (error) {
-    _logger.warn(
-      "getPrecheckCacheHitsCount: read failed; returning zero",
-      {
-        module: "queue-worker",
-        method: "getPrecheckCacheHitsCount",
-        crawlId,
-        error,
-      },
-    );
+    _logger.warn("getPrecheckCacheHitsCount: read failed; returning zero", {
+      module: "queue-worker",
+      method: "getPrecheckCacheHitsCount",
+      crawlId,
+      error,
+    });
     return 0;
   }
 }
@@ -382,4 +376,12 @@ export async function finishCrawlSuper(job: NuQJob<any>) {
       }
     }
   }
+
+  devTrace("crawl.complete", {
+    crawlId,
+    teamId,
+    isV1,
+    cancelled: sc.cancelled ?? false,
+    zeroDataRetention,
+  });
 }

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { redisRateLimitClient } from "./rate-limiter";
 import { config } from "../config";
-import { logger } from "../lib/logger";
+import { logger, devTrace } from "../lib/logger";
 
 /**
  * Redis-backed tiered result cache (BB-11) for non-indexed scrapes.
@@ -183,15 +183,37 @@ export async function getCachedResultTiered(
     const raw = await redisRateLimitClient.get(key);
     if (!raw) {
       TIER_STATS[tier].misses += 1;
+      devTrace("scrape.cache.lookup", {
+        url,
+        tier,
+        hit: false,
+        teamId,
+        zdr,
+      });
       return null;
     }
     const parsed = JSON.parse(raw) as CachedScrapeResult;
     if (typeof parsed.url !== "string" || typeof parsed.cachedAt !== "string") {
       // Defensive: discard malformed entries rather than throw.
       TIER_STATS[tier].misses += 1;
+      devTrace("scrape.cache.lookup", {
+        url,
+        tier,
+        hit: false,
+        malformed: true,
+        teamId,
+        zdr,
+      });
       return null;
     }
     TIER_STATS[tier].hits += 1;
+    devTrace("scrape.cache.lookup", {
+      url,
+      tier,
+      hit: true,
+      teamId,
+      zdr,
+    });
     return parsed;
   } catch (error) {
     logger.warn("result-cache: get failed; treating as cache miss", {
@@ -199,6 +221,14 @@ export async function getCachedResultTiered(
       tier,
     });
     TIER_STATS[tier].misses += 1;
+    devTrace("scrape.cache.lookup", {
+      url,
+      tier,
+      hit: false,
+      error: error instanceof Error ? error.message : String(error),
+      teamId,
+      zdr,
+    });
     return null;
   }
 }
