@@ -215,10 +215,12 @@ describe("metrics router (admin-ops-07)", () => {
 
   it("preserves the legacy /admin/:BULL_AUTH_KEY/metrics back-compat path", async () => {
     configState.METRICS_AUTH_KEY = VALID_KEY;
-    configState.BULL_AUTH_KEY = "legacy-bull-key";
+    // BULL_AUTH_KEY is captured into the admin router's path templates at
+    // import time, so the request must use the same key the router saw
+    // (set in beforeEach: "test-bull-key").
     const app = buildApp();
 
-    const res = await request(app).get("/admin/legacy-bull-key/metrics");
+    const res = await request(app).get("/admin/test-bull-key/metrics");
 
     expect(res.status).toBe(200);
     expect(res.text).toContain("concurrency_limit_queue_job_count_total");
@@ -227,7 +229,6 @@ describe("metrics router (admin-ops-07)", () => {
 
   it("rejects the legacy /admin path when BULL_AUTH_KEY is wrong", async () => {
     configState.METRICS_AUTH_KEY = VALID_KEY;
-    configState.BULL_AUTH_KEY = "legacy-bull-key";
     const app = buildApp();
 
     const res = await request(app).get("/admin/wrong-key/metrics");

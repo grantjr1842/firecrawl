@@ -2,18 +2,18 @@
 //
 // Three cases the route expects:
 //   1. Operator sends X-Admin-Role: admin → 200, next() invoked.
-//   2. Caller omits the header AND the JWT key is not in ADMIN_API_KEYS →
-//      403 with `error: "Admin role required"`.
-//   3. ADMIN_API_KEYS allowlist matches the JWT key → 200, next() invoked
-//      (so self-host operators can use a regular API key without the
-//      operator header).
+//   2. Caller omits the header AND the JWT email is not in ADMIN_EMAILS
+//      → 403 with `error: "Admin role required"`.
+//   3. ADMIN_EMAILS allowlist matches the JWT email → 200, next()
+//      invoked (so self-host operators can use a regular API key whose
+//      email is on the allowlist without the operator header).
 //
-// The middleware only consults config + req headers + req.acuc.api_key,
+// The middleware only consults config + req headers + req.acuc.email,
 // so no DB / Autumn / scraper mocks are needed.
 
 vi.mock("../../config", () => ({
   config: {
-    ADMIN_API_KEYS: "fc-admin-key-1,fc-admin-key-2",
+    ADMIN_EMAILS: "ops@firecrawl.dev,admin@firecrawl.dev",
   },
 }));
 
@@ -21,15 +21,17 @@ import type { NextFunction, Response } from "express";
 import type { RequestWithAuth } from "../../controllers/v1/types";
 import { requireAdmin } from "../../routes/shared";
 
-function buildReq(overrides: Partial<RequestWithAuth> = {}): RequestWithAuth {
-  const headerStore: Record<string, string> = overrides.headerStore ?? {};
+function buildReq(opts: {
+  headerStore?: Record<string, string>;
+  email?: string;
+} = {}): RequestWithAuth {
+  const headerStore: Record<string, string> = opts.headerStore ?? {};
   const req = {
     auth: { team_id: "team_test", org_id: "org_test" },
-    acuc: { api_key: "fc-regular-key" } as any,
+    acuc: { email: opts.email ?? "user@firecrawl.dev" } as any,
     header(name: string) {
       return headerStore[name.toLowerCase()];
     },
-    ...overrides,
   } as unknown as RequestWithAuth;
   return req;
 }
@@ -61,7 +63,7 @@ describe("requireAdmin", () => {
     expect(res.status).not.toHaveBeenCalled();
   });
 
-  it("returns 403 when header is missing and JWT key is not in ADMIN_API_KEYS", () => {
+  it("returns 403 when header is missing and email is not in ADMIN_EMAILS", () => {
     const req = buildReq();
     const { res } = buildRes();
     const next = vi.fn() as unknown as NextFunction;
@@ -76,9 +78,9 @@ describe("requireAdmin", () => {
     });
   });
 
-  it("lets through when JWT api_key matches an entry in ADMIN_API_KEYS", () => {
+  it("lets through when JWT email matches an entry in ADMIN_EMAILS", () => {
     const req = buildReq({
-      acuc: { api_key: "fc-admin-key-2" } as any,
+      acuc: { email: "ops@firecrawl.dev" } as any,
     });
     const { res } = buildRes();
     const next = vi.fn() as unknown as NextFunction;
@@ -89,9 +91,9 @@ describe("requireAdmin", () => {
     expect(res.status).not.toHaveBeenCalled();
   });
 
-  it("still returns 403 when the JWT key is wrong even if the header is absent", () => {
+  it("still returns 403 when the JWT email is wrong even if the header is absent", () => {
     const req = buildReq({
-      acuc: { api_key: "fc-regular-key" } as any,
+      acuc: { email: "user@firecrawl.dev" } as any,
     });
     const { res } = buildRes();
     const next = vi.fn() as unknown as NextFunction;

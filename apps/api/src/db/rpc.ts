@@ -115,12 +115,20 @@ export function billTeam6(params: {
   credits: number;
   api_key_id: number | null;
   is_extract: boolean;
-}): Promise<{ api_key: string }[]> {
+}): Promise<{ api_key: string; credits_applied?: number }[]> {
+  // NOTE (FIRE-BILL-001): `credits_applied` is part of the cloud parity
+  // bill_team_7 SQL function — it surfaces the actual number of credits the
+  // RPC committed so the batch worker can reconcile against the
+  // request-scoped Autumn track. Self-host's bill_team_6 doesn't emit it;
+  // the billing service falls back to the requested `credits` value when
+  // it's absent. TODO: ship a self-host migration that backfills
+  // `credits_applied` in the existing bill_team_6 SQL function so drift
+  // detection works on self-host deployments too.
   if (!config.USE_DB_AUTHENTICATION) {
     logger.debug(
       `[stub] bill_team_6 called with team_id=${params.team_id} credits=${params.credits} — self-host stub`,
     );
-    return Promise.resolve([{ api_key: "" }]);
+    return Promise.resolve([{ api_key: "", credits_applied: params.credits }]);
   }
   return execRows(
     db,

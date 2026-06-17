@@ -1,5 +1,6 @@
 import { logger as _logger } from "../../lib/logger";
 import { config } from "../../config";
+import { v7 as uuidv7 } from "uuid";
 import {
   finishCrawl,
   getCrawlJobs,
@@ -10,7 +11,178 @@ import { creditsBilledByCrawlId } from "../../db/rpc";
 import { getJobs } from "../../controllers/v1/crawl-status";
 import { logCrawl, logBatchScrape } from "../logging/log_job";
 import { createWebhookSender, WebhookEvent } from "../webhook/index";
+import { redisEvictConnection } from "../redis";
+import type { Document } from "../../controllers/v2/types";
 import type { NuQJob } from "./nuq";
+
+// ---------------------------------------------------------------------------
+// PERF-2026-06-17-6: Batch cache precheck helpers.
+//
+// The v1 batch-scrape controller runs an O(n) Redis lookup against the
+// tiered result cache before enqueuing. URLs that hit the cache are
+// merged into the batch result store directly via `mergeBatchResult`,
+// bypassing the NuQ enqueue path entirely. The crawl-status endpoint
+// stitches cache hits back into its result list at read time via
+// `getPrecheckCacheHits`, so the user sees a single unified document
+// stream regardless of which path each URL took.
+//
+// Storage layout (per-crawl, all on redisEvictConnection):
+//   crawl:<id>:precheck_cache_hits          hash url -> Document JSON
+//   crawl:<id>:precheck_cache_hits:order    zset url -> ts (insertion order)
+//
+// We also stamp a synthetic "pseudo" job id into a separate
+// precheck_jobs_done set so the existing crawl-progress accounting
+// keeps working: cache hits count as "done" without ever appearing in
+// the NuQ jobs set.
+// ---------------------------------------------------------------------------
+
+/**
+ * Persist a cached scrape result into the batch result store for the given
+ * crawl id and mark the URL as done so crawl-progress accounting includes
+ * cache-warm URLs. Never throws - failures are logged and swallowed so
+ * the precheck path is best-effort and a Redis hiccup cannot break the
+ * batch.
+ */
+export async function mergeBatchResult(
+  crawlId: string,
+  url: string,
+  document: Document,
+): Promise<void> {
+  try {
+    const payload = JSON.stringify(document);
+    // Stable pseudo job id so the URL is discoverable across the hash,
+    // ordered set, and :jobs_done tracking. The "pc_" prefix avoids any
+    // collision with real NuQ job ids (uuidv7 in hex, never starts with
+    // "pc_").
+    const pseudoJobId = `pc_${uuidv7()}`;
+    const ts = Date.now();
+
+    const pipeline = redisEvictConnection.pipeline();
+    // 1) Document store keyed by URL.
+    pipeline.hset(`crawl:${crawlId}:precheck_cache_hits`, url, payload);
+    pipeline.expire(`crawl:${crawlId}:precheck_cache_hits`, 24 * 60 * 60);
+    // 2) Ordered insertion so list-by-time stays stable.
+    pipeline.zadd(`crawl:${crawlId}:precheck_cache_hits:order`, ts, url);
+    pipeline.expire(
+      `crawl:${crawlId}:precheck_cache_hits:order`,
+      24 * 60 * 60,
+    );
+    // 3) Mirror the existing addCrawlJobDone bookkeeping so the in-flight
+    //    progress counter (scard :jobs_done vs :jobs) closes correctly.
+    //    Note: we do NOT add to :jobs (we never enqueued), so this is a
+    //    separate "precheck" counter that's added to the totals by
+    //    getCrawlJobsForListing callers via getPrecheckCacheHits.
+    pipeline.sadd(`crawl:${crawlId}:precheck_jobs_done`, pseudoJobId);
+    pipeline.expire(`crawl:${crawlId}:precheck_jobs_done`, 24 * 60 * 60);
+    pipeline.zadd(
+      `crawl:${crawlId}:precheck_jobs_donez_ordered`,
+      ts,
+      pseudoJobId,
+    );
+    pipeline.expire(
+      `crawl:${crawlId}:precheck_jobs_donez_ordered`,
+      24 * 60 * 60,
+    );
+
+    await pipeline.exec();
+  } catch (error) {
+    _logger.warn("mergeBatchResult: failed to merge cache hit", {
+      module: "queue-worker",
+      method: "mergeBatchResult",
+      crawlId,
+      url,
+      error,
+    });
+  }
+}
+
+export type PrecheckHit = {
+  url: string;
+  document: Document;
+  ts: number;
+};
+
+/**
+ * Read all precheck cache hits for a crawl in insertion order. Returns
+ * an empty array when the precheck feature wasn't used, the crawl id
+ * has expired, or Redis is unreachable (logged, not thrown).
+ */
+export async function getPrecheckCacheHits(
+  crawlId: string,
+  start = 0,
+  end = -1,
+): Promise<PrecheckHit[]> {
+  try {
+    const urls = await redisEvictConnection.zrange(
+      `crawl:${crawlId}:precheck_cache_hits:order`,
+      start,
+      end,
+    );
+    if (!urls || urls.length === 0) {
+      return [];
+    }
+    const raws = await redisEvictConnection.hmget(
+      `crawl:${crawlId}:precheck_cache_hits`,
+      ...urls,
+    );
+    const scores = await redisEvictConnection.zmscore(
+      `crawl:${crawlId}:precheck_cache_hits:order`,
+      ...urls,
+    );
+    const out: PrecheckHit[] = [];
+    for (let i = 0; i < urls.length; i++) {
+      const raw = raws?.[i];
+      const ts = scores?.[i] !== undefined ? Number(scores[i]) : 0;
+      if (!raw) continue;
+      try {
+        out.push({ url: urls[i], document: JSON.parse(raw), ts });
+      } catch (error) {
+        _logger.warn("getPrecheckCacheHits: malformed document skipped", {
+          module: "queue-worker",
+          method: "getPrecheckCacheHits",
+          crawlId,
+          url: urls[i],
+          error,
+        });
+      }
+    }
+    return out;
+  } catch (error) {
+    _logger.warn("getPrecheckCacheHits: read failed; returning empty", {
+      module: "queue-worker",
+      method: "getPrecheckCacheHits",
+      crawlId,
+      error,
+    });
+    return [];
+  }
+}
+
+/**
+ * Return the count of cache-hit URLs merged into this crawl so far.
+ * Used by crawl-status to compute the "completed" total alongside the
+ * NuQ numeric stats.
+ */
+export async function getPrecheckCacheHitsCount(
+  crawlId: string,
+): Promise<number> {
+  try {
+    return await redisEvictConnection.zcard(
+      `crawl:${crawlId}:precheck_cache_hits:order`,
+    );
+  } catch (error) {
+    _logger.warn(
+      "getPrecheckCacheHitsCount: read failed; returning zero",
+      {
+        module: "queue-worker",
+        method: "getPrecheckCacheHitsCount",
+        crawlId,
+        error,
+      },
+    );
+    return 0;
+  }
+}
 
 export async function finishCrawlSuper(job: NuQJob<any>) {
   const crawlId = job.groupId;

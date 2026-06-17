@@ -324,9 +324,10 @@ const configSchema = z.object({
   ALLOW_LOCAL_WEBHOOKS: z.stringbool().optional(),
   WEBHOOK_USE_RABBITMQ: z.stringbool().optional(),
 
-  // Admin operator allowlist. Comma-separated API keys whose callers can
-  // reach cross-team admin endpoints without the X-Admin-Role header.
-  ADMIN_API_KEYS: z.string().optional(),
+  // Admin operator allowlist. Comma-separated emails (matched against
+  // the JWT email after authMiddleware runs) whose callers can reach
+  // cross-team admin endpoints without the X-Admin-Role header.
+  ADMIN_EMAILS: z.string().optional(),
 
   // Firecrawl Features
   FIRECRAWL_DEBUG_FILTER_LINKS: z.stringbool().optional(),

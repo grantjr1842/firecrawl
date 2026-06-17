@@ -164,6 +164,15 @@ export class ResidentialProxyProvider implements AntiBotProvider {
         const key = this.resolveScopeKey(input, fetchOpts);
         if (key) sessionId = this.deriveStickySessionId(key);
       }
+      // ANTI-BOT-6: when we have a stable sessionId (sticky mode)
+      // and the agent cache already holds an entry for it, reuse the
+      // cached ProxyAgent so we don't open a fresh TCP/TLS pool per
+      // call. The eviction timer in `cacheAgent` guarantees the
+      // entry disappears after `sessionTtlMs`.
+      if (sessionId) {
+        const hit = this.agentCache.get(sessionId);
+        if (hit) return hit;
+      }
       const buildOpts: VendorBuildOptions = {
         target:
           typeof input === "string"
