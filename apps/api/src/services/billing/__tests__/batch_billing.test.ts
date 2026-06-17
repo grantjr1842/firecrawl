@@ -169,6 +169,7 @@ describe("processBillingBatch", () => {
         apiKeyId: 123,
         subscriptionId: "sub-1",
       },
+      featureId: "CREDITS",
     });
     expect(captureException).not.toHaveBeenCalled();
   });
@@ -254,6 +255,7 @@ describe("processBillingBatch", () => {
         apiKeyId: 123,
         subscriptionId: "sub-1",
       },
+      featureId: "CREDITS",
       trackId: "op-track-3",
     });
     expect(billTeam6).toHaveBeenCalledTimes(2);
@@ -266,6 +268,7 @@ describe("processBillingBatch", () => {
         apiKeyId: 123,
         subscriptionId: "sub-2",
       },
+      featureId: "CREDITS",
     });
     expect(captureException).toHaveBeenCalled();
   });
