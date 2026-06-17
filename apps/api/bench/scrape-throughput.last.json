@@ -1,0 +1,60 @@
+{
+  "generated_at": "2026-06-17T00:08:54.287Z",
+  "corpus": "/home/gfunk/firecrawl/apps/api/bench/corpus-1k.json",
+  "duration_sec": 15,
+  "concurrency": 16,
+  "metrics": {
+    "totalUrls": 390,
+    "urlsPerSec": 21.713943523915663,
+    "successRate": 0.9794871794871794,
+    "cacheHitRate": 0.2777777777777778,
+    "p50LatencyMs": 133.5668569999998,
+    "p95LatencyMs": 3303.532806000001,
+    "p99LatencyMs": 3965.1210730000003,
+    "errorsByCode": {
+      "FETCH_TIMEOUT": 8
+    },
+    "perCategorySuccess": {
+      "social": {
+        "total": 39,
+        "ok": 38
+      },
+      "hackernews": {
+        "total": 38,
+        "ok": 38
+      },
+      "news": {
+        "total": 38,
+        "ok": 37
+      },
+      "wikipedia": {
+        "total": 40,
+        "ok": 40
+      },
+      "ecommerce": {
+        "total": 41,
+        "ok": 39
+      },
+      "blog": {
+        "total": 40,
+        "ok": 39
+      },
+      "academic": {
+        "total": 40,
+        "ok": 39
+      },
+      "documentation": {
+        "total": 40,
+        "ok": 40
+      },
+      "code": {
+        "total": 37,
+        "ok": 37
+      },
+      "government": {
+        "total": 37,
+        "ok": 35
+      }
+    }
+  }
+}

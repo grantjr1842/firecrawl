@@ -1,0 +1,7021 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-06-16T00:00:00Z",
+  "seed": 2654435769,
+  "count": 1000,
+  "categories": [
+    "hackernews",
+    "wikipedia",
+    "news",
+    "ecommerce",
+    "academic",
+    "government",
+    "blog",
+    "social",
+    "documentation",
+    "code"
+  ],
+  "corpus_id": "corpus-1k-2026-06-16",
+  "entries": [
+    {
+      "url": "https://news.ycombinator.com/item?id=1000000",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 28937,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=1",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 1185690,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026002",
+      "category": "news",
+      "source": "news",
+      "bytes": 27198,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100003",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 53193,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0004",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 751704,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-5",
+      "category": "government",
+      "source": "government",
+      "bytes": 13378,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-6-56",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 173989,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/7/bench_7",
+      "category": "social",
+      "source": "social",
+      "bytes": 31406,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/8",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 972705,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-9/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 416402,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000010",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 12962,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=11",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 19849,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026012",
+      "category": "news",
+      "source": "news",
+      "bytes": 124985,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100013",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 1884269,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0014",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1329193,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-15",
+      "category": "government",
+      "source": "government",
+      "bytes": 132016,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-16-ds",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1636822,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/17/bench_17",
+      "category": "social",
+      "source": "social",
+      "bytes": 1930492,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/18",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 829543,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-19/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 10283,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000020",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 186468,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=21",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 681366,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026022",
+      "category": "news",
+      "source": "news",
+      "bytes": 320814,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100023",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 654135,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0024",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 27981,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-25",
+      "category": "government",
+      "source": "government",
+      "bytes": 39455,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-26-me",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1921908,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/27/bench_27",
+      "category": "social",
+      "source": "social",
+      "bytes": 39080,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/28",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 1870199,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-29/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 14266,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000030",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 29498,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=31",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 283768,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026032",
+      "category": "news",
+      "source": "news",
+      "bytes": 121899,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100033",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 1453071,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0034",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 13242,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-35",
+      "category": "government",
+      "source": "government",
+      "bytes": 54933,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-36-v0",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 124083,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/37/bench_37",
+      "category": "social",
+      "source": "social",
+      "bytes": 54916,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/38",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 36355,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-39/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 32974,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000040",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 14912,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=41",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 33803,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026042",
+      "category": "news",
+      "source": "news",
+      "bytes": 10692,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100043",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 25649,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0044",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 48535,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-45",
+      "category": "government",
+      "source": "government",
+      "bytes": 213008,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-46-13m",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 11168,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/47/bench_47",
+      "category": "social",
+      "source": "social",
+      "bytes": 64086,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/48",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 418149,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-49/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 322540,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000050",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 1750397,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=51",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 21436,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026052",
+      "category": "news",
+      "source": "news",
+      "bytes": 258151,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100053",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 282759,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0054",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 47794,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-55",
+      "category": "government",
+      "source": "government",
+      "bytes": 1272830,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-56-1c8",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 210798,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/57/bench_57",
+      "category": "social",
+      "source": "social",
+      "bytes": 15534,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/58",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 18482,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-59/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 1528707,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000060",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 255623,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=61",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 635044,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026062",
+      "category": "news",
+      "source": "news",
+      "bytes": 603632,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100063",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 1398860,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0064",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1555068,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-65",
+      "category": "government",
+      "source": "government",
+      "bytes": 11100,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-66-1ku",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 77874,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/67/bench_67",
+      "category": "social",
+      "source": "social",
+      "bytes": 20754,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/68",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 10863,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-69/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 41090,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000070",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 25884,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=71",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 100154,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026072",
+      "category": "news",
+      "source": "news",
+      "bytes": 262325,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100073",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 22085,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0074",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 367942,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-75",
+      "category": "government",
+      "source": "government",
+      "bytes": 666337,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-76-1tg",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 133004,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/77/bench_77",
+      "category": "social",
+      "source": "social",
+      "bytes": 23382,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/78",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 95108,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-79/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 489932,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000080",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 69615,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=81",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 351959,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026082",
+      "category": "news",
+      "source": "news",
+      "bytes": 14875,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100083",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 343621,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0084",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 10973,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-85",
+      "category": "government",
+      "source": "government",
+      "bytes": 803497,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-86-222",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 208137,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/87/bench_87",
+      "category": "social",
+      "source": "social",
+      "bytes": 1007332,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/88",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 17150,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-89/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 1043477,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000090",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 12427,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=91",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 11608,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026092",
+      "category": "news",
+      "source": "news",
+      "bytes": 323377,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100093",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 526613,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0094",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 21814,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-95",
+      "category": "government",
+      "source": "government",
+      "bytes": 34346,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-96-2ao",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 166689,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/97/bench_97",
+      "category": "social",
+      "source": "social",
+      "bytes": 80014,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/98",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 14520,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-99/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 25788,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000100",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 324182,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=101",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 179364,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026102",
+      "category": "news",
+      "source": "news",
+      "bytes": 28260,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100103",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 286553,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0104",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 49378,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-105",
+      "category": "government",
+      "source": "government",
+      "bytes": 154053,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-106-2ja",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 130849,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/107/bench_107",
+      "category": "social",
+      "source": "social",
+      "bytes": 39935,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/108",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 12952,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-109/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 698716,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000110",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 12572,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=111",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 63228,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026112",
+      "category": "news",
+      "source": "news",
+      "bytes": 46336,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100113",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 12604,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0114",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1012181,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-115",
+      "category": "government",
+      "source": "government",
+      "bytes": 10944,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-116-2rw",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 10097,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/117/bench_117",
+      "category": "social",
+      "source": "social",
+      "bytes": 1090818,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/118",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 685678,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-119/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 285529,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000120",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 25665,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=121",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 373947,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026122",
+      "category": "news",
+      "source": "news",
+      "bytes": 19496,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100123",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 41045,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0124",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 31679,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-125",
+      "category": "government",
+      "source": "government",
+      "bytes": 20465,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-126-30i",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 10111,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/127/bench_127",
+      "category": "social",
+      "source": "social",
+      "bytes": 10080,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/128",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 104975,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-129/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 99930,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000130",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 11277,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=131",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 187385,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026132",
+      "category": "news",
+      "source": "news",
+      "bytes": 23597,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100133",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 14375,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0134",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 310959,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-135",
+      "category": "government",
+      "source": "government",
+      "bytes": 106861,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-136-394",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 285893,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/137/bench_137",
+      "category": "social",
+      "source": "social",
+      "bytes": 1820328,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/138",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 164965,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-139/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 38279,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000140",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 642012,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=141",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 27317,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026142",
+      "category": "news",
+      "source": "news",
+      "bytes": 139165,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100143",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 148862,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0144",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1149612,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-145",
+      "category": "government",
+      "source": "government",
+      "bytes": 734802,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-146-3hq",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 14803,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/147/bench_147",
+      "category": "social",
+      "source": "social",
+      "bytes": 40082,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/148",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 19797,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-149/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 237292,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000150",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 496875,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=151",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 17611,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026152",
+      "category": "news",
+      "source": "news",
+      "bytes": 877769,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100153",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 23958,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0154",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 313094,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-155",
+      "category": "government",
+      "source": "government",
+      "bytes": 286335,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-156-3qc",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 64715,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/157/bench_157",
+      "category": "social",
+      "source": "social",
+      "bytes": 1931247,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/158",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 301208,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-159/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 369584,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000160",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 1098688,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=161",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 82882,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026162",
+      "category": "news",
+      "source": "news",
+      "bytes": 64848,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100163",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 1963022,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0164",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 218005,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-165",
+      "category": "government",
+      "source": "government",
+      "bytes": 12483,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-166-3yy",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 36272,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/167/bench_167",
+      "category": "social",
+      "source": "social",
+      "bytes": 137548,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/168",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 181215,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-169/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 165193,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000170",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 214772,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=171",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 94289,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026172",
+      "category": "news",
+      "source": "news",
+      "bytes": 59074,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100173",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 12930,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0174",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 216292,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-175",
+      "category": "government",
+      "source": "government",
+      "bytes": 663523,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-176-47k",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 147533,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/177/bench_177",
+      "category": "social",
+      "source": "social",
+      "bytes": 11882,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/178",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 707805,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-179/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 53418,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000180",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 103503,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=181",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 17799,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026182",
+      "category": "news",
+      "source": "news",
+      "bytes": 360044,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100183",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 13647,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0184",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 160558,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-185",
+      "category": "government",
+      "source": "government",
+      "bytes": 129719,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-186-4g6",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 96492,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/187/bench_187",
+      "category": "social",
+      "source": "social",
+      "bytes": 13314,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/188",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 1282570,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-189/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 1098961,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000190",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 272453,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=191",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 91843,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026192",
+      "category": "news",
+      "source": "news",
+      "bytes": 11203,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100193",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 291625,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0194",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 203220,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-195",
+      "category": "government",
+      "source": "government",
+      "bytes": 552967,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-196-4os",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 28814,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/197/bench_197",
+      "category": "social",
+      "source": "social",
+      "bytes": 1448658,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/198",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 45323,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-199/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 28469,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000200",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 388132,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=201",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 1913633,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026202",
+      "category": "news",
+      "source": "news",
+      "bytes": 18453,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100203",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 250034,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0204",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 42745,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-205",
+      "category": "government",
+      "source": "government",
+      "bytes": 250015,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-206-4xe",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1536402,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/207/bench_207",
+      "category": "social",
+      "source": "social",
+      "bytes": 17989,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/208",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 875120,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-9/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 682390,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000210",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 27484,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=211",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 209786,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026212",
+      "category": "news",
+      "source": "news",
+      "bytes": 22984,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100213",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 595449,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0214",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 49561,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-215",
+      "category": "government",
+      "source": "government",
+      "bytes": 16043,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-216-560",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 108889,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/217/bench_217",
+      "category": "social",
+      "source": "social",
+      "bytes": 36245,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/218",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 18353,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-19/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 380700,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000220",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 87637,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=221",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 54470,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026222",
+      "category": "news",
+      "source": "news",
+      "bytes": 42766,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100223",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 380942,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0224",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 27630,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-225",
+      "category": "government",
+      "source": "government",
+      "bytes": 94135,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-226-5em",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 23534,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/227/bench_227",
+      "category": "social",
+      "source": "social",
+      "bytes": 1609506,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/228",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 611848,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-29/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 87131,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000230",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 104194,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=231",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 1811025,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026232",
+      "category": "news",
+      "source": "news",
+      "bytes": 24910,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100233",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 52647,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0234",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 59829,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-235",
+      "category": "government",
+      "source": "government",
+      "bytes": 585738,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-236-5n8",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1490947,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/237/bench_237",
+      "category": "social",
+      "source": "social",
+      "bytes": 12801,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/238",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 17267,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-39/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 1761601,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000240",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 74087,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=241",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 23837,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026242",
+      "category": "news",
+      "source": "news",
+      "bytes": 707865,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100243",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 14981,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0244",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1260566,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-245",
+      "category": "government",
+      "source": "government",
+      "bytes": 18776,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-246-5vu",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1040374,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/247/bench_247",
+      "category": "social",
+      "source": "social",
+      "bytes": 676369,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/248",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 50520,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-49/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 323296,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000250",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 10674,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=251",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 925449,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026252",
+      "category": "news",
+      "source": "news",
+      "bytes": 124667,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100253",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 312544,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0254",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 11319,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-255",
+      "category": "government",
+      "source": "government",
+      "bytes": 30704,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-256-64g",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1607947,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/257/bench_257",
+      "category": "social",
+      "source": "social",
+      "bytes": 24550,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/258",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 10426,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-59/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 19033,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000260",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 27251,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=261",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 224230,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026262",
+      "category": "news",
+      "source": "news",
+      "bytes": 1072470,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100263",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 1529500,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0264",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 895785,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-265",
+      "category": "government",
+      "source": "government",
+      "bytes": 61018,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-266-6d2",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 24096,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/267/bench_267",
+      "category": "social",
+      "source": "social",
+      "bytes": 10784,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/268",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 54577,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-69/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 24692,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000270",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 526534,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=271",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 11265,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026272",
+      "category": "news",
+      "source": "news",
+      "bytes": 1991085,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100273",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 52004,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0274",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 19884,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-275",
+      "category": "government",
+      "source": "government",
+      "bytes": 165240,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-276-6lo",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 131362,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/277/bench_277",
+      "category": "social",
+      "source": "social",
+      "bytes": 17804,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/278",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 1099927,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-79/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 163302,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000280",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 78538,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=281",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 52303,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026282",
+      "category": "news",
+      "source": "news",
+      "bytes": 12004,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100283",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 1645186,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0284",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 67938,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-285",
+      "category": "government",
+      "source": "government",
+      "bytes": 688285,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-286-6ua",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 12166,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/287/bench_287",
+      "category": "social",
+      "source": "social",
+      "bytes": 45912,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/288",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 268642,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-89/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 32720,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000290",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 1871057,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=291",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 325863,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026292",
+      "category": "news",
+      "source": "news",
+      "bytes": 1410919,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100293",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 332471,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0294",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 15734,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-295",
+      "category": "government",
+      "source": "government",
+      "bytes": 35080,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-296-72w",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1502849,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/297/bench_297",
+      "category": "social",
+      "source": "social",
+      "bytes": 28423,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/298",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 25950,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-99/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 184873,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000300",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 203947,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=301",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 461542,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026302",
+      "category": "news",
+      "source": "news",
+      "bytes": 44913,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100303",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 106800,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0304",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 39715,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-305",
+      "category": "government",
+      "source": "government",
+      "bytes": 60926,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-306-7bi",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 18264,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/307/bench_307",
+      "category": "social",
+      "source": "social",
+      "bytes": 47693,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/308",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 37496,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-109/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 1134132,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000310",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 84248,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=311",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 406744,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026312",
+      "category": "news",
+      "source": "news",
+      "bytes": 200854,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100313",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 137094,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0314",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1708032,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-315",
+      "category": "government",
+      "source": "government",
+      "bytes": 169364,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-316-7k4",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 33055,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/317/bench_317",
+      "category": "social",
+      "source": "social",
+      "bytes": 144436,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/318",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 242804,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-119/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 148040,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000320",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 1268320,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=321",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 11341,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026322",
+      "category": "news",
+      "source": "news",
+      "bytes": 41130,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100323",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 78376,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0324",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 127864,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-325",
+      "category": "government",
+      "source": "government",
+      "bytes": 21070,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-326-7sq",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 26445,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/327/bench_327",
+      "category": "social",
+      "source": "social",
+      "bytes": 11188,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/328",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 58500,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-129/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 239094,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000330",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 454494,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=331",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 1143734,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026332",
+      "category": "news",
+      "source": "news",
+      "bytes": 79005,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100333",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 11841,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0334",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 42291,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-335",
+      "category": "government",
+      "source": "government",
+      "bytes": 1274836,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-336-81c",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 31226,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/337/bench_337",
+      "category": "social",
+      "source": "social",
+      "bytes": 79691,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/338",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 647343,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-139/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 77299,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000340",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 676990,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=341",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 685598,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026342",
+      "category": "news",
+      "source": "news",
+      "bytes": 13950,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100343",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 102073,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0344",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 35590,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-345",
+      "category": "government",
+      "source": "government",
+      "bytes": 1215097,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-346-89y",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 19185,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/347/bench_347",
+      "category": "social",
+      "source": "social",
+      "bytes": 72179,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/348",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 13820,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-149/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 71408,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000350",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 1870285,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=351",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 1085237,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026352",
+      "category": "news",
+      "source": "news",
+      "bytes": 58857,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100353",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 1048985,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0354",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 73220,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-355",
+      "category": "government",
+      "source": "government",
+      "bytes": 1973449,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-356-8ik",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 10605,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/357/bench_357",
+      "category": "social",
+      "source": "social",
+      "bytes": 1223394,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/358",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 422978,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-159/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 12611,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000360",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 302083,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=361",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 514380,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026362",
+      "category": "news",
+      "source": "news",
+      "bytes": 493890,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100363",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 94767,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0364",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 119130,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-365",
+      "category": "government",
+      "source": "government",
+      "bytes": 35259,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-366-8r6",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 18379,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/367/bench_367",
+      "category": "social",
+      "source": "social",
+      "bytes": 26346,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/368",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 602655,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-169/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 294509,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000370",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 50367,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=371",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 90520,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026372",
+      "category": "news",
+      "source": "news",
+      "bytes": 1552246,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100373",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 166819,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0374",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 550185,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-375",
+      "category": "government",
+      "source": "government",
+      "bytes": 1673043,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-376-8zs",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 134056,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/377/bench_377",
+      "category": "social",
+      "source": "social",
+      "bytes": 352157,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/378",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 516094,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-179/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 51809,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000380",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 239024,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=381",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 464612,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026382",
+      "category": "news",
+      "source": "news",
+      "bytes": 26088,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100383",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 452534,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0384",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 659475,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-385",
+      "category": "government",
+      "source": "government",
+      "bytes": 27878,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-386-98e",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1126248,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/387/bench_387",
+      "category": "social",
+      "source": "social",
+      "bytes": 133105,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/388",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 365745,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-189/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 1252309,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000390",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 151641,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=391",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 21658,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026392",
+      "category": "news",
+      "source": "news",
+      "bytes": 922534,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100393",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 53492,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0394",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1920241,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-395",
+      "category": "government",
+      "source": "government",
+      "bytes": 10055,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-396-9h0",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 33845,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/397/bench_397",
+      "category": "social",
+      "source": "social",
+      "bytes": 72368,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/398",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 22655,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-199/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 585820,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000400",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 1140838,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=401",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 27925,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026402",
+      "category": "news",
+      "source": "news",
+      "bytes": 32859,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100403",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 367618,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0404",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1591941,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-405",
+      "category": "government",
+      "source": "government",
+      "bytes": 15686,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-406-9pm",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1434649,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/407/bench_407",
+      "category": "social",
+      "source": "social",
+      "bytes": 17030,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/408",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 1341012,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-9/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 269971,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000410",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 163560,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=411",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 59036,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026412",
+      "category": "news",
+      "source": "news",
+      "bytes": 142443,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100413",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 179850,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0414",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 108849,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-415",
+      "category": "government",
+      "source": "government",
+      "bytes": 1090971,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-416-9y8",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1772858,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/417/bench_417",
+      "category": "social",
+      "source": "social",
+      "bytes": 149852,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/418",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 125058,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-19/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 1287440,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000420",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 28941,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=421",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 125705,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026422",
+      "category": "news",
+      "source": "news",
+      "bytes": 15452,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100423",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 15014,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0424",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 185986,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-425",
+      "category": "government",
+      "source": "government",
+      "bytes": 366172,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-426-a6u",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 806660,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/427/bench_427",
+      "category": "social",
+      "source": "social",
+      "bytes": 32131,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/428",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 11794,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-29/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 17724,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000430",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 624597,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=431",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 34962,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026432",
+      "category": "news",
+      "source": "news",
+      "bytes": 325845,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100433",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 51660,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0434",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 23433,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-435",
+      "category": "government",
+      "source": "government",
+      "bytes": 13116,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-436-afg",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 56494,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/437/bench_437",
+      "category": "social",
+      "source": "social",
+      "bytes": 279002,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/438",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 83791,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-39/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 1196333,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000440",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 250260,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=441",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 11196,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026442",
+      "category": "news",
+      "source": "news",
+      "bytes": 14323,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100443",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 238526,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0444",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 32187,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-445",
+      "category": "government",
+      "source": "government",
+      "bytes": 556589,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-446-ao2",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 778962,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/447/bench_447",
+      "category": "social",
+      "source": "social",
+      "bytes": 110506,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/448",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 538604,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-49/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 28850,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000450",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 39512,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=451",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 225772,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026452",
+      "category": "news",
+      "source": "news",
+      "bytes": 232117,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100453",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 43050,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0454",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 30898,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-455",
+      "category": "government",
+      "source": "government",
+      "bytes": 58417,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-456-awo",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 13403,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/457/bench_457",
+      "category": "social",
+      "source": "social",
+      "bytes": 131446,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/458",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 77264,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-59/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 31442,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000460",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 1224616,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=461",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 1375535,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026462",
+      "category": "news",
+      "source": "news",
+      "bytes": 24391,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100463",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 952248,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0464",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 43365,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-465",
+      "category": "government",
+      "source": "government",
+      "bytes": 25726,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-466-b5a",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 10509,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/467/bench_467",
+      "category": "social",
+      "source": "social",
+      "bytes": 15733,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/468",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 15847,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-69/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 290967,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000470",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 277511,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=471",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 11379,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026472",
+      "category": "news",
+      "source": "news",
+      "bytes": 79716,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100473",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 188493,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0474",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 160373,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-475",
+      "category": "government",
+      "source": "government",
+      "bytes": 54202,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-476-bdw",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 14827,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/477/bench_477",
+      "category": "social",
+      "source": "social",
+      "bytes": 1327289,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/478",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 27894,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-79/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 16793,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000480",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 19458,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=481",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 667819,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026482",
+      "category": "news",
+      "source": "news",
+      "bytes": 97039,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100483",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 560324,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0484",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 16544,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-485",
+      "category": "government",
+      "source": "government",
+      "bytes": 21427,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-486-bmi",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 40558,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/487/bench_487",
+      "category": "social",
+      "source": "social",
+      "bytes": 110058,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/488",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 15865,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-89/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 16126,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000490",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 197133,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=491",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 13366,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026492",
+      "category": "news",
+      "source": "news",
+      "bytes": 746252,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100493",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 10236,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0494",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 367862,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-495",
+      "category": "government",
+      "source": "government",
+      "bytes": 10786,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-496-bv4",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 13838,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/497/bench_497",
+      "category": "social",
+      "source": "social",
+      "bytes": 12559,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/498",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 430435,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-99/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 11675,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000500",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 59034,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=501",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 1024977,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026502",
+      "category": "news",
+      "source": "news",
+      "bytes": 45784,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100503",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 21262,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0504",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 286220,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-505",
+      "category": "government",
+      "source": "government",
+      "bytes": 241965,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-506-c3q",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1141034,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/507/bench_507",
+      "category": "social",
+      "source": "social",
+      "bytes": 11173,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/508",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 17559,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-109/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 59094,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000510",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 354353,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=511",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 459144,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026512",
+      "category": "news",
+      "source": "news",
+      "bytes": 23211,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100513",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 342522,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0514",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 70983,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-515",
+      "category": "government",
+      "source": "government",
+      "bytes": 17335,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-516-ccc",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 60410,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/517/bench_517",
+      "category": "social",
+      "source": "social",
+      "bytes": 25101,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/518",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 11538,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-119/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 667462,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000520",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 14126,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=521",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 34023,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026522",
+      "category": "news",
+      "source": "news",
+      "bytes": 866534,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100523",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 1445447,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0524",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 163609,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-525",
+      "category": "government",
+      "source": "government",
+      "bytes": 51622,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-526-cky",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 82574,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/527/bench_527",
+      "category": "social",
+      "source": "social",
+      "bytes": 244665,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/528",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 33526,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-129/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 14352,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000530",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 255280,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=531",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 297833,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026532",
+      "category": "news",
+      "source": "news",
+      "bytes": 416606,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100533",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 36572,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0534",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 454359,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-535",
+      "category": "government",
+      "source": "government",
+      "bytes": 1378379,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-536-ctk",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 24201,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/537/bench_537",
+      "category": "social",
+      "source": "social",
+      "bytes": 1654503,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/538",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 388244,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-139/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 18101,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000540",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 44139,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=541",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 38827,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026542",
+      "category": "news",
+      "source": "news",
+      "bytes": 15187,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100543",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 291310,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0544",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 10422,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-545",
+      "category": "government",
+      "source": "government",
+      "bytes": 66116,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-546-d26",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 507886,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/547/bench_547",
+      "category": "social",
+      "source": "social",
+      "bytes": 16113,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/548",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 53284,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-149/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 715102,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000550",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 242990,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=551",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 154764,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026552",
+      "category": "news",
+      "source": "news",
+      "bytes": 1509147,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100553",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 40879,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0554",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 67745,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-555",
+      "category": "government",
+      "source": "government",
+      "bytes": 24866,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-556-das",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 448029,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/557/bench_557",
+      "category": "social",
+      "source": "social",
+      "bytes": 593132,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/558",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 184418,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-159/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 10712,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000560",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 42163,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=561",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 183100,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026562",
+      "category": "news",
+      "source": "news",
+      "bytes": 23203,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100563",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 101664,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0564",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 10504,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-565",
+      "category": "government",
+      "source": "government",
+      "bytes": 22254,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-566-dje",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 148201,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/567/bench_567",
+      "category": "social",
+      "source": "social",
+      "bytes": 348813,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/568",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 187407,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-169/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 1041919,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000570",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 47628,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=571",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 81969,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026572",
+      "category": "news",
+      "source": "news",
+      "bytes": 78166,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100573",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 180919,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0574",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 47037,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-575",
+      "category": "government",
+      "source": "government",
+      "bytes": 243154,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-576-ds0",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 509683,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/577/bench_577",
+      "category": "social",
+      "source": "social",
+      "bytes": 88868,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/578",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 38494,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-179/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 540226,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000580",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 47429,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=581",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 228114,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026582",
+      "category": "news",
+      "source": "news",
+      "bytes": 590343,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100583",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 1151141,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0584",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 22808,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-585",
+      "category": "government",
+      "source": "government",
+      "bytes": 12413,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-586-e0m",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 24593,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/587/bench_587",
+      "category": "social",
+      "source": "social",
+      "bytes": 85251,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/588",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 534378,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-189/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 636700,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000590",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 24717,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=591",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 745047,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026592",
+      "category": "news",
+      "source": "news",
+      "bytes": 367928,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100593",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 650020,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0594",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 13987,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-595",
+      "category": "government",
+      "source": "government",
+      "bytes": 199665,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-596-e98",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 74745,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/597/bench_597",
+      "category": "social",
+      "source": "social",
+      "bytes": 15242,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/598",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 1284575,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-199/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 782620,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000600",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 908969,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=601",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 26756,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026602",
+      "category": "news",
+      "source": "news",
+      "bytes": 764065,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100603",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 481457,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0604",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 12195,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-605",
+      "category": "government",
+      "source": "government",
+      "bytes": 1019521,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-606-ehu",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 25902,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/607/bench_607",
+      "category": "social",
+      "source": "social",
+      "bytes": 549079,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/608",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 477644,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-9/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 55609,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000610",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 13823,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=611",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 526182,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026612",
+      "category": "news",
+      "source": "news",
+      "bytes": 1500563,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100613",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 158873,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0614",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 208091,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-615",
+      "category": "government",
+      "source": "government",
+      "bytes": 898668,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-616-eqg",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1906174,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/617/bench_617",
+      "category": "social",
+      "source": "social",
+      "bytes": 808534,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/618",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 1171498,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-19/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 35475,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000620",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 1280618,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=621",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 348250,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026622",
+      "category": "news",
+      "source": "news",
+      "bytes": 60552,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100623",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 16902,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0624",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1959401,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-625",
+      "category": "government",
+      "source": "government",
+      "bytes": 11027,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-626-ez2",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 18868,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/627/bench_627",
+      "category": "social",
+      "source": "social",
+      "bytes": 561389,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/628",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 127225,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-29/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 811739,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000630",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 76763,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=631",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 159380,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026632",
+      "category": "news",
+      "source": "news",
+      "bytes": 286234,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100633",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 55112,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0634",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1092334,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-635",
+      "category": "government",
+      "source": "government",
+      "bytes": 11816,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-636-f7o",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 194430,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/637/bench_637",
+      "category": "social",
+      "source": "social",
+      "bytes": 216991,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/638",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 135988,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-39/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 188555,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000640",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 42281,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=641",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 350245,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026642",
+      "category": "news",
+      "source": "news",
+      "bytes": 39887,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100643",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 78108,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0644",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 14175,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-645",
+      "category": "government",
+      "source": "government",
+      "bytes": 706371,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-646-fga",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 319641,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/647/bench_647",
+      "category": "social",
+      "source": "social",
+      "bytes": 49721,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/648",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 1715834,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-49/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 124412,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000650",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 614228,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=651",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 137132,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026652",
+      "category": "news",
+      "source": "news",
+      "bytes": 30826,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100653",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 142388,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0654",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 15042,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-655",
+      "category": "government",
+      "source": "government",
+      "bytes": 65414,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-656-fow",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 687223,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/657/bench_657",
+      "category": "social",
+      "source": "social",
+      "bytes": 147191,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/658",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 109162,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-59/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 65783,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000660",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 17491,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=661",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 82231,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026662",
+      "category": "news",
+      "source": "news",
+      "bytes": 18954,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100663",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 10470,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0664",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 26216,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-665",
+      "category": "government",
+      "source": "government",
+      "bytes": 19003,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-666-fxi",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1730885,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/667/bench_667",
+      "category": "social",
+      "source": "social",
+      "bytes": 80454,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/668",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 41902,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-69/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 10185,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000670",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 10019,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=671",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 10123,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026672",
+      "category": "news",
+      "source": "news",
+      "bytes": 1341553,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100673",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 1868461,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0674",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 70899,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-675",
+      "category": "government",
+      "source": "government",
+      "bytes": 496559,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-676-g64",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 13064,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/677/bench_677",
+      "category": "social",
+      "source": "social",
+      "bytes": 781235,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/678",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 11418,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-79/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 23936,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000680",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 68361,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=681",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 97112,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026682",
+      "category": "news",
+      "source": "news",
+      "bytes": 1425367,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100683",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 16350,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0684",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 433501,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-685",
+      "category": "government",
+      "source": "government",
+      "bytes": 19454,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-686-geq",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 40803,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/687/bench_687",
+      "category": "social",
+      "source": "social",
+      "bytes": 101824,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/688",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 1174860,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-89/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 348532,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000690",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 54743,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=691",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 133771,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026692",
+      "category": "news",
+      "source": "news",
+      "bytes": 95700,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100693",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 31597,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0694",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 200258,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-695",
+      "category": "government",
+      "source": "government",
+      "bytes": 19724,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-696-gnc",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 53111,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/697/bench_697",
+      "category": "social",
+      "source": "social",
+      "bytes": 1888333,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/698",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 22456,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-99/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 23998,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000700",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 39417,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=701",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 1917463,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026702",
+      "category": "news",
+      "source": "news",
+      "bytes": 33273,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100703",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 32867,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0704",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 12090,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-705",
+      "category": "government",
+      "source": "government",
+      "bytes": 616716,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-706-gvy",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 11402,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/707/bench_707",
+      "category": "social",
+      "source": "social",
+      "bytes": 42493,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/708",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 96154,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-109/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 42719,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000710",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 17541,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=711",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 16502,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026712",
+      "category": "news",
+      "source": "news",
+      "bytes": 20135,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100713",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 194245,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0714",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 12784,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-715",
+      "category": "government",
+      "source": "government",
+      "bytes": 17681,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-716-h4k",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 12650,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/717/bench_717",
+      "category": "social",
+      "source": "social",
+      "bytes": 19099,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/718",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 1453335,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-119/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 211020,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000720",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 12333,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=721",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 621369,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026722",
+      "category": "news",
+      "source": "news",
+      "bytes": 31921,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100723",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 775206,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0724",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 11218,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-725",
+      "category": "government",
+      "source": "government",
+      "bytes": 1194904,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-726-hd6",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 385256,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/727/bench_727",
+      "category": "social",
+      "source": "social",
+      "bytes": 1652629,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/728",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 85185,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-129/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 407817,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000730",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 76544,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=731",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 493129,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026732",
+      "category": "news",
+      "source": "news",
+      "bytes": 92887,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100733",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 36433,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0734",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 11472,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-735",
+      "category": "government",
+      "source": "government",
+      "bytes": 16040,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-736-hls",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 35940,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/737/bench_737",
+      "category": "social",
+      "source": "social",
+      "bytes": 420948,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/738",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 1901127,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-139/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 63353,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000740",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 26122,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=741",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 33897,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026742",
+      "category": "news",
+      "source": "news",
+      "bytes": 1596252,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100743",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 360665,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0744",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 295726,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-745",
+      "category": "government",
+      "source": "government",
+      "bytes": 34056,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-746-hue",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 240621,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/747/bench_747",
+      "category": "social",
+      "source": "social",
+      "bytes": 702429,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/748",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 740280,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-149/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 1107477,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000750",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 720492,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=751",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 68212,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026752",
+      "category": "news",
+      "source": "news",
+      "bytes": 18115,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100753",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 21213,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0754",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1000730,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-755",
+      "category": "government",
+      "source": "government",
+      "bytes": 224187,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-756-i30",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 256479,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/757/bench_757",
+      "category": "social",
+      "source": "social",
+      "bytes": 23723,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/758",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 1223976,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-159/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 18371,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000760",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 82074,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=761",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 660706,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026762",
+      "category": "news",
+      "source": "news",
+      "bytes": 24385,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100763",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 208368,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0764",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 130293,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-765",
+      "category": "government",
+      "source": "government",
+      "bytes": 76858,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-766-ibm",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 829797,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/767/bench_767",
+      "category": "social",
+      "source": "social",
+      "bytes": 206931,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/768",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 42250,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-169/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 59320,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000770",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 37129,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=771",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 961524,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026772",
+      "category": "news",
+      "source": "news",
+      "bytes": 191379,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100773",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 1534139,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0774",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 832721,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-775",
+      "category": "government",
+      "source": "government",
+      "bytes": 68321,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-776-ik8",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1109277,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/777/bench_777",
+      "category": "social",
+      "source": "social",
+      "bytes": 88245,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/778",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 593401,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-179/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 107064,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000780",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 68505,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=781",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 94949,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026782",
+      "category": "news",
+      "source": "news",
+      "bytes": 575743,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100783",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 1281955,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0784",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 17719,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-785",
+      "category": "government",
+      "source": "government",
+      "bytes": 27063,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-786-isu",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 12820,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/787/bench_787",
+      "category": "social",
+      "source": "social",
+      "bytes": 947304,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/788",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 106375,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-189/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 41573,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000790",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 12087,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=791",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 81112,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026792",
+      "category": "news",
+      "source": "news",
+      "bytes": 1081144,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100793",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 18061,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0794",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 631393,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-795",
+      "category": "government",
+      "source": "government",
+      "bytes": 87603,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-796-j1g",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 12250,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/797/bench_797",
+      "category": "social",
+      "source": "social",
+      "bytes": 271216,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/798",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 27845,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-199/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 22156,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000800",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 1084218,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=801",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 60972,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026802",
+      "category": "news",
+      "source": "news",
+      "bytes": 26129,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100803",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 29456,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0804",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 17690,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-805",
+      "category": "government",
+      "source": "government",
+      "bytes": 745527,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-806-ja2",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 280013,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/807/bench_807",
+      "category": "social",
+      "source": "social",
+      "bytes": 255095,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/808",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 70456,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-9/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 155622,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000810",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 54643,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=811",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 333001,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026812",
+      "category": "news",
+      "source": "news",
+      "bytes": 12771,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100813",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 652024,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0814",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 186881,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-815",
+      "category": "government",
+      "source": "government",
+      "bytes": 128065,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-816-jio",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 13193,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/817/bench_817",
+      "category": "social",
+      "source": "social",
+      "bytes": 41987,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/818",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 1469539,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-19/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 18820,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000820",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 13021,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=821",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 239687,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026822",
+      "category": "news",
+      "source": "news",
+      "bytes": 86972,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100823",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 62565,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0824",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1089102,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-825",
+      "category": "government",
+      "source": "government",
+      "bytes": 23377,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-826-jra",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 16171,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/827/bench_827",
+      "category": "social",
+      "source": "social",
+      "bytes": 16335,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/828",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 76851,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-29/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 1845963,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000830",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 438098,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=831",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 471010,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026832",
+      "category": "news",
+      "source": "news",
+      "bytes": 649419,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100833",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 55894,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0834",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 23849,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-835",
+      "category": "government",
+      "source": "government",
+      "bytes": 447920,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-836-jzw",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 640234,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/837/bench_837",
+      "category": "social",
+      "source": "social",
+      "bytes": 353364,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/838",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 346734,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-39/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 274128,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000840",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 66876,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=841",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 133500,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026842",
+      "category": "news",
+      "source": "news",
+      "bytes": 1593383,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100843",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 11765,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0844",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 762315,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-845",
+      "category": "government",
+      "source": "government",
+      "bytes": 134410,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-846-k8i",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1749502,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/847/bench_847",
+      "category": "social",
+      "source": "social",
+      "bytes": 11953,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/848",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 11861,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-49/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 810915,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000850",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 581539,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=851",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 483807,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026852",
+      "category": "news",
+      "source": "news",
+      "bytes": 22567,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100853",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 649339,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0854",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1189105,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-855",
+      "category": "government",
+      "source": "government",
+      "bytes": 97520,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-856-kh4",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 17562,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/857/bench_857",
+      "category": "social",
+      "source": "social",
+      "bytes": 1434127,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/858",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 920889,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-59/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 175786,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000860",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 1132216,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=861",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 21627,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026862",
+      "category": "news",
+      "source": "news",
+      "bytes": 509308,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100863",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 114577,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0864",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1771440,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-865",
+      "category": "government",
+      "source": "government",
+      "bytes": 10016,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-866-kpq",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1093123,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/867/bench_867",
+      "category": "social",
+      "source": "social",
+      "bytes": 16276,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/868",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 607257,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-69/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 211162,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000870",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 354466,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=871",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 207827,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026872",
+      "category": "news",
+      "source": "news",
+      "bytes": 192992,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100873",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 856306,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0874",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 559995,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-875",
+      "category": "government",
+      "source": "government",
+      "bytes": 44946,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-876-kyc",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 184453,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/877/bench_877",
+      "category": "social",
+      "source": "social",
+      "bytes": 14052,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/878",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 180973,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-79/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 299943,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000880",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 28364,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=881",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 21250,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026882",
+      "category": "news",
+      "source": "news",
+      "bytes": 14339,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100883",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 123583,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0884",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 11609,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-885",
+      "category": "government",
+      "source": "government",
+      "bytes": 490245,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-886-l6y",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 208331,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/887/bench_887",
+      "category": "social",
+      "source": "social",
+      "bytes": 11499,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/888",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 1399468,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-89/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 656400,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000890",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 50317,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=891",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 1317067,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026892",
+      "category": "news",
+      "source": "news",
+      "bytes": 97266,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100893",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 895744,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0894",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 402646,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-895",
+      "category": "government",
+      "source": "government",
+      "bytes": 15242,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-896-lfk",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 53612,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/897/bench_897",
+      "category": "social",
+      "source": "social",
+      "bytes": 1181662,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/898",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 14991,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-99/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 995675,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000900",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 329726,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=901",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 983382,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026902",
+      "category": "news",
+      "source": "news",
+      "bytes": 986196,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100903",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 147763,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0904",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 34433,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-905",
+      "category": "government",
+      "source": "government",
+      "bytes": 102765,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-906-lo6",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 679341,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/907/bench_907",
+      "category": "social",
+      "source": "social",
+      "bytes": 111695,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/908",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 12389,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-109/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 280403,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000910",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 13014,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=911",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 1913694,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026912",
+      "category": "news",
+      "source": "news",
+      "bytes": 1622298,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100913",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 633073,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0914",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 171340,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-915",
+      "category": "government",
+      "source": "government",
+      "bytes": 1952987,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-916-lws",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 12659,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/917/bench_917",
+      "category": "social",
+      "source": "social",
+      "bytes": 321306,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/918",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 29164,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-119/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 39656,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000920",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 14194,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=921",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 667597,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026922",
+      "category": "news",
+      "source": "news",
+      "bytes": 324735,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100923",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 60487,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0924",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 12537,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-925",
+      "category": "government",
+      "source": "government",
+      "bytes": 34483,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-926-m5e",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 1771903,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/927/bench_927",
+      "category": "social",
+      "source": "social",
+      "bytes": 187098,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/928",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 12639,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-129/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 603022,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000930",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 1301270,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=931",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 12988,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026932",
+      "category": "news",
+      "source": "news",
+      "bytes": 58076,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100933",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 12178,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0934",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 953342,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-935",
+      "category": "government",
+      "source": "government",
+      "bytes": 69927,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-936-me0",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 54302,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/937/bench_937",
+      "category": "social",
+      "source": "social",
+      "bytes": 1564830,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/938",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 383789,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-139/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 196023,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000940",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 548596,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=941",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 21913,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026942",
+      "category": "news",
+      "source": "news",
+      "bytes": 10339,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100943",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 1614904,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0944",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 116678,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-945",
+      "category": "government",
+      "source": "government",
+      "bytes": 14905,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-946-mmm",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 16115,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/947/bench_947",
+      "category": "social",
+      "source": "social",
+      "bytes": 39722,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/948",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 13700,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-149/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 11871,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000950",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 1759266,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=951",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 82650,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026952",
+      "category": "news",
+      "source": "news",
+      "bytes": 12657,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100953",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 82621,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0954",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 199980,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-955",
+      "category": "government",
+      "source": "government",
+      "bytes": 57771,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-956-mv8",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 46897,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/957/bench_957",
+      "category": "social",
+      "source": "social",
+      "bytes": 169448,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/958",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 693902,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-159/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 51763,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000960",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 20444,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=961",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 48231,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026962",
+      "category": "news",
+      "source": "news",
+      "bytes": 170712,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100963",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 83436,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0964",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 15040,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-965",
+      "category": "government",
+      "source": "government",
+      "bytes": 10072,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-966-n3u",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 604783,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/967/bench_967",
+      "category": "social",
+      "source": "social",
+      "bytes": 11848,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/968",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 41177,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-169/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 28077,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000970",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 893576,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=971",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 794851,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026972",
+      "category": "news",
+      "source": "news",
+      "bytes": 14887,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100973",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 68171,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0974",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 1277868,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-975",
+      "category": "government",
+      "source": "government",
+      "bytes": 1580497,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-976-ncg",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 44614,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/977/bench_977",
+      "category": "social",
+      "source": "social",
+      "bytes": 164262,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/978",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 856968,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-179/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 38686,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000980",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 27088,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=981",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 158413,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026982",
+      "category": "news",
+      "source": "news",
+      "bytes": 44305,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100983",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 89699,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0984",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 842352,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-985",
+      "category": "government",
+      "source": "government",
+      "bytes": 485958,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-986-nl2",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 175749,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/987/bench_987",
+      "category": "social",
+      "source": "social",
+      "bytes": 70874,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v1/page/988",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 960404,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-189/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 162361,
+      "cacheable": true
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1000990",
+      "category": "hackernews",
+      "source": "hackernews",
+      "bytes": 116755,
+      "cacheable": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:Random?seed=991",
+      "category": "wikipedia",
+      "source": "wikipedia",
+      "bytes": 27339,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.reuters.com/world/article-2026992",
+      "category": "news",
+      "source": "news",
+      "bytes": 1451257,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.amazon.com/dp/B00100993",
+      "category": "ecommerce",
+      "source": "ecommerce",
+      "bytes": 37051,
+      "cacheable": false
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.0994",
+      "category": "academic",
+      "source": "academic",
+      "bytes": 135407,
+      "cacheable": true
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/doc-995",
+      "category": "government",
+      "source": "government",
+      "bytes": 59406,
+      "cacheable": true
+    },
+    {
+      "url": "https://medium.com/@user/post-996-nto",
+      "category": "blog",
+      "source": "blog",
+      "bytes": 65085,
+      "cacheable": false
+    },
+    {
+      "url": "https://www.reddit.com/r/test/comments/997/bench_997",
+      "category": "social",
+      "source": "social",
+      "bytes": 655507,
+      "cacheable": false
+    },
+    {
+      "url": "https://docs.example.com/api/v3/page/998",
+      "category": "documentation",
+      "source": "documentation",
+      "bytes": 22733,
+      "cacheable": true
+    },
+    {
+      "url": "https://github.com/example/repo-199/blob/main/README.md",
+      "category": "code",
+      "source": "code",
+      "bytes": 17582,
+      "cacheable": true
+    }
+  ]
+}
