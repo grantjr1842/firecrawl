@@ -197,6 +197,7 @@ describe("processBillingBatch", () => {
         apiKeyId: 123,
         subscriptionId: "sub-1",
       },
+      featureId: "CREDITS",
       trackId: "op-track-1",
     });
     expect(captureException).toHaveBeenCalled();
@@ -217,6 +218,7 @@ describe("processBillingBatch", () => {
         apiKeyId: 123,
         subscriptionId: "sub-1",
       },
+      featureId: "CREDITS",
       trackId: "op-track-2",
     });
     expect(captureException).toHaveBeenCalled();

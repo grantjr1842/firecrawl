@@ -92,6 +92,7 @@ describe("billTeam", () => {
         apiKeyId: 123,
       },
       requestScoped: true,
+      featureId: "SEARCH_CREDITS",
     });
     expect(result).toMatchObject({
       success: true,
@@ -116,6 +117,7 @@ describe("billTeam", () => {
         jobId: "job-1",
         apiKeyId: 123,
       },
+      featureId: "SEARCH_CREDITS",
       trackId: "track-uuid-1",
     });
     expect(addBreadcrumb).toHaveBeenCalledWith(

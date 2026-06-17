@@ -127,6 +127,7 @@ async function billScrapeJob(
   // request's own credits. Standalone scrapes stay on CREDITS.
   const featureId = featureIdForBillingEndpoint(billing.endpoint);
   let trackedInRequest = false;
+  let scrapeTrackId: string | null = null;
 
   if (job.data.is_scrape !== true && !job.data.internalOptions?.bypassBilling) {
     creditsToBeBilled = await calculateCreditsToBeBilled(
@@ -150,7 +151,7 @@ async function billScrapeJob(
       config.USE_DB_AUTHENTICATION
     ) {
       try {
-        const scrapeTrackId = await autumnService.trackCredits({
+        scrapeTrackId = await autumnService.trackCredits({
           teamId: job.data.team_id,
           value: creditsToBeBilled,
           properties: autumnProperties,
