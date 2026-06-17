@@ -1,6 +1,8 @@
 import { sql, SQL } from "drizzle-orm";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { db, dbIndex } from "./connection";
+import { config } from "../config";
+import { logger } from "../lib/logger";
 
 type DB = NodePgDatabase;
 
@@ -18,6 +20,19 @@ async function execRows<T = Record<string, any>>(
 function toNum(v: unknown): number | null {
   return v == null ? null : Number(v);
 }
+
+// ============================================================================
+// Self-host stubs (T3.1)
+// ============================================================================
+// The migrations that defined the cloud-only PL/pgSQL bodies for the
+// functions below were orphaned from main before the parity work
+// landed in 0021. Self-hosted instances therefore hit a silent 500 on
+// every scrape that touched the index cache or the monitor store. To
+// keep self-host functional, we intercept each call below with a
+// safe-default TypeScript stub when USE_DB_AUTHENTICATION is false.
+// When USE_DB_AUTHENTICATION is true (cloud), we fall through to the
+// Drizzle call — which will fail loudly and surface the missing
+// migration to operators, instead of silently returning wrong data.
 
 // ============================================================================
 // Main database RPCs

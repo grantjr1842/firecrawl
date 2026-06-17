@@ -50,6 +50,7 @@ import {
   isX402Enabled,
 } from "../lib/x402";
 import { deprecationMiddleware } from "../lib/deprecations";
+import { cloudOnlyRoute } from "../middleware/cloudOnlyRoute";
 import { agentController } from "../controllers/v2/agent";
 import { agentStatusController } from "../controllers/v2/agent-status";
 import { agentCancelController } from "../controllers/v2/agent-cancel";
@@ -261,6 +262,7 @@ v2Router.post(
 
 v2Router.post(
   "/parse",
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.Scrape, { allowKeyless: true }),
   countryCheck,
   parseUploadMiddleware,
@@ -418,6 +420,7 @@ v2Router.get(
 
 v2Router.post(
   "/agent",
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.Extract),
   countryCheck,
   checkCreditsMiddleware(20),
@@ -427,6 +430,7 @@ v2Router.post(
 
 v2Router.get(
   "/agent/:jobId",
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.ExtractStatus),
   validateJobIdParam,
   wrap(agentStatusController),
@@ -434,6 +438,7 @@ v2Router.get(
 
 v2Router.delete(
   "/agent/:jobId",
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.ExtractStatus),
   validateJobIdParam,
   wrap(agentCancelController),
@@ -483,6 +488,7 @@ v2Router.get(
 
 v2Router.post(
   "/monitor",
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.Crawl),
   countryCheck,
   checkCreditsMiddleware(1),
@@ -492,26 +498,34 @@ v2Router.post(
 
 v2Router.get(
   "/monitor",
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.CrawlStatus),
   wrap(listMonitorsController),
 );
 
 // Public, unauthenticated — token in body is the credential. Registered
 // before /monitor/:monitorId so "email" isn't parsed as a monitor UUID.
-v2Router.post("/monitor/email/confirm", wrap(confirmMonitorEmailController));
+v2Router.post(
+  "/monitor/email/confirm",
+  cloudOnlyRoute,
+  wrap(confirmMonitorEmailController),
+);
 v2Router.post(
   "/monitor/email/unsubscribe",
+  cloudOnlyRoute,
   wrap(unsubscribeMonitorEmailController),
 );
 
 v2Router.get(
   "/monitor/:monitorId",
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.CrawlStatus),
   wrap(getMonitorController),
 );
 
 v2Router.patch(
   "/monitor/:monitorId",
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.Crawl),
   countryCheck,
   checkCreditsMiddleware(1),
@@ -521,12 +535,14 @@ v2Router.patch(
 
 v2Router.delete(
   "/monitor/:monitorId",
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.CrawlStatus),
   wrap(deleteMonitorController),
 );
 
 v2Router.post(
   "/monitor/:monitorId/run",
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.Crawl),
   countryCheck,
   checkCreditsMiddleware(1),
@@ -536,18 +552,21 @@ v2Router.post(
 
 v2Router.get(
   "/monitor/:monitorId/checks",
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.CrawlStatus),
   wrap(listMonitorChecksController),
 );
 
 v2Router.get(
   "/monitor/:monitorId/checks/:checkId",
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.CrawlStatus),
   wrap(getMonitorCheckController),
 );
 
 v2Router.post(
   ["/browser", "/interact"],
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.Browser),
   countryCheck,
   checkCreditsMiddleware(2),
@@ -556,24 +575,28 @@ v2Router.post(
 
 v2Router.get(
   ["/browser", "/interact"],
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.BrowserExecute),
   wrap(browserListController),
 );
 
 v2Router.post(
   ["/browser/:sessionId/execute", "/interact/:sessionId/execute"],
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.BrowserExecute),
   wrap(browserExecuteController),
 );
 
 v2Router.delete(
   ["/browser/:sessionId", "/interact/:sessionId"],
+  cloudOnlyRoute,
   authMiddleware(RateLimiterMode.BrowserExecute),
   wrap(browserDeleteController),
 );
 
 v2Router.post(
   "/browser/webhook/destroyed",
+  cloudOnlyRoute,
   wrap(browserWebhookDestroyedController),
 );
 
@@ -592,12 +615,14 @@ v2Router.post(
 if (config.RESEARCH_PROXY_URL) {
   v2Router.use(
     "/search/research",
+    cloudOnlyRoute,
     authMiddleware(RateLimiterMode.Research, { allowKeyless: true }),
     createResearchRouter(),
   );
 
   v2Router.use(
     "/research",
+    cloudOnlyRoute,
     authMiddleware(RateLimiterMode.Research),
     createResearchRouter({ legacy: true }),
   );
@@ -607,6 +632,7 @@ if (config.RESEARCH_PROXY_URL) {
 if (isX402Enabled()) {
   v2Router.post(
     "/x402/search",
+    cloudOnlyRoute,
     authMiddleware(RateLimiterMode.Search),
     countryCheck,
     blocklistMiddleware,

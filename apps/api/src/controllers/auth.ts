@@ -26,7 +26,7 @@ import {
   authCreditUsageChunkFromTeam,
   AuthCreditUsageChunkRow,
 } from "../db/rpc";
-import { AuthResponse, RateLimiterMode } from "../types";
+import { AuthResponse, RateLimiterMode, SelfHostACUC } from "../types";
 import { AuthCreditUsageChunk, AuthCreditUsageChunkFromTeam } from "./v1/types";
 
 function normalizedApiIsUuid(potentialUuid: string): boolean {
@@ -113,46 +113,77 @@ const mockPreviewACUC: (
   is_extract,
 });
 
-const mockACUC: () => AuthCreditUsageChunk = () => ({
-  api_key: "bypass",
-  api_key_id: 0,
-  team_id: "bypass",
-  sub_id: "bypass",
-  sub_current_period_start: new Date().toISOString(),
-  sub_current_period_end: new Date(
-    new Date().getTime() + 30 * 24 * 60 * 60 * 1000,
-  ).toISOString(),
-  sub_user_id: "bypass",
-  price_id: "bypass",
-  plan: "scale",
-  rate_limits: {
-    crawl: 99999999,
-    scrape: 99999999,
-    extract: 99999999,
-    search: 99999999,
-    map: 99999999,
-    preview: 99999999,
-    crawlStatus: 99999999,
-    extractStatus: 99999999,
-    extractAgentPreview: 99999999,
-    scrapeAgentPreview: 99999999,
-  },
-  price_credits: 99999999,
-  price_should_be_graceful: false,
-  price_associated_auto_recharge_price_id: null,
-  credits_used: 0,
-  coupon_credits: 99999999,
-  adjusted_credits_used: 0,
-  remaining_credits: 99999999,
-  total_credits_sum: 99999999,
-  plan_priority: {
-    bucketLimit: 25,
-    planModifier: 0.1,
-  },
-  concurrency: 99999999,
-  flags: null,
-  is_extract: false,
-});
+// Runtime self-check: the keys here must match the SelfHostACUC type
+// in src/types.ts (and the PL/pgSQL mock in
+// drizzle/0021_cloud_rpcs_remaining.sql). DB-RPC-006 aligns the
+// TS and SQL mocks on the same 10 rate_limit keys.
+const SELF_HOST_RATE_LIMIT_KEYS: ReadonlyArray<keyof SelfHostACUC["rate_limits"]> = [
+  "crawl",
+  "scrape",
+  "extract",
+  "search",
+  "map",
+  "preview",
+  "crawlStatus",
+  "extractStatus",
+  "extractAgentPreview",
+  "scrapeAgentPreview",
+];
+
+const mockACUC: () => AuthCreditUsageChunk = () => {
+  const chunk: AuthCreditUsageChunk = {
+    api_key: "bypass",
+    api_key_id: 0,
+    team_id: "bypass",
+    sub_id: "bypass",
+    sub_current_period_start: new Date().toISOString(),
+    sub_current_period_end: new Date(
+      new Date().getTime() + 30 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+    sub_user_id: "bypass",
+    price_id: "bypass",
+    plan: "scale",
+    rate_limits: {
+      crawl: 99999999,
+      scrape: 99999999,
+      extract: 99999999,
+      search: 99999999,
+      map: 99999999,
+      preview: 99999999,
+      crawlStatus: 99999999,
+      extractStatus: 99999999,
+      extractAgentPreview: 99999999,
+      scrapeAgentPreview: 99999999,
+    },
+    price_credits: 99999999,
+    price_should_be_graceful: false,
+    price_associated_auto_recharge_price_id: null,
+    credits_used: 0,
+    coupon_credits: 99999999,
+    adjusted_credits_used: 0,
+    remaining_credits: 99999999,
+    total_credits_sum: 99999999,
+    plan_priority: {
+      bucketLimit: 25,
+      planModifier: 0.1,
+    },
+    concurrency: 99999999,
+    flags: null,
+    is_extract: false,
+  };
+  // DB-RPC-006: assert no rate_limit key is undefined. If you add
+  // a key to SELF_HOST_RATE_LIMIT_KEYS above without adding it to
+  // the object literal, this throws at first call rather than
+  // silently passing undefined through to getRateLimiter.
+  for (const key of SELF_HOST_RATE_LIMIT_KEYS) {
+    if (chunk.rate_limits[key] === undefined) {
+      throw new Error(
+        `mockACUC is missing rate_limits.${String(key)} (DB-RPC-006)`,
+      );
+    }
+  }
+  return chunk;
+};
 
 /**
  * Introspection response from the OAuth token endpoint.

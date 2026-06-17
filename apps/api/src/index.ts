@@ -19,6 +19,7 @@ import { v0Router } from "./routes/v0";
 import os from "os";
 import { logger } from "./lib/logger";
 import { adminRouter } from "./routes/admin";
+import { metricsRouter } from "./routes/metrics";
 import http from "node:http";
 import https from "node:https";
 import { v1Router } from "./routes/v1";
@@ -110,6 +111,7 @@ app.get("/e2e-test", (_, res) => {
 app.use(v0Router);
 app.use("/v1", v1Router);
 app.use("/v2", v2Router);
+app.use(metricsRouter);
 app.use(adminRouter);
 
 const DEFAULT_PORT = config.PORT;

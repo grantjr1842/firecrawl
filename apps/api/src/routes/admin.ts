@@ -20,9 +20,19 @@ import {
   handleIntegrationAdminRotateProxy,
   handleIntegrationAdminValidateProxy,
 } from "../lib/admin-integration-integrations-proxy";
+import {
+  adminAuthMiddleware,
+  adminRateLimitMiddleware,
+} from "../lib/adminAuth";
 import { RateLimiterMode } from "../types";
 
 export const adminRouter = express.Router();
+
+// Audit + actor-identity enforcement applies to every /admin/* route.
+// The bull-board UI is mounted on `/admin/{BULL_AUTH_KEY}/queues` directly
+// via app.use() in index.ts and bypasses this router, so the
+// `X-Admin-Actor-Email` requirement on mutating methods does not affect the UI.
+adminRouter.use(adminAuthMiddleware);
 
 adminRouter.get(
   `/admin/${config.BULL_AUTH_KEY}/redis-health`,
@@ -34,8 +44,12 @@ adminRouter.get(
   autumnHealthController,
 );
 
+// acuc-cache-clear wipes every API key's cached chunk for the given team_id,
+// so in addition to the actor-identity check we rate-limit to 1 call / 10s
+// per BULL_AUTH_KEY. See auth-rbac-6.
 adminRouter.post(
   `/admin/${config.BULL_AUTH_KEY}/acuc-cache-clear`,
+  adminRateLimitMiddleware(10_000, 1),
   wrap(acucCacheClearController),
 );
 

@@ -25,6 +25,35 @@ However, there are some limitations and additional responsibilities to be aware 
 
 Self-hosting Firecrawl is ideal for those who need full control over their scraping and data processing environments but comes with the trade-off of additional maintenance and configuration efforts.
 
+### Cloud-only endpoints (return HTTP 501 on self-hosted)
+
+Some v2 routes are cloud-only. When `USE_DB_AUTHENTICATION=false` (self-hosted), the API returns a stable **HTTP 501 Not Implemented** with the following JSON envelope so SDKs and operators can rely on the behavior instead of a 500/404 from an unconfigured controller:
+
+```json
+{
+  "error": "NotImplemented",
+  "code": "cloud_only",
+  "message": "This endpoint requires Firecrawl Cloud. See https://docs.firecrawl.dev/contributing/self-host for the self-host feature matrix.",
+  "docs": "https://docs.firecrawl.dev/contributing/self-host"
+}
+```
+
+The following v2 endpoints are gated:
+
+| Method | Path |
+| --- | --- |
+| `POST` | `/v2/parse` |
+| `POST` | `/v2/agent` |
+| `GET` | `/v2/agent/:jobId` |
+| `DELETE` | `/v2/agent/:jobId` |
+| `POST` `/GET` | `/v2/browser`, `/v2/interact` |
+| `POST` | `/v2/browser/:sessionId/execute`, `/v2/interact/:sessionId/execute` |
+| `DELETE` | `/v2/browser/:sessionId`, `/v2/interact/:sessionId` |
+| `POST` | `/v2/browser/webhook/destroyed` |
+| `POST` `/GET` `/PATCH` `/DELETE` | `/v2/monitor`, `/v2/monitor/:monitorId` and sub-routes (`/checks`, `/checks/:checkId`, `/run`, `/email/confirm`, `/email/unsubscribe`) |
+| (gated by `RESEARCH_PROXY_URL`) | `/v2/research`, `/v2/search/research` |
+| (gated by `X402_PAY_TO_ADDRESS`) | `/v2/x402/search` |
+
 ## Steps
 
 1. First, start by installing the dependencies
@@ -95,6 +124,83 @@ BULL_AUTH_KEY=CHANGEME
 # PLAYWRIGHT_MICROSERVICE_URL=http://playwright-service:3000/scrape
 # REDIS_URL=redis://redis:6379
 # REDIS_RATE_LIMIT_URL=redis://redis:6379
+
+## === Log aggregation ===
+
+By default the API and worker write **one JSON object per line** to stdout.
+Docker, Kubernetes (`kubectl logs`), and any standard log shipper (Loki
+promtail, fluentbit, Vector, Filebeat, etc.) can parse every line out of
+the box — no custom regex, no half-text half-JSON output. If you also
+enable `FIRECRAWL_LOG_TO_FILE=true` the rolling file is always JSON too.
+
+A few notable fields the JSON record carries:
+
+- `level` — `info` / `warn` / `error` / `debug` (winston level names)
+- `message` — the human-readable log line
+- `timestamp` — ISO-ish `YYYY-MM-DD HH:mm:ss` (winston timestamp format)
+- `module`, `method` — call-site metadata (when supplied by the caller)
+- `stack`, `cause` — populated for `logger.error(..., { err })` style calls
+
+For local development you can opt back into the colored printf format
+with `FIRECRAWL_LOG_FORMAT=text` (this is what `pnpm dev` uses). Anything
+else (Docker compose, Helm, k8s manifests) should leave it at the default
+of `json`.
+
+### Loki / promtail scrape config
+
+If you run a [Grafana Loki](https://grafana.com/oss/loki/) stack, the
+following `promtail` config scrapes both the `firecrawl-api` and
+`firecrawl-worker` pods and labels them so you can filter in Grafana.
+Adapt the `__path__` to wherever your container runtime writes the pod
+logs (most commonly `/var/log/pods/*/firecrawl-*.log`).
+
+```yaml
+# promtail config — ship Firecrawl stdout to Loki.
+# Save as e.g. /etc/promtail/config.yaml and mount into the promtail pod.
+server:
+  http_listen_port: 9080
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: firecrawl
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["com.docker.compose.project=firecrawl"]
+    relabel_configs:
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: container
+      - source_labels: ["__meta_docker_container_log_stream"]
+        target_label: stream
+    pipeline_stages:
+      # Firecrawl already emits one JSON object per line, so promtail just
+      # has to parse it — no multiline or regex extraction required.
+      - json:
+          expressions:
+            level: level
+            msg: message
+            module: module
+            method: method
+      - labels:
+          level:
+          module:
+          method:
+      - output:
+          source: msg
+```
+
+A starter SLI/SLO dashboard for the API (request rate, error rate, scrape
+latency percentiles) is provided at
+[`contrib/grafana/firecrawl-sli-slo.json`](../contrib/grafana/firecrawl-sli-slo.json)
+— import it into Grafana once Loki is wired up.
 
 ## === PostgreSQL Database Configuration ===
 # Configure PostgreSQL credentials. These should match the credentials used by the nuq-postgres container.

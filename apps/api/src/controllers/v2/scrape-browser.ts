@@ -68,6 +68,22 @@ import { applyAgentAuthDiscoveryHeader } from "../../lib/agent-auth-discovery";
 // Schemas
 // ---------------------------------------------------------------------------
 
+// BP-06: profile.name is used verbatim as the key into a shared S3-backed
+// blob store (`persistentStorage.uniqueId`). Path-traversal (`../`),
+// null-byte injection (`\x00`), and overlong names could overwrite a
+// sibling tenant's profile or escape the per-team prefix. Restrict the
+// name to a conservative charset and length, and reject names that start
+// with `_` (reserved namespace) or contain `..`.
+const profileNameSchema = z
+  .string()
+  .regex(/^[a-zA-Z0-9_-]{1,64}$/, {
+    message:
+      "profile.name must be 1-64 characters of [a-zA-Z0-9_-] (no path separators, no null bytes, no whitespace).",
+  })
+  .refine(n => !n.startsWith("_") && !n.includes(".."), {
+    message: "profile.name cannot start with '_' or contain '..'.",
+  });
+
 const browserCreateRequestSchema = z.object({
   ttl: z.number().min(30).max(3600).default(600),
   activityTtl: z.number().min(10).max(3600).default(300),
@@ -75,7 +91,7 @@ const browserCreateRequestSchema = z.object({
   integration: integrationSchema.optional().transform(val => val || null),
   profile: z
     .object({
-      name: z.string().min(1).max(128),
+      name: profileNameSchema,
       saveChanges: z.boolean().default(true),
     })
     .optional(),
@@ -601,6 +617,23 @@ async function createSessionForScrape(
 
   let persistentStorage: { uniqueId: string; write: boolean } | undefined;
   if (profile) {
+    // BP-06: log a structured `profile_name_rejected` event when the
+    // incoming profile.name violates the safe-name rules. The
+    // `controllers/v2/types.ts` schema is the source of truth for the
+    // scrape path; this hook detects probing regardless. Truncate the
+    // logged name to 128 chars to avoid log injection.
+    const candidateResult = profileNameSchema.safeParse(profile.name);
+    if (!candidateResult.success) {
+      logger.warn("profile_name_rejected", {
+        event: "profile_name_rejected",
+        actor: req.auth.team_id,
+        attempted_name: profile.name.slice(0, 128),
+        attempted_name_length: profile.name.length,
+        ip: req.ip,
+        scrapeId,
+        issues: candidateResult.error.issues.map(i => i.message).join("; "),
+      });
+    }
     const teamHash = createHash("sha256")
       .update(req.auth.team_id)
       .digest("hex")

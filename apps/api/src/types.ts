@@ -141,6 +141,40 @@ export interface FirecrawlCrawlStatusResponse {
   error?: string;
 }
 
+/**
+ * Canonical ACUC shape produced by self-hosted mocks (TypeScript
+ * `mockACUC` in `controllers/auth.ts` and the PL/pgSQL
+ * `auth_credit_usage_chunk_47` function in
+ * `drizzle/0021_cloud_rpcs_remaining.sql`).
+ *
+ * Self-hosted deployments must populate every key — never
+ * `undefined` — so the rate-limiter middleware (`getRateLimiter` in
+ * `services/rate-limiter.ts`) can safely destructure any
+ * `RateLimiterMode` value without silently reading `undefined` and
+ * falling back to the conservative `500` cap. The 10 keys here
+ * are the union of the keys the TS mock and the SQL mock historically
+ * produced; DB-RPC-006 aligns the two mocks on this exact set.
+ *
+ * Optional fields that are NOT used on the self-hosted hot path
+ * (browser / account / support / research) are intentionally
+ * excluded from this type so a regression in either mock surfaces
+ * as a TypeScript error rather than a silent `undefined`.
+ */
+export type SelfHostACUC = {
+  rate_limits: {
+    crawl: number;
+    scrape: number;
+    search: number;
+    map: number;
+    extract: number;
+    preview: number;
+    crawlStatus: number;
+    extractStatus: number;
+    extractAgentPreview: number;
+    scrapeAgentPreview: number;
+  };
+};
+
 export enum RateLimiterMode {
   Crawl = "crawl",
   CrawlStatus = "crawlStatus",

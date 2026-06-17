@@ -78,11 +78,9 @@ export const logger = winston.createLogger({
         winston.format.metadata({
           fillExcept: ["message", "level", "timestamp"],
         }),
-        ...((config.ENV === "production" &&
-          config.SENTRY_ENVIRONMENT === "dev") ||
-        config.ENV !== "production"
+        ...(config.FIRECRAWL_LOG_FORMAT === "text"
           ? [winston.format.colorize(), logFormat]
-          : []),
+          : [winston.format.json()]),
       ),
     }),
   ],

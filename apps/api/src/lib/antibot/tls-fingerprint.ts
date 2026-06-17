@@ -1,6 +1,7 @@
 // TLS fingerprint rotation provider
 import { fetch as undiciFetch } from "undici";
 import type { AntiBotProvider } from "./types";
+import { assertUrlNotInternal } from "../../scraper/scrapeURL/engines/utils/safeFetch";
 
 export const SUPPORTED_TLS_FINGERPRINTS = [
   "chrome_120",
@@ -141,6 +142,10 @@ export class TlsFingerprintProvider implements AntiBotProvider {
     }
 
     const url = typeof input === "string" ? input : input.toString();
+    // SEC-2026-01: tls-client uses its own transport (libcurl-style),
+    // not undici, so the connect-hook in `withSSRFGuard` does not
+    // apply. Guard the URL up-front instead.
+    await assertUrlNotInternal(url);
     const method = (init.method ?? "GET").toUpperCase();
     const headers: Record<string, string> = {};
     if (init.headers) {

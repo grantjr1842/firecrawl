@@ -65,7 +65,14 @@ export class SmartproxyVendorAdapter implements VendorAdapter {
     }
     if (opts.sessionId) {
       tokens.push(`session-${opts.sessionId}`);
-      tokens.push(`sesstime-${this.stickyMinutes}`);
+      // ANTI-BOT-6: when the caller supplies a sessionTtlMs, convert
+      // it to minutes and pin the vendor-side sticky window to match
+      // the in-process agent cache TTL. Floor at 1 minute so a
+      // sub-minute TTL still produces a valid `sesstime-N` token.
+      const minutes = opts.sessionTtlMs
+        ? Math.max(1, Math.ceil(opts.sessionTtlMs / 60_000))
+        : this.stickyMinutes;
+      tokens.push(`sesstime-${minutes}`);
     }
     const userInfo = tokens.join("-");
     return `http://${userInfo}:${creds.password}@${creds.host}:${creds.port}`;

@@ -8,6 +8,7 @@ import { Document, TokenUsage } from "../../../controllers/v1/types";
 import { getModel } from "../../../lib/generic-ai";
 import { extractData } from "../../../scraper/scrapeURL/lib/extractSmartScrape";
 import { CostTracking } from "../../cost-tracking";
+import { extractConfig } from "../config";
 
 export async function singleAnswerCompletion({
   singleAnswerDocs,
@@ -58,8 +59,8 @@ export async function singleAnswerCompletion({
     },
     markdown: `${singleAnswerDocs.map((x, i) => `[START_PAGE (ID: ${i})]` + buildDocument(x)).join("\n")} [END_PAGE]\n`,
     isExtractEndpoint: true,
-    model: getModel("gpt-4o-mini", "openai"),
-    retryModel: getModel("gpt-4.1", "openai"),
+    model: getModel(extractConfig.MODEL),
+    retryModel: getModel(extractConfig.SCHEMA_ANALYSIS_MODEL),
     costTrackingOptions: {
       costTracking,
       metadata: {

@@ -239,7 +239,9 @@ BEGIN
       'extract', 99999999,
       'preview', 99999999,
       'crawlStatus', 99999999,
-      'extractStatus', 99999999
+      'extractStatus', 99999999,
+      'extractAgentPreview', 99999999,
+      'scrapeAgentPreview', 99999999
     ),
     99999999::integer,
     NULL::jsonb;
@@ -382,7 +384,9 @@ BEGIN
       'extract', 99999999,
       'preview', 99999999,
       'crawlStatus', 99999999,
-      'extractStatus', 99999999
+      'extractStatus', 99999999,
+      'extractAgentPreview', 99999999,
+      'scrapeAgentPreview', 99999999
     ),
     99999999::integer,
     NULL::jsonb;

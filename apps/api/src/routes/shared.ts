@@ -417,3 +417,55 @@ export function wrap(
     controller(req, res).catch(err => next(err));
   };
 }
+
+/**
+ * Gate cross-team admin endpoints. Two paths to authorization:
+ *
+ *  1. The admin-panel (or any operator tool) sends `X-Admin-Role: admin`
+ *     to mark the call as operator-driven. Cloud uses this same header.
+ *  2. Self-host operators who already hold a regular API key can pass
+ *     `Authorization: Bearer <key>` whose owning email is in
+ *     `ADMIN_EMAILS` (comma-separated env var).
+ *
+ * `authMiddleware` must run first — when path #1 succeeds we don't even
+ * need to decode the JWT, but we still want `req.auth` populated for the
+ * controllers behind us.
+ */
+export function requireAdmin(
+  req: RequestWithAuth,
+  res: Response,
+  next: NextFunction,
+): void {
+  if (req.header("X-Admin-Role") === "admin") {
+    next();
+    return;
+  }
+
+  const allowList = (config.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (allowList.length === 0) {
+    if (!res.headersSent) {
+      res
+        .status(403)
+        .json({ success: false, error: "Admin role required" });
+    }
+    return;
+  }
+
+  // authMiddleware has already decoded the JWT into req.auth; we need the
+  // caller's email from the chunk to compare against ADMIN_EMAILS.
+  const email = (req.acuc as any)?.email;
+  if (
+    typeof email === "string" &&
+    allowList.includes(email.toLowerCase())
+  ) {
+    next();
+    return;
+  }
+
+  if (!res.headersSent) {
+    res.status(403).json({ success: false, error: "Admin role required" });
+  }
+}

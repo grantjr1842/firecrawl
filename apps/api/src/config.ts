@@ -66,6 +66,12 @@ const configSchema = z.object({
 
   // API Keys & Authentication
   BULL_AUTH_KEY: z.string().optional(),
+  // Optional shared secret for the unauthenticated /metrics prom endpoint
+  // (admin-ops-07). Unset disables the endpoint entirely; set enables it
+  // and gates it on a Bearer / X-Metrics-Key header. Separate from
+  // BULL_AUTH_KEY so Prometheus scrapers do not share the same secret as
+  // the bull-board UI and the destructive acuc-cache-clear endpoint.
+  METRICS_AUTH_KEY: z.string().min(16).optional(),
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_BASE_URL: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
@@ -219,10 +225,21 @@ const configSchema = z.object({
   FIRECRAWL_PROXY_VENDOR_URL: z.string().optional(),
   FIRECRAWL_PROXY_VENDOR_ROTATE: z
     .preprocess(
-      v => (v === undefined || v === null || v === "" ? true : v),
+      v => (v === undefined || v === null || v === "" ? false : v),
       z.stringbool(),
     )
-    .default(true),
+    .default(false),
+  // ANTI-BOT-6: sticky residential-proxy session configuration.
+  // When FIRECRAWL_PROXY_VENDOR_ROTATE is false, the residential
+  // provider derives a stable `sessionId` from a scope key (default:
+  // crawl id, then domain) so that exit IP reputation can build up
+  // across requests. Sites that fingerprint on exit IP (Amazon,
+  // Yelp, LinkedIn) otherwise see a fresh IP faster than the
+  // rate-limit window and trigger CAPTCHAs.
+  FIRECRAWL_PROXY_STICKY_TTL_MS: z.coerce.number().int().min(0).default(600_000),
+  FIRECRAWL_PROXY_STICKY_SCOPE: z
+    .enum(["session", "crawl", "domain"])
+    .default("crawl"),
   // Anti-bot vendor integration (T1.1; post-ultracode item #16).
   // When FIRECRAWL_ANTIBOT_VENDOR is "brightdata" or "smartproxy", the
   // router will instantiate the corresponding VendorAdapter and use
@@ -307,9 +324,19 @@ const configSchema = z.object({
   ALLOW_LOCAL_WEBHOOKS: z.stringbool().optional(),
   WEBHOOK_USE_RABBITMQ: z.stringbool().optional(),
 
+  // Admin operator allowlist. Comma-separated emails whose API keys can
+  // reach cross-team admin endpoints (paired with X-Admin-Role header).
+  ADMIN_EMAILS: z.string().optional(),
+
   // Firecrawl Features
   FIRECRAWL_DEBUG_FILTER_LINKS: z.stringbool().optional(),
   FIRECRAWL_LOG_TO_FILE: z.stringbool().optional(),
+  // Console log format for stdout. Default 'json' so docker/k8s logs and
+  // downstream log shippers (Loki promtail, fluentbit, Vector, etc.) can
+  // parse every line. Set to 'text' for a human-readable printf format
+  // during local development. The file transport (FIRECRAWL_LOG_TO_FILE)
+  // is always JSON regardless of this setting.
+  FIRECRAWL_LOG_FORMAT: z.enum(["json", "text"]).default("json"),
   FIRECRAWL_SAVE_MOCKS: z.stringbool().optional(),
   FIRECRAWL_INDEX_WRITE_ONLY: z.stringbool().optional(),
   DISABLE_BLOCKLIST: z.stringbool().optional(),

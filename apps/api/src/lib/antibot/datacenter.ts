@@ -1,6 +1,7 @@
 // Datacenter proxy provider
 import { ProxyAgent, fetch as undiciFetch } from "undici";
 import type { AntiBotProvider } from "./types";
+import { withSSRFGuard } from "../../scraper/scrapeURL/engines/utils/safeFetch";
 
 export interface DatacenterProviderOptions {
   proxyServer: string;
@@ -24,7 +25,11 @@ export class DatacenterProxyProvider implements AntiBotProvider {
           `${opts.proxyUsername}:${opts.proxyPassword ?? ""}`,
         ).toString("base64")}`
       : undefined;
-    this.agent = new ProxyAgent({ uri, token });
+    // SEC-2026-01: wrap the ProxyAgent with the SSRF guard so the
+    // connect-hook destroys any socket that resolves to a private /
+    // loopback / link-local IP. Without this, the datacenter proxy
+    // could be tricked into dialing cloud metadata (169.254.169.254).
+    this.agent = withSSRFGuard(new ProxyAgent({ uri, token }));
   }
 
   describe(): string {

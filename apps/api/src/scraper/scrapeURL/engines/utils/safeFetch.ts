@@ -6,6 +6,7 @@ import { interceptors } from "undici";
 import { CookieJar } from "tough-cookie";
 import { cookie } from "http-cookie-agent/undici";
 import IPAddr from "ipaddr.js";
+import { lookup as dnsLookup } from "dns/promises";
 export class InsecureConnectionError extends Error {
   constructor() {
     super("Connection violated security rules.");
@@ -17,6 +18,51 @@ export function isIPPrivate(address: string): boolean {
 
   const addr = IPAddr.parse(address);
   return addr.range() !== "unicast";
+}
+
+/**
+ * SEC-2026-01: Resolve the hostname of `url` and reject the request if
+ * any returned address falls into a private / loopback / link-local
+ * range. Used as a DNS pre-flight by transport layers that do not
+ * expose an undici dispatcher we can wrap (e.g. tls-client in
+ * TlsFingerprintProvider) and as a belt-and-braces guard at the router
+ * boundary in `lib/antibot/router.ts`.
+ *
+ * Throws an `InsecureConnectionError` on a hit so callers can
+ * pattern-match on the same surface as the dispatcher-based guard.
+ * If `ALLOW_LOCAL_WEBHOOKS` is set the check is bypassed (mirrors the
+ * behavior of the connect-hook guard) so self-hosted deployments can
+ * intentionally target internal services.
+ */
+export async function assertUrlNotInternal(
+  input: string | URL,
+): Promise<void> {
+  if (config.ALLOW_LOCAL_WEBHOOKS === true) return;
+  const url = typeof input === "string" ? input : input.toString();
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    // Unparseable URL — let the downstream call fail on its own.
+    return;
+  }
+  if (!hostname) return;
+  // Bare IP literal? No DNS needed.
+  if (isIPPrivate(hostname)) {
+    throw new InsecureConnectionError();
+  }
+  let addresses: Array<{ address: string }>;
+  try {
+    addresses = await dnsLookup(hostname, { all: true, verbatim: true });
+  } catch {
+    // Resolution failure is the request's problem, not ours.
+    return;
+  }
+  for (const a of addresses) {
+    if (isIPPrivate(a.address)) {
+      throw new InsecureConnectionError();
+    }
+  }
 }
 
 function createBaseAgent(skipTlsVerification: boolean) {
@@ -58,6 +104,24 @@ function attachSecurityCheck(agent: undici.Dispatcher) {
       socket.destroy(new InsecureConnectionError());
     }
   });
+}
+
+/**
+ * Wraps the given undici dispatcher (e.g. ProxyAgent, Socks5ProxyAgent,
+ * undici.Agent) with a connect-hook that destroys the socket whenever the
+ * remote address resolves to a private / loopback / link-local range
+ * (RFC1918, 169.254/16, 127/8, IPv6 ULA, etc.). Intended for use by
+ * antibot providers (datacenter, residential, tor, akamai-h2,
+ * tls-fingerprint) that build their own dispatchers and would otherwise
+ * bypass the direct-fetch SSRF guard in `secureDispatcher`.
+ *
+ * SEC-2026-01: prior to this, the antibot path dialed internal targets
+ * (cloud metadata 169.254.169.254, VPC ranges) without any private-IP
+ * check, enabling exfiltration through the operator's outbound proxy.
+ */
+export function withSSRFGuard<T extends undici.Dispatcher>(dispatcher: T): T {
+  attachSecurityCheck(dispatcher);
+  return dispatcher;
 }
 
 // Dispatcher WITH cookie handling (for scraping - needs cookies for auth flows)

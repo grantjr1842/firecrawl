@@ -38,6 +38,22 @@ import { autumnService } from "../../services/autumn/autumn.service";
 // Zod schemas
 // ---------------------------------------------------------------------------
 
+// BP-06: profile.name is used verbatim as the key into a shared S3-backed
+// blob store (`persistentStorage.uniqueId`). Path-traversal (`../`),
+// null-byte injection (`\x00`), and overlong names could overwrite a
+// sibling tenant's profile or escape the per-team prefix. Restrict the
+// name to a conservative charset and length, and reject names that start
+// with `_` (reserved namespace) or contain `..`.
+const profileNameSchema = z
+  .string()
+  .regex(/^[a-zA-Z0-9_-]{1,64}$/, {
+    message:
+      "profile.name must be 1-64 characters of [a-zA-Z0-9_-] (no path separators, no null bytes, no whitespace).",
+  })
+  .refine(n => !n.startsWith("_") && !n.includes(".."), {
+    message: "profile.name cannot start with '_' or contain '..'.",
+  });
+
 const browserCreateRequestSchema = z.object({
   ttl: z.number().min(30).max(3600).default(600),
   activityTtl: z.number().min(10).max(3600).default(300),
@@ -45,7 +61,7 @@ const browserCreateRequestSchema = z.object({
   integration: integrationSchema.optional().transform(val => val || null),
   profile: z
     .object({
-      name: z.string().min(1).max(128),
+      name: profileNameSchema,
       saveChanges: z.boolean().default(true),
     })
     .optional(),
@@ -209,6 +225,37 @@ export async function browserCreateController(
     module: "api/v2",
     method: "browserCreateController",
   });
+
+  // BP-06: pre-validate profile.name so we can log a structured
+  // `profile_name_rejected` event *before* the full schema parse throws.
+  // The full schema is still the source of truth — this is a probe-detection
+  // hook only. We never log the offending value past length-128 to avoid
+  // log injection.
+  if (
+    req.body &&
+    typeof req.body === "object" &&
+    "profile" in req.body &&
+    req.body.profile &&
+    typeof req.body.profile === "object" &&
+    "name" in req.body.profile &&
+    typeof req.body.profile.name === "string"
+  ) {
+    const candidateName = req.body.profile.name;
+    const candidateResult = profileNameSchema.safeParse(candidateName);
+    if (!candidateResult.success) {
+      const issues = candidateResult.error.issues
+        .map(i => i.message)
+        .join("; ");
+      logger.warn("profile_name_rejected", {
+        event: "profile_name_rejected",
+        actor: req.auth.team_id,
+        attempted_name: candidateName.slice(0, 128),
+        attempted_name_length: candidateName.length,
+        ip: req.ip,
+        issues,
+      });
+    }
+  }
 
   req.body = browserCreateRequestSchema.parse(req.body);
 

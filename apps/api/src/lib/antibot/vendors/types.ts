@@ -32,6 +32,14 @@ export interface VendorBuildOptions {
    */
   sessionId?: string;
   /**
+   * Optional sticky-session TTL in milliseconds. Vendors that support
+   * a vendor-side TTL (e.g. Smartproxy's `sesstime-<minutes>` token)
+   * may embed it in the username to keep the same exit node for the
+   * whole window. When omitted, vendors fall back to their own
+   * default sticky window.
+   */
+  sessionTtlMs?: number;
+  /**
    * Optional country / region hint (ISO-3166 alpha-2, e.g. "us",
    * "de"). Vendors that support geo targeting may embed it in the
    * username for routing.

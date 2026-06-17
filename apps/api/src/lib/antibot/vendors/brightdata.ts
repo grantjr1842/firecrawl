@@ -58,6 +58,13 @@ export class BrightDataVendorAdapter implements VendorAdapter {
     }
     if (opts.sessionId) {
       tokens.push(`session-${opts.sessionId}`);
+      // ANTI-BOT-6: Bright Data also accepts a `sesstime-<minutes>`
+      // token to bound the sticky session lifetime. Mirror the
+      // smartproxy adapter so both vendors honor the caller's TTL.
+      if (opts.sessionTtlMs) {
+        const minutes = Math.max(1, Math.ceil(opts.sessionTtlMs / 60_000));
+        tokens.push(`sesstime-${minutes}`);
+      }
     }
     const userInfo = tokens.join("-");
     return `http://${userInfo}:${creds.password}@${creds.host}:${creds.port}`;

@@ -1,6 +1,7 @@
 // Akamai HTTP/2 fingerprinting dispatcher (stub)
 import { Agent, fetch as undiciFetch } from "undici";
 import type { AntiBotProvider } from "./types";
+import { withSSRFGuard } from "../../scraper/scrapeURL/engines/utils/safeFetch";
 
 /** Chrome 120's default H2 SETTINGS. */
 export const CHROME_120_H2_SETTINGS = {
@@ -52,11 +53,13 @@ export class AkamaiH2Provider implements AntiBotProvider {
       },
     };
 
-    this.agent = new Agent({
-      connect: connectOpts as unknown as Agent.Options["connect"],
-      bodyTimeout: this.timeoutMs,
-      headersTimeout: this.timeoutMs,
-    });
+    this.agent = withSSRFGuard(
+      new Agent({
+        connect: connectOpts as unknown as Agent.Options["connect"],
+        bodyTimeout: this.timeoutMs,
+        headersTimeout: this.timeoutMs,
+      }),
+    );
   }
 
   describe(): string {

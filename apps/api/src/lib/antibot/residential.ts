@@ -16,6 +16,7 @@
 import { ProxyAgent, fetch as undiciFetch } from "undici";
 import type { AntiBotProvider } from "./types";
 import type { VendorAdapter, VendorBuildOptions } from "./vendors/types";
+import { withSSRFGuard } from "../../scraper/scrapeURL/engines/utils/safeFetch";
 
 export interface ResidentialProviderOptions {
   /** Legacy: full URL including scheme and credentials. */
@@ -95,7 +96,11 @@ export class ResidentialProxyProvider implements AntiBotProvider {
         this.vendorCredentials,
         buildOpts,
       );
-      const agent = new ProxyAgent({ uri: url });
+      // SEC-2026-01: wrap the ProxyAgent with the SSRF guard so the
+      // connect-hook destroys any socket that resolves to a private
+      // IP. Without this, the residential proxy could be used to
+      // exfiltrate cloud metadata or VPC internal targets.
+      const agent = withSSRFGuard(new ProxyAgent({ uri: url }));
       if (sessionId) {
         this.agentCache.set(sessionId, agent);
         setTimeout(
@@ -111,7 +116,7 @@ export class ResidentialProxyProvider implements AntiBotProvider {
       );
     }
     if (!this.rotate) {
-      return new ProxyAgent({ uri: this.vendorUrl });
+      return withSSRFGuard(new ProxyAgent({ uri: this.vendorUrl }));
     }
     const sessionId = Math.random().toString(36).slice(2, 10);
     const [scheme, rest] = this.vendorUrl.includes("://")
@@ -121,7 +126,7 @@ export class ResidentialProxyProvider implements AntiBotProvider {
       /(@)/,
       `-session-${sessionId}$1`,
     )}`;
-    const agent = new ProxyAgent({ uri: rotated });
+    const agent = withSSRFGuard(new ProxyAgent({ uri: rotated }));
     this.agentCache.set(sessionId, agent);
     setTimeout(() => this.agentCache.delete(sessionId), 60_000).unref();
     return agent;
