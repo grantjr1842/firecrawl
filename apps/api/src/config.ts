@@ -223,6 +223,24 @@ const configSchema = z.object({
       z.stringbool(),
     )
     .default(true),
+  // Anti-bot vendor integration (T1.1; post-ultracode item #16).
+  // When FIRECRAWL_ANTIBOT_VENDOR is "brightdata" or "smartproxy", the
+  // router will instantiate the corresponding VendorAdapter and use
+  // it to build per-request proxy URLs for the residential tier.
+  FIRECRAWL_ANTIBOT_VENDOR: z
+    .enum(["brightdata", "smartproxy", "generic"])
+    .optional(),
+  FIRECRAWL_ANTIBOT_VENDOR_GEO: z.string().optional(),
+  // Bright Data credentials
+  FIRECRAWL_BRIGHTDATA_USERNAME: z.string().optional(),
+  FIRECRAWL_BRIGHTDATA_PASSWORD: z.string().optional(),
+  FIRECRAWL_BRIGHTDATA_HOST: z.string().optional(),
+  FIRECRAWL_BRIGHTDATA_PORT: z.coerce.number().optional(),
+  // Smartproxy credentials
+  FIRECRAWL_SMARTPROXY_USERNAME: z.string().optional(),
+  FIRECRAWL_SMARTPROXY_PASSWORD: z.string().optional(),
+  FIRECRAWL_SMARTPROXY_HOST: z.string().optional(),
+  FIRECRAWL_SMARTPROXY_PORT: z.coerce.number().optional(),
   FIRECRAWL_ANTIBOT_TIERS: z.string().optional(),
   FIRECRAWL_ANTIBOT_RETRY_ON_STATUS: z.string().default("403,429,503"),
   FIRECRAWL_ANTIBOT_BYPASS_PREFIXES: z.string().optional(),
@@ -368,6 +386,16 @@ const configSchema = z.object({
   SENTRY_ERROR_SAMPLE_RATE: z.coerce.number().default(0.05),
   SENTRY_ENVIRONMENT: z.string().default("production"),
   NUQ_POD_NAME: z.string().default("main"),
+
+  // OpenTelemetry / distributed tracing (T2.2 foundation)
+  // OTLP endpoint in the form "http://jaeger:4318" or "http://otel-collector:4318".
+  // When unset, the OTel SDK stays uninitialized and tracing is a no-op.
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
+  OTEL_SERVICE_NAME: z.string().default("firecrawl-api"),
+  // Head-based sampler; default 1% to mirror SENTRY_TRACE_SAMPLE_RATE.
+  OTEL_TRACE_SAMPLE_RATE: z.coerce.number().default(0.01),
+  // Hard kill-switch for the SDK without removing env wiring (e.g. for tests).
+  OTEL_SDK_DISABLED: z.stringbool().default(false),
 
   // Billing
   AUTO_RECHARGE_ENABLED: z.stringbool().default(false),

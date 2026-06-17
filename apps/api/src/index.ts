@@ -1,5 +1,8 @@
 import "dotenv/config";
 import { config } from "./config";
+// IMPORTANT: OTel must be imported BEFORE Sentry so the async-hooks context
+// manager is registered before Sentry's own OTel integration layer boots.
+import "./services/otel";
 import "./services/sentry";
 import { setSentryServiceTag } from "./services/sentry";
 import * as Sentry from "@sentry/node";
@@ -38,6 +41,7 @@ import { initializeEngineForcing } from "./scraper/WebScraper/utils/engine-forci
 import responseTime from "response-time";
 import { shutdownWebhookQueue } from "./services/webhook";
 import { shutdownIndexerQueue } from "./services/indexing/indexer-queue";
+import { shutdownOtel } from "./services/otel";
 
 const { createBullBoard } = require("@bull-board/api");
 const { BullMQAdapter } = require("@bull-board/api/bullMQAdapter");
@@ -141,8 +145,14 @@ async function startServer(port = DEFAULT_PORT) {
       nuqShutdown().finally(() => {
         shutdownWebhookQueue().finally(() => {
           shutdownIndexerQueue().finally(() => {
-            logger.info("NUQ shutdown complete");
-            process.exit(0);
+            shutdownOtel()
+              .catch(error => {
+                logger.error("OTel shutdown error", { error });
+              })
+              .finally(() => {
+                logger.info("NUQ shutdown complete");
+                process.exit(0);
+              });
           });
         });
       });
