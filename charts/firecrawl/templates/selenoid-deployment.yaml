@@ -1,0 +1,101 @@
+{{- if .Values.selenoid.enabled -}}
+{{- $size := include "firecrawl.selenoid.size" . | fromYaml -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "firecrawl.fullname" . }}-selenoid
+  labels:
+    {{- include "firecrawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: selenoid
+spec:
+  replicas: {{ $size.replicas }}
+  selector:
+    matchLabels:
+      {{- include "firecrawl.selenoid.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "firecrawl.selenoid.selectorLabels" . | nindent 8 }}
+      annotations:
+        # T1.2 followup: wire Prometheus scrape annotations + a custom
+        # `active_pages` metric for HPA. The chart foundation deliberately
+        # leaves the HPA out — operators can install kube-prometheus-stack
+        # and reference this annotation block from a ServiceMonitor.
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "4444"
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: selenoid
+          image: {{ include "firecrawl.selenoid.image" . }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - name: webdriver
+              containerPort: 4444
+              protocol: TCP
+          env:
+            - name: OVERRIDE_VIDEO_OUTPUT_DIR
+              value: /opt/selenoid/video
+            - name: OVERRIDE_LOGS_DIR
+              value: /opt/selenoid/logs
+            - name: SELENIUM_VERSION
+              value: {{ .Values.selenoid.image.tag | quote }}
+            {{- if .Values.selenoid.enableVNC }}
+            - name: ENABLE_VNC
+              value: "true"
+            {{- end }}
+          {{- with $size }}
+          args:
+            - -conf
+            - /etc/selenoid/browsers.json
+            - -limit
+            - {{ .limit | quote }}
+            - -container
+            - {{ .containerCpu | quote }}
+            - -session-attempt-timeout
+            - {{ $.Values.selenoid.sessionTimeout | default 60 | quote }}
+            - -timeout
+            - {{ $.Values.selenoid.sessionTimeout | default 60 | quote }}
+            - -service
+            - /wd/hub
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: webdriver
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: webdriver
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: {{ $size.cpu | quote }}
+              memory: {{ $size.memory | quote }}
+            limits:
+              cpu: {{ $size.cpu | quote }}
+              memory: {{ $size.memory | quote }}
+          volumeMounts:
+            - name: browsers
+              mountPath: /etc/selenoid
+              readOnly: true
+            - name: shared
+              mountPath: /opt/selenoid
+      volumes:
+        - name: browsers
+          configMap:
+            name: {{ include "firecrawl.fullname" . }}-selenoid-browsers
+        - name: shared
+          persistentVolumeClaim:
+            claimName: {{ include "firecrawl.fullname" . }}-selenoid-shared
+{{- end }}

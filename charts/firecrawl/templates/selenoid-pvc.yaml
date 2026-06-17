@@ -1,0 +1,18 @@
+{{- if .Values.selenoid.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "firecrawl.fullname" . }}-selenoid-shared
+  labels:
+    {{- include "firecrawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: selenoid
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.selenoid.sharedDir.size | default "1Gi" }}
+  {{- if .Values.selenoid.sharedDir.storageClass }}
+  storageClassName: {{ .Values.selenoid.sharedDir.storageClass }}
+  {{- end }}
+{{- end }}

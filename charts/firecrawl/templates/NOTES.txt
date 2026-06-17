@@ -1,0 +1,33 @@
+{{- $selenoidEnabled := .Values.selenoid.enabled -}}
+Firecrawl {{ .Chart.AppVersion }} has been installed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+{{- if $selenoidEnabled }}
+
+Selenoid (WebDriver grid) is ENABLED.
+  Service:    {{ include "firecrawl.fullname" . }}-selenoid:{{ .Values.selenoid.service.port | default 4444 }}
+  Size:       {{ .Values.selenoid.sizePreset }}
+  Replicas:   {{ include "firecrawl.selenoid.size" . }}
+  Browsers:   {{ range .Values.selenoid.browsers }}{{ .name }}={{ .version }} {{ end }}
+
+Configure the API to talk to the grid:
+  export WEBDRIVER_URL=http://{{ include "firecrawl.fullname" . }}-selenoid:{{ .Values.selenoid.service.port | default 4444 }}
+  export PLAYWRIGHT_DRIVER=webdriver
+
+To expose the WebDriver API outside the cluster, add a Caddy/NGINX ingress
+that requires a bearer token — the W3C WebDriver protocol is
+unauthenticated by default. Do not expose :4444 on a public NIC.
+
+T1.2 followups (multi-week):
+  - HorizontalPodAutoscaler on a custom `active_pages` metric
+  - Multi-AZ pod anti-affinity
+  - Browser image pull-through cache (air-gapped clusters)
+  - ServiceMonitor for kube-prometheus-stack
+{{- else }}
+
+Selenoid is DISABLED. The API uses the in-process Playwright pool
+(capped at ~10 concurrent pages). To switch to a selenoid grid,
+re-install with:
+  helm upgrade {{ .Release.Name }} {{ .Chart.Name }} \
+    --set selenoid.enabled=true \
+    --set selenoid.sizePreset=small
+{{- end }}

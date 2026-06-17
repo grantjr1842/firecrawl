@@ -1,0 +1,108 @@
+# Default values for the Firecrawl chart.
+# This file is intentionally small for the T1.2 foundation ship — only the
+# selenoid subchart values are wired. The api/worker/redis/rabbitmq/postgres
+# subcharts are tracked separately and will be backfilled in followup PRs.
+
+# -- Image pull policy applied to all Firecrawl subcharts.
+imagePullPolicy: IfNotPresent
+
+# -- Image pull secrets for private registries.
+imagePullSecrets: []
+
+# -- Service account used by API/worker pods.
+serviceAccount:
+  create: true
+  name: ""
+
+selenoid:
+  # -- Enable the selenoid subchart. Set to false to use the in-process
+  # -- Playwright pool instead (the default for small/self-host deployments).
+  enabled: false
+
+  # -- One size preset for the T1.2 foundation. Real autoscaling (HPA on
+  # -- active_pages metric, multi-AZ, per-browser pinning) is a multi-week
+  # -- followup and is intentionally not implemented here.
+  sizePreset: small
+
+  # -- Override the image registry (defaults to Docker Hub).
+  image:
+    registry: docker.io
+    repository: aerokube/selenoid
+    tag: 1.11.0
+
+  # -- Browser image list. selenoid pulls these on first start; in air-gapped
+  # -- clusters bake them into a private registry and point `browsersImage`
+  # -- at the mirror. Format mirrors selenoid's `browsers.json`.
+  browsers:
+    - name: chromium
+      version: "121.0"
+      default: true
+    - name: firefox
+      version: "123.0"
+    - name: opera
+      version: "106.0"
+
+  # -- Per-pod resource envelope. 1 CPU ≈ 2-3 concurrent pages (per
+  # -- SELF_HOSTED_LIMITS.md). "small" = 2 replicas, "medium"/"large"
+  # -- are placeholders for the T1.2 followup.
+  resources:
+    small:
+      replicas: 2
+      cpu: "1"
+      memory: "2Gi"
+      limit: 5
+      containerCpu: "0.8"
+    medium:
+      replicas: 4
+      cpu: "2"
+      memory: "4Gi"
+      limit: 10
+      containerCpu: "1.2"
+    large:
+      replicas: 8
+      cpu: "4"
+      memory: "8Gi"
+      limit: 20
+      containerCpu: "1.5"
+
+  # -- WebDriver endpoint exposure. The W3C WebDriver protocol is
+  # -- unauthenticated by default, so we recommend ClusterIP + a Caddy
+  # -- ingress with basicauth for any cross-pod traffic. The chart only
+  # -- ships a ClusterIP Service; operators add the ingress.
+  service:
+    type: ClusterIP
+    port: 4444
+
+  # -- VNC port for live browser inspection. Off by default.
+  enableVNC: false
+
+  # -- Session timeout (seconds). Browsers are recycled after this idle
+  # -- window to avoid leaking crashed pages.
+  sessionTimeout: 60
+
+  # -- Shared persistent volume for downloaded files. 1Gi is enough for
+  # -- most scrapes; size up for heavy PDF workloads.
+  sharedDir:
+    size: 1Gi
+    storageClass: ""
+
+# -- API service config. Used by the api subchart (separate workstream).
+api:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/firecrawl/firecrawl
+    tag: latest
+  service:
+    type: ClusterIP
+    port: 3002
+  env:
+    PLAYWRIGHT_DRIVER: webdriver
+    # -- When selenoid is enabled, point the api at the in-cluster service.
+    WEBDRIVER_URL: http://firecrawl-selenoid:4444
+  resources:
+    requests:
+      cpu: "2"
+      memory: "4Gi"
+    limits:
+      cpu: "4"
+      memory: "8Gi"

@@ -1,0 +1,18 @@
+apiVersion: v2
+name: firecrawl
+description: |
+  Firecrawl Helm chart. Ships the API, workers, and a selenoid (WebDriver grid)
+  subchart for browser-rendered scrapes. The selenoid subchart is the T1.2
+  foundation — 1 size preset, no autoscaling yet (multi-week followup).
+type: application
+version: 0.1.0
+appVersion: "2.0.0"
+keywords:
+  - firecrawl
+  - scraper
+  - selenoid
+  - webdriver
+  - browser-pool
+maintainers:
+  - name: Firecrawl
+    url: https://firecrawl.dev

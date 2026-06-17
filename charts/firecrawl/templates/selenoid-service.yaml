@@ -1,0 +1,18 @@
+{{- if .Values.selenoid.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "firecrawl.fullname" . }}-selenoid
+  labels:
+    {{- include "firecrawl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: selenoid
+spec:
+  type: {{ .Values.selenoid.service.type | default "ClusterIP" }}
+  ports:
+    - name: webdriver
+      port: {{ .Values.selenoid.service.port | default 4444 }}
+      targetPort: webdriver
+      protocol: TCP
+  selector:
+    {{- include "firecrawl.selenoid.selectorLabels" . | nindent 4 }}
+{{- end }}

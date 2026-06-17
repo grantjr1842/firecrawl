@@ -7,6 +7,11 @@ import { TorSocksProvider } from "./tor";
 import { ResidentialProxyProvider } from "./residential";
 import { TlsFingerprintProvider } from "./tls-fingerprint";
 import { AkamaiH2Provider } from "./akamai-h2";
+import {
+  createVendorAdapter,
+  resolveVendorCredentials,
+  type VendorConfig,
+} from "./vendors";
 
 const DEFAULT_TIERS: AntiBotTier[] = [
   "datacenter",
@@ -56,6 +61,64 @@ function parseRetryStatuses(raw: string | undefined): Set<number> {
   return out.size > 0 ? out : new Set([403, 429, 503]);
 }
 
+function buildResidentialProviderFromConfig(): ResidentialProxyProvider {
+  const vendorRaw = config.FIRECRAWL_ANTIBOT_VENDOR;
+
+  if (vendorRaw && vendorRaw !== "generic") {
+    // Vendor-adapter path: pull credentials from the matched vendor's
+    // env vars, then hand the adapter to the residential provider.
+    const vendorCfg: VendorConfig = readVendorConfigFromEnv(vendorRaw);
+    try {
+      const adapter = createVendorAdapter({
+        vendor: vendorRaw,
+        config: vendorCfg,
+      });
+      const creds = resolveVendorCredentials(adapter.id, vendorCfg);
+      return new ResidentialProxyProvider({
+        vendorAdapter: adapter,
+        vendorCredentials: creds,
+        rotate: config.FIRECRAWL_PROXY_VENDOR_ROTATE ?? true,
+        ...(config.FIRECRAWL_ANTIBOT_VENDOR_GEO
+          ? { geo: config.FIRECRAWL_ANTIBOT_VENDOR_GEO }
+          : {}),
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[antibot] vendor adapter "${vendorRaw}" could not be initialized (${(err as Error).message}). ` +
+          "Falling back to the generic URL-based provider.",
+      );
+    }
+  }
+
+  // Generic / legacy path.
+  return new ResidentialProxyProvider({
+    vendorUrl: config.FIRECRAWL_PROXY_VENDOR_URL,
+    rotate: config.FIRECRAWL_PROXY_VENDOR_ROTATE ?? true,
+  });
+}
+
+function readVendorConfigFromEnv(
+  vendor: "brightdata" | "smartproxy",
+): VendorConfig {
+  if (vendor === "brightdata") {
+    return {
+      vendor: "brightdata",
+      username: config.FIRECRAWL_BRIGHTDATA_USERNAME,
+      password: config.FIRECRAWL_BRIGHTDATA_PASSWORD,
+      host: config.FIRECRAWL_BRIGHTDATA_HOST,
+      port: config.FIRECRAWL_BRIGHTDATA_PORT,
+    };
+  }
+  return {
+    vendor: "smartproxy",
+    username: config.FIRECRAWL_SMARTPROXY_USERNAME,
+    password: config.FIRECRAWL_SMARTPROXY_PASSWORD,
+    host: config.FIRECRAWL_SMARTPROXY_HOST,
+    port: config.FIRECRAWL_SMARTPROXY_PORT,
+  };
+}
+
 export function buildRouterFromConfig(): AntiBotRouter {
   const tiers = parseTiers(config.FIRECRAWL_ANTIBOT_TIERS);
   const retryStatuses = parseRetryStatuses(
@@ -96,12 +159,9 @@ export function buildRouterFromConfig(): AntiBotRouter {
           timeoutMs: 30_000,
         }),
       );
-    } else if (tier === "residential" && config.FIRECRAWL_PROXY_VENDOR_URL) {
+    } else if (tier === "residential" && (config.FIRECRAWL_PROXY_VENDOR_URL || config.FIRECRAWL_ANTIBOT_VENDOR)) {
       providers.push(
-        new ResidentialProxyProvider({
-          vendorUrl: config.FIRECRAWL_PROXY_VENDOR_URL,
-          rotate: config.FIRECRAWL_PROXY_VENDOR_ROTATE ?? true,
-        }),
+        buildResidentialProviderFromConfig(),
       );
     } else if (tier === "tor" && config.FIRECRAWL_TOR_SOCKS_URL) {
       providers.push(

@@ -1,0 +1,92 @@
+# docker-compose.selenoid.yml
+#
+# T1.2 foundation: a compose profile that brings up a selenoid
+# (WebDriver-compatible) grid alongside the existing api/worker stack
+# and points the playwright-service at it via PLAYWRIGHT_DRIVER=webdriver.
+#
+# Usage:
+#   docker compose -f docker-compose.yaml -f docker-compose.selenoid.yml \
+#     --profile selenoid up
+#
+# This is the single-VM equivalent of the k8s chart at
+# charts/firecrawl/. Production autoscaling (HPA on active_pages,
+# multi-AZ, browser pull-through cache) is a multi-week T1.2 followup.
+#
+# See SELF_HOSTED_LIMITS.md and charts/firecrawl/README.md for context.
+
+name: firecrawl-selenoid
+
+services:
+  selenoid:
+    # T1.2 foundation: one selenoid instance. The real cluster runs on k8s
+    # via charts/firecrawl/. For docker-compose we ship a single hub that
+    # pulls browser images on first start.
+    image: aerokube/selenoid:1.11.0
+    networks:
+      - selenoid-bridge
+    # -- The W3C WebDriver endpoint. Internal-only by default; the
+    # -- standard compose does not publish it to the host. If the
+    # -- operator needs cross-host access, add a Caddy reverse proxy
+    # -- with bearer auth — do NOT publish :4444 to a public NIC.
+    expose:
+      - "4444"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./.selenoid:/etc/selenoid:ro"
+      - "selenoid-video:/opt/selenoid/video"
+      - "selenoid-logs:/opt/selenoid/logs"
+    environment:
+      # T1.2 followup: ENABLE_VNC, OVERRIDE_VIDEO_OUTPUT_DIR, etc. are
+      # left as documented knobs. The foundation ships sensible defaults.
+      OVERRIDE_VIDEO_OUTPUT_DIR: /opt/selenoid/video
+      OVERRIDE_LOGS_DIR: /opt/selenoid/logs
+    # -- Pull browser images on first start. The list mirrors
+    # -- charts/firecrawl/templates/selenoid-configmap.yaml. To pre-bake
+    # -- images in air-gapped environments, run `selenoid pull` once on
+    # -- a connected host and `docker save` the resulting images.
+    command:
+      - -conf
+      - /etc/selenoid/browsers.json
+      - -limit
+      - "${SELENOID_LIMIT:-5}"
+      - -container
+      - "${SELENOID_CONTAINER_CPU:-0.8}"
+      - -session-attempt-timeout
+      - "${SELENOID_SESSION_TIMEOUT:-60s}"
+      - -timeout
+      - "${SELENOID_SESSION_TIMEOUT:-60s}"
+    healthcheck:
+      # F-INFRA-002 fix: the previous healthcheck ended in `|| exit 0`
+      # and could never fail. This one probes /ping and exits 1 on any
+      # non-`selenoid: ready` response. The api pod's depends_on is
+      # service_healthy so it waits for the grid to actually answer.
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:4444/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    profiles: ["selenoid"]
+
+  # -- When the selenoid profile is active, the playwright-service in
+  # -- the base compose talks to it instead of launching its own
+  # -- Chromium. We override the env vars + the depends_on list via a
+  # -- merge (docker compose `-f` overlay applies environment
+  # -- overrides on top of the base service definition).
+  api:
+    environment:
+      PLAYWRIGHT_DRIVER: webdriver
+      WEBDRIVER_URL: http://selenoid:4444
+      WEBDRIVER_SESSION_TIMEOUT: "${WEBDRIVER_SESSION_TIMEOUT:-60}"
+    depends_on:
+      selenoid:
+        condition: service_healthy
+    profiles: ["selenoid"]
+
+networks:
+  selenoid-bridge:
+    driver: bridge
+
+volumes:
+  selenoid-video:
+  selenoid-logs:

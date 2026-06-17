@@ -61,3 +61,8 @@ _local/
 
 
 apps/api/src/lib/scrape-interact/*.md
+
+# selenoid compose profile runtime artifacts (browsers.json is committed;
+# video + logs are operator-managed and should not be checked in)
+.selenoid/video/
+.selenoid/logs/
