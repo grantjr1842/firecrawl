@@ -338,6 +338,30 @@ const configSchema = z.object({
   SYS_INFO_MAX_CACHE_DURATION: z.coerce.number().default(150),
   USE_GO_MARKDOWN_PARSER: z.stringbool().optional(),
 
+  // ---------------------------------------------------------------------
+  // Native result cache (BB-11). The cache stores the post-transformer
+  // Document for each (url, tier) tuple so repeat scrapes can skip the
+  // engine waterfall. Operators can tune the per-tier TTLs to match
+  // their freshness needs and the bound on LRU size (RESULT_CACHE_MAX_KEYS
+  // is enforced via Redis maxmemory-policy=allkeys-lru, see
+  // services/result-cache.ts). ETag round-trip is opt-out via
+  // RESULT_CACHE_USE_ETAG=false. ZDR requests always bypass both reads
+  // and writes - see services/result-cache.ts for the privacy rationale.
+  // ---------------------------------------------------------------------
+  RESULT_CACHE_TIER_MARKDOWN_TTL: z.coerce.number().default(3600),
+  RESULT_CACHE_TIER_HTML_TTL: z.coerce.number().default(1800),
+  RESULT_CACHE_TIER_SCREENSHOT_TTL: z.coerce.number().default(600),
+  RESULT_CACHE_TIER_EXTRACT_TTL: z.coerce.number().default(300),
+  RESULT_CACHE_USE_ETAG: z
+    .preprocess(
+      v => (v === undefined || v === null || v === "" ? true : v),
+      z.stringbool(),
+    )
+    .default(true),
+  // Soft cap on the number of cache entries; documented in the module
+  // comment as a hint for the Redis maxmemory / maxmemory-sample tuning.
+  RESULT_CACHE_MAX_KEYS: z.coerce.number().default(100000),
+
   // Sentry
   SENTRY_DSN: z.string().optional(),
   SENTRY_TRACE_SAMPLE_RATE: z.coerce.number().default(0.01),
@@ -384,6 +408,14 @@ const configSchema = z.object({
   EXTRACT_ANCHOR_MODEL: z.string().default("openai/gpt-oss-120b"),
   EXTRACT_LIGHT_MODEL: z.string().default("openai/gpt-oss-20b"),
   CODE_SANDBOX_URL: z.string().default("ws://code-sandbox:3001"),
+
+  // ---------------------------------------------------------------------------
+  // BB-10: Per-tenant cache isolation. When true, getCachedResultTiered
+  // and setCachedResultTiered prefix the Redis key with a team hash so
+  // teams don't share cached bytes. Default off to preserve the
+  // high-hit-rate shared global cache for self-hosted installs.
+  // ---------------------------------------------------------------------------
+  RESULT_CACHE_TEAM_ISOLATION: z.coerce.boolean().default(false),
 });
 
 export const config = configSchema.parse(process.env);

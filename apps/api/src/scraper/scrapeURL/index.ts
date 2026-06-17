@@ -86,6 +86,13 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
+import {
+  getCachedResultTiered,
+  setCachedResultTiered,
+  pickCacheTier,
+  ttlSecondsFromMaxAgeMs,
+  type CachedScrapeResult,
+} from "../../services/result-cache";
 
 export type ScrapeUrlResponse =
   | {
@@ -503,6 +510,55 @@ type EngineScrapeResultWithContext = {
 };
 
 const MAX_HTML_SIZE_FOR_MARKDOWN_CHECK = 300 * 1024; // 300KB
+
+/**
+ * Reconstruct a Document from a cached scrape result. The cached payload
+ * is the post-transformer Document with the cache module's bookkeeping
+ * fields (`cachedAt`, `ttlSeconds`) stripped. We stamp the metadata so
+ * downstream code can tell this was a cache hit (`cacheState: "hit"`)
+ * and record the original write time for observability.
+ */
+function buildDocumentFromCache(
+  cached: CachedScrapeResult,
+  meta: Meta,
+): Document {
+  // Strip cache bookkeeping before handing the payload back as a Document.
+  const {
+    cachedAt: _cachedAt,
+    ttlSeconds: _ttlSeconds,
+    etag: _etag,
+    ...rest
+  } = cached;
+
+  // The cached payload was a Document at the time of the original write;
+  // the metadata sub-object may have a stale cacheState. We rebuild a
+  // minimal Document that satisfies the type and stamps the cache hit
+  // for the caller. The `metadata` sub-object on the cached payload
+  // already contains the right shape, but we overwrite `cacheState` to
+  // "hit" so it stays accurate even if a future code path mutates the
+  // cache between read and write.
+  const cachedMetadata = (rest.metadata ?? {}) as Document["metadata"];
+  const document: Document = {
+    ...(rest as Omit<Document, "metadata">),
+    metadata: {
+      ...cachedMetadata,
+      cacheState: "hit",
+      cachedAt:
+        typeof cached.cachedAt === "string"
+          ? cached.cachedAt
+          : new Date().toISOString(),
+    } as Document["metadata"],
+  };
+
+  // Sanity log so the operator can correlate the hit with the original
+  // write - useful when the cache hit rate looks suspiciously high.
+  meta.logger.debug("scrapeURL result cache hit; serving from cache", {
+    cachedAt: cached.cachedAt,
+    ttlSeconds: cached.ttlSeconds,
+  });
+
+  return document;
+}
 
 async function scrapeURLLoopIter(
   meta: Meta,
@@ -1095,6 +1151,40 @@ export async function scrapeURL(
       });
     }
 
+    // ---------------------------------------------------------------------
+    // Tiered result cache (BB-11). Look up a previously-scraped result for
+    // this (url, tier) tuple and short-circuit if the cache is hot. The
+    // index engine has its own cache, so we only consult the tiered cache
+    // when the index path is disabled for this request. The cache also
+    // honours ZDR (never reads/writes for zero-data-retention requests)
+    // and per-team isolation when the operator opts in.
+    // ---------------------------------------------------------------------
+    const cacheableUrl = meta.rewrittenUrl ?? meta.url;
+    if (!shouldUseIndex(meta) && !internalOptions.isPreCrawl) {
+      const tier = pickCacheTier(options.formats);
+      const cached = await getCachedResultTiered(
+        cacheableUrl,
+        tier,
+        !!internalOptions.zeroDataRetention,
+        internalOptions.teamId,
+      );
+      if (cached) {
+        meta.logger.debug("scrapeURL result cache hit", { tier });
+        setSpanAttributes(span, {
+          "scrape.result_cache": "hit",
+          "scrape.result_cache_tier": tier,
+        });
+        return {
+          success: true,
+          document: buildDocumentFromCache(cached, meta),
+        };
+      }
+      setSpanAttributes(span, {
+        "scrape.result_cache": "miss",
+        "scrape.result_cache_tier": tier,
+      });
+    }
+
     if (shouldCheckRobots(options, internalOptions)) {
       await withSpan("scrape.robots_check", async robotsSpan => {
         const urlToCheck = meta.rewrittenUrl || meta.url;
@@ -1312,6 +1402,33 @@ export async function scrapeURL(
         "scrape.index_hit":
           result.success && result.document.metadata.cacheState === "hit",
       });
+
+      // -----------------------------------------------------------------
+      // Tiered result cache (BB-11) write. We only cache results that
+      // came from a non-index engine, since the index path already
+      // persists its own cache. ZDR requests are bypassed inside the
+      // cache module. We honour a caller-provided `maxAge` by passing
+      // it as a TTL override; otherwise the per-tier default applies.
+      // -----------------------------------------------------------------
+      if (
+        result.success &&
+        meta.winnerEngine !== "index" &&
+        meta.winnerEngine !== "index;documents"
+      ) {
+        const writeTier = pickCacheTier(options.formats);
+        const writeTtl = ttlSecondsFromMaxAgeMs(options.maxAge);
+        // Fire-and-forget: a Redis hiccup must never fail the scrape.
+        void setCachedResultTiered(
+          cacheableUrl,
+          writeTier,
+          result.document as unknown as Record<string, unknown>,
+          writeTtl,
+          !!internalOptions.zeroDataRetention,
+          internalOptions.teamId,
+        ).catch(err => {
+          meta.logger.debug("scrapeURL result cache write failed", { err });
+        });
+      }
 
       return result;
     } catch (error) {
