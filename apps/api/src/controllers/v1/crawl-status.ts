@@ -30,6 +30,10 @@ import {
   crawlGroup,
 } from "../../services/worker/nuq-router";
 import { ScrapeJobSingleUrls } from "../../types";
+import {
+  getPrecheckCacheHits,
+  getPrecheckCacheHitsCount,
+} from "../../services/worker/crawl-logic";
 configDotenv();
 
 export type PseudoJob<T> = {
@@ -223,6 +227,19 @@ export async function crawlStatusController(
     creditsUsed: creditsBilled?.[0]?.credits_billed ?? -1,
   };
 
+  // PERF-2026-06-17-6: For batch scrapes that used the cache precheck,
+  // add the precheck-hit count to both completed and total so the
+  // progress bar reflects the merged stream (cache + worker results).
+  // Cache hits count as "completed" because they're already materialized
+  // in the precheck store at batch-scrape time.
+  if (isBatch) {
+    const precheckCount = await getPrecheckCacheHitsCount(req.params.jobId);
+    if (precheckCount > 0) {
+      outputBulkA.completed = (outputBulkA.completed ?? 0) + precheckCount;
+      outputBulkA.total = (outputBulkA.total ?? 0) + precheckCount;
+    }
+  }
+
   // if the crawl has a stored error and no jobs were ever created, mark as failed
   if (
     crawlError &&
@@ -262,6 +279,28 @@ export async function crawlStatusController(
   let iteratedOver = 0;
   let bytes = 0;
   const bytesLimit = 10485760; // 10 MiB in bytes
+
+  // PERF-2026-06-17-6: For batch scrapes, prepend cache-hit documents so
+  // they appear first in the result stream (insertion-order). The NuQ
+  // listing still serves the worker-completed documents after. When the
+  // pagination window lands entirely in the cache-hit range (skip small),
+  // skip the NuQ listing entirely; when it crosses the boundary, the
+  // bytes-limit loop in the existing code path keeps memory bounded.
+  if (isBatch) {
+    const precheckHits = await getPrecheckCacheHits(
+      req.params.jobId,
+      start,
+      end !== undefined ? end : -1,
+    );
+    for (const hit of precheckHits) {
+      scrapes.push(hit.document);
+      bytes += JSON.stringify(hit.document).length;
+      iteratedOver++;
+      if (bytes > bytesLimit) {
+        break;
+      }
+    }
+  }
 
   const scrapeBlobs = await Promise.all(
     doneJobs.map(

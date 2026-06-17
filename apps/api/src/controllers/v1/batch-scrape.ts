@@ -32,6 +32,13 @@ import {
 } from "../../services/worker/nuq-router";
 import { logRequest } from "../../services/logging/log_job";
 import { getScrapeZDR } from "../../lib/zdr-helpers";
+import {
+  getCachedResultTiered,
+  pickCacheTier,
+} from "../../services/result-cache";
+import { rewriteUrl } from "../../scraper/scrapeURL/lib/rewriteUrl";
+import { buildDocumentFromCachePayload } from "../../scraper/scrapeURL/lib/cacheDocument";
+import { mergeBatchResult } from "../../services/worker/crawl-logic";
 
 export async function batchScrapeController(
   req: RequestWithAuth<{}, BatchScrapeResponse, BatchScrapeRequest>,
@@ -196,6 +203,82 @@ export async function batchScrapeController(
   }
   logger.debug("Using job priority " + jobPriority, { jobPriority });
   const billing = { endpoint: "batch_scrape" as const, jobId: id };
+
+  // ---------------------------------------------------------------------
+  // PERF-2026-06-17-6: batch cache precheck.
+  //
+  // For a 10K-url batch with an 80% cache-hit ratio (a common re-index
+  // pattern), paying full NuQ round-trip + lock acquire + team-semaphore
+  // for the 8K cache-warm URLs is wasteful: the scrapeURL cache
+  // short-circuit (scrapeURL/index.ts:1165) would have served them in
+  // <1ms anyway. We do an O(n) Redis lookup here and skip enqueuing for
+  // hits. The hit documents are merged into the batch result store via
+  // `mergeBatchResult`; the crawl-status endpoint stitches them back at
+  // read time so the user sees a single unified stream.
+  //
+  // Gating rules:
+  //   - RESULT_CACHE_PRECHECK_BATCH env (default true)
+  //   - ZDR requests bypass entirely (cache module never reads/writes
+  //     for zdr=true; the privacy contract is non-negotiable)
+  //   - The v1 batch controller sets disableSmartWaitCache:true at
+  //     sc.internalOptions so every batch URL actually runs; we keep
+  //     that for the misses we still enqueue, since the cache-hit URLs
+  //     never reach the worker.
+  // ---------------------------------------------------------------------
+  if (
+    config.RESULT_CACHE_PRECHECK_BATCH &&
+    !zeroDataRetention &&
+    urls.length > 0
+  ) {
+    const tier = pickCacheTier(scrapeOptions.formats as any);
+    logger.debug("Running batch cache precheck", {
+      tier,
+      urls: urls.length,
+    });
+    // Promise.all (not allSettled): a single cache lookup failure should
+    // be visible. Redis is best-effort inside getCachedResultTiered (it
+    // swallows errors and returns null), so a thrown error here means a
+    // programming bug, not transient infrastructure.
+    const cachedResults = await Promise.all(
+      urls.map(async url => {
+        const rewritten = rewriteUrl(url) ?? url;
+        const cached = await getCachedResultTiered(
+          rewritten,
+          tier,
+          false,
+          req.auth.team_id,
+        );
+        return [url, cached] as const;
+      }),
+    );
+    const hits = cachedResults.filter(
+      (entry): entry is [string, NonNullable<typeof entry[1]>] =>
+        entry[1] !== null,
+    );
+    const misses = cachedResults
+      .filter(([, r]) => r === null)
+      .map(([u]) => u);
+
+    logger.debug("Batch cache precheck complete", {
+      tier,
+      hits: hits.length,
+      misses: misses.length,
+    });
+
+    // Merge hit documents directly into the batch result store. The
+    // helper is best-effort: any Redis failure is logged and swallowed,
+    // and the URL falls through to the enqueue path.
+    for (const [url, cached] of hits) {
+      const document = buildDocumentFromCachePayload(cached);
+      await mergeBatchResult(id, url, document);
+    }
+
+    // Only the misses need to flow through NuQ. Note: this preserves
+    // ordering within the misses (filter is stable, map preserves
+    // order), so the per-batch URL order observed by workers matches
+    // the user's request order modulo the precheck hits.
+    urls = misses;
+  }
 
   const jobs = urls.map(x => ({
     jobId: uuidv7(),

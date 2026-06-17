@@ -228,6 +228,10 @@ async function refundCredits(params: {
         rating: options.feedback.rating,
         refundPolicy: policy.matchedReason,
       },
+      // Feedback refunds are one-shot and don't correlate to a specific
+      // request-scoped trackId. Synthesize one so the refund still carries a
+      // stable correlation id for Autumn + Sentry breadcrumbs (FIRE-BILL-001).
+      trackId: `feedback_refund_${feedbackId}_${randomUUID()}`,
     });
     return cappedRefund;
   } catch (error) {
