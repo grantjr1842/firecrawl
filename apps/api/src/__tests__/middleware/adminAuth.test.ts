@@ -3,17 +3,14 @@ import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import request from "supertest";
 
-const {
-  addBreadcrumb,
-  setTag,
-  captureException,
-  captureMessage,
-} = vi.hoisted(() => ({
-  addBreadcrumb: vi.fn(),
-  setTag: vi.fn(),
-  captureException: vi.fn(),
-  captureMessage: vi.fn(),
-}));
+const { addBreadcrumb, setTag, captureException, captureMessage } = vi.hoisted(
+  () => ({
+    addBreadcrumb: vi.fn(),
+    setTag: vi.fn(),
+    captureException: vi.fn(),
+    captureMessage: vi.fn(),
+  }),
+);
 
 const { loggerInfo, loggerError, loggerWarn } = vi.hoisted(() => ({
   loggerInfo: vi.fn(),
@@ -42,7 +39,7 @@ vi.mock("../../config", () => ({
   },
 }));
 
-vi.mock("../logger", () => ({
+vi.mock("../../lib/logger", () => ({
   logger: {
     info: loggerInfo,
     warn: loggerWarn,
@@ -51,21 +48,21 @@ vi.mock("../logger", () => ({
   },
 }));
 
-vi.mock("../scraper/scrapeURL/error", () => ({
+vi.mock("../../scraper/scrapeURL/error", () => ({
   AddFeatureError: class extends Error {},
   RemoveFeatureError: class extends Error {},
   EngineError: class extends Error {},
 }));
 
-vi.mock("../scraper/scrapeURL/lib/abortManager", () => ({
+vi.mock("../../scraper/scrapeURL/lib/abortManager", () => ({
   AbortManagerThrownError: class extends Error {},
 }));
 
-vi.mock("../lib/error", () => ({
+vi.mock("../../lib/error", () => ({
   JobCancelledError: class extends Error {},
 }));
 
-vi.mock("../lib/queue-full-error", () => ({
+vi.mock("../../lib/queue-full-error", () => ({
   isQueueFullError: () => false,
 }));
 
@@ -85,12 +82,13 @@ function buildApp(opts: { rateLimit?: boolean } = {}) {
   app.use(adminAuthMiddleware);
 
   if (opts.rateLimit) {
-    app.post("/admin/x/acuc-cache-clear", adminRateLimitMiddleware(10_000, 1), (
-      req: Request,
-      res: Response,
-    ) => {
-      res.json({ ok: true });
-    });
+    app.post(
+      "/admin/x/acuc-cache-clear",
+      adminRateLimitMiddleware(10_000, 1),
+      (req: Request, res: Response) => {
+        res.json({ ok: true });
+      },
+    );
   } else {
     app.post("/admin/x/acuc-cache-clear", (req: Request, res: Response) => {
       res.json({ ok: true });
@@ -113,11 +111,9 @@ function buildApp(opts: { rateLimit?: boolean } = {}) {
   });
 
   // Error sink so we don't pollute test output.
-  app.use(
-    (err: any, _req: Request, res: Response, _next: NextFunction) => {
-      res.status(500).json({ error: err?.message ?? "error" });
-    },
-  );
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    res.status(500).json({ error: err?.message ?? "error" });
+  });
 
   return app;
 }
