@@ -302,6 +302,18 @@ const configSchema = z.object({
   PDF_MU_V2_EXPERIMENT: z.string().optional(),
   PDF_MU_V2_EXPERIMENT_PERCENT: z.coerce.number().default(100),
 
+  // Default PDF renderer used by the scrape→PDF pipeline. `weasyprint`
+  // is the offline, system-binary path; `pandoc-pdf` is reserved for a
+  // future latex-style output; `none` disables local rendering entirely
+  // (callers must use a downstream service).
+  PDF_DEFAULT_RENDERER: z
+    .enum(["weasyprint", "pandoc-pdf", "none"])
+    .default("weasyprint"),
+  // Hard upper bound on a single weasyprint invocation. The renderer
+  // installs a SIGKILL timer at this boundary so a stuck render can't
+  // hold a worker hostage.
+  PDF_RENDER_TIMEOUT_MS: z.coerce.number().int().min(1000).default(60000),
+
   // MinerU direct routing (bypass Rust extraction for a % of traffic)
   MINERU_PERCENT: z.coerce.number().min(0).max(100).default(0),
 
