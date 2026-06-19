@@ -70,16 +70,18 @@ describe("CircuitBreaker", () => {
       let calls = 0;
       const action = vi.fn().mockImplementation(() => {
         calls++;
-        if (calls % 2 === 0) return Promise.resolve("ok");
-        return Promise.reject(new Error("flaky"));
+        // Every 3rd call fails. Failure ratio ≈ 0.33, below the
+        // 0.5 threshold even after volumeThreshold calls.
+        if (calls % 3 === 0) return Promise.reject(new Error("flaky"));
+        return Promise.resolve("ok");
       });
       const breaker = new CircuitBreaker(action, {
         name: "test-4",
         volumeThreshold: 5,
-        errorThresholdPercentage: 0.6, // 50% failure ratio < 60% threshold
+        errorThresholdPercentage: 0.5,
       });
 
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 9; i++) {
         try {
           await breaker.fire();
         } catch {
@@ -192,7 +194,8 @@ describe("CircuitBreaker", () => {
         const action = vi
           .fn()
           .mockImplementation(
-            () => new Promise(resolve => setTimeout(() => resolve("late"), 5_000)),
+            () =>
+              new Promise(resolve => setTimeout(() => resolve("late"), 5_000)),
           );
         const breaker = new CircuitBreaker(action, {
           name: "test-8",

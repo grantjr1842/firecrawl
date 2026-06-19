@@ -45,9 +45,9 @@ describe("backoff strategies", () => {
     });
 
     it("caps at maxDelayMs", () => {
-      expect(
-        linearBackoff(20, { baseDelayMs: 100, maxDelayMs: 500 }),
-      ).toBe(500);
+      expect(linearBackoff(20, { baseDelayMs: 100, maxDelayMs: 500 })).toBe(
+        500,
+      );
     });
   });
 
@@ -251,7 +251,7 @@ describe("executeWithRetry", () => {
   it("fires onAttemptFailure even on successful attempts (for parity with legacy)", async () => {
     const events: number[] = [];
     let calls = 0;
-    const result = await executeWithRetry(
+    const result = await executeWithRetry<string>(
       async () => {
         calls++;
         if (calls < 2) return null;
