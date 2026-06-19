@@ -1,6 +1,6 @@
 import { Response } from "express";
 import { config } from "../../config";
-import { logger as _logger } from "../../lib/logger";
+import { logger as _logger, devTrace } from "../../lib/logger";
 import {
   Document,
   RequestWithAuth,
@@ -45,8 +45,28 @@ export async function scrapeController(
   const preNormalizedBody = { ...req.body };
   req.body = scrapeRequestSchema.parse(req.body);
 
+  // OBS-DEVTRACE-V1-GAP: emit lifecycle.received as early as
+  // possible — before permission check, before concurrency gate —
+  // so every terminal code path can pair it with scrape.complete
+  // without a flag.
+  devTrace("scrape.received", {
+    jobId,
+    teamId: req.auth.team_id,
+    version: "v1",
+    url: req.body.url,
+    formats: req.body.formats,
+  });
+
   const permissions = checkPermissions(req.body, req.acuc?.flags);
   if (permissions.error) {
+    // OBS-DEVTRACE-V1-GAP: terminal permission-denied path.
+    devTrace("scrape.complete", {
+      jobId,
+      teamId: req.auth.team_id,
+      version: "v1",
+      success: false,
+      errorCode: "PERMISSION_DENIED",
+    });
     return res.status(403).json({
       success: false,
       error: permissions.error,
@@ -121,6 +141,14 @@ export async function scrapeController(
     );
     if (!reservation.ok) {
       applyAgentAuthDiscoveryHeader(res);
+      // OBS-DEVTRACE-V1-GAP: terminal keyless-credits path.
+      devTrace("scrape.complete", {
+        jobId,
+        teamId: req.auth.team_id,
+        version: "v1",
+        success: false,
+        errorCode: "KEYLESS_CREDITS_RESERVE_FAILED",
+      });
       return res.status(429).json({
         success: false,
         error: KEYLESS_CREDITS_MESSAGE,
@@ -250,6 +278,14 @@ export async function scrapeController(
       }
 
       if (e.code === "SCRAPE_ACTIONS_NOT_SUPPORTED") {
+        // OBS-DEVTRACE-V1-GAP: terminal error path.
+        devTrace("scrape.complete", {
+          jobId,
+          teamId: req.auth.team_id,
+          version: "v1",
+          success: false,
+          errorCode: e.code,
+        });
         return res.status(400).json({
           success: false,
           code: e.code,
@@ -257,6 +293,15 @@ export async function scrapeController(
         });
       }
 
+      // OBS-DEVTRACE-V1-GAP: terminal error path (scrape-timeout /
+      // generic transportable error).
+      devTrace("scrape.complete", {
+        jobId,
+        teamId: req.auth.team_id,
+        version: "v1",
+        success: false,
+        errorCode: e.code,
+      });
       return res.status(e.code === "SCRAPE_TIMEOUT" ? 408 : 500).json({
         success: false,
         code: e.code,
@@ -282,6 +327,16 @@ export async function scrapeController(
           url: req.body.url,
         },
         zeroDataRetention,
+      });
+      // OBS-DEVTRACE-V1-GAP: terminal error path (unknown / non-
+      // transportable exception).
+      devTrace("scrape.complete", {
+        jobId,
+        teamId: req.auth.team_id,
+        version: "v1",
+        success: false,
+        errorCode: "UNKNOWN_ERROR",
+        errorId: id,
       });
       return res.status(500).json({
         success: false,
@@ -348,6 +403,18 @@ export async function scrapeController(
     formats: req.body.formats,
     concurrencyLimited,
     concurrencyQueueDurationMs: lockTime || undefined,
+  });
+
+  // OBS-DEVTRACE-V1-GAP: success-path lifecycle event. Mirrors the
+  // v2 controller's devTrace("scrape.complete") at the same shape
+  // so dashboards/Loki queries can filter on `version` cleanly.
+  devTrace("scrape.complete", {
+    jobId,
+    teamId: req.auth.team_id,
+    version: "v1",
+    success: true,
+    creditsUsed: doc?.metadata?.creditsUsed,
+    totalRequestTime,
   });
 
   return res.status(200).json({
