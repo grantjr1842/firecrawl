@@ -323,9 +323,6 @@ function buildCoverSection(input: ScrapePdfInput): string {
     <div class="source-url">${escapeHtml(input.sourceURL)}</div>
     <div>Captured ${escapeHtml(scrapedAt)}</div>
   </div>
-  <span class="src-url" style="position: absolute; visibility: hidden;">${escapeHtml(
-    input.sourceURL,
-  )}</span>
 </div>`;
 }
 
@@ -345,14 +342,16 @@ export async function buildScrapeHTML(input: ScrapePdfInput): Promise<string> {
   // The `.doc-root` wrapper carries the `string-set: source-url`
   // declaration so every page (not just the cover) prints the source
   // URL in the bottom-left footer.
+  // The `string-set: source-url content()` declaration lives on
+  // `.cover .meta .source-url` in styles.css.ts so WeasyPrint captures the
+  // cover's URL into the named string at first occurrence, and every
+  // subsequent page's @bottom-left picks it up via `string(source-url)`.
   return `<!DOCTYPE html>
 <html lang="${escapeHtml(input.metadata?.language ?? "en")}">
 <head>
   <meta charset="utf-8" />
   <title>${escapeHtml(input.metadata?.title ?? "Scrape PDF")}</title>
-  <style>${stylesCss}
-  .doc-root { string-set: source-url content(); }
-  </style>
+  <style>${stylesCss}</style>
 </head>
 <body>
   <div class="doc-root">

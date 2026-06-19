@@ -242,6 +242,11 @@ figcaption {
   color: var(--accent);
   overflow-wrap: anywhere;
   border-bottom: 1px solid rgba(184, 92, 56, 0.4);
+  /* Capture the URL into the source-url named string so the @bottom-left
+     running footer on every subsequent page can render it via
+     string(source-url). The element must be in flow (not display:none
+     or position:absolute) for WeasyPrint to pick it up. */
+  string-set: source-url content();
 }
 
 .cover .accent-rule {
@@ -403,11 +408,11 @@ figcaption {
   }
 }
 
-@page :first {
-  margin: 0;
-  @bottom-left { content: none; }
-  @bottom-right { content: none; }
-}
+/* The first page of the document is also the named "cover" page; we let
+   the @page cover rule below handle it exclusively. Using @page :first
+   here alongside @page cover was triggering WeasyPrint to render the
+   cover content twice in some configurations (the cover's hidden
+   span was being painted onto subsequent pages). */
 
 @page cover {
   margin: 0;
