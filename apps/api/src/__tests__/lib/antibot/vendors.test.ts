@@ -197,6 +197,72 @@ describe("T1.1: SmartproxyVendorAdapter URL construction", () => {
   });
 });
 
+describe("SMARTPROXY-STICKY-MISSING-ENV: sticky-minutes env wiring", () => {
+  const baseOpts = {
+    target: "https://example.com/",
+    sessionId: "sess42",
+  };
+
+  it("defaults to 10 minutes when no option is supplied", () => {
+    const url = new SmartproxyVendorAdapter().buildProxyUrl(
+      SMART_CREDS,
+      baseOpts,
+    );
+    expect(url).toMatch(/-sesstime-10\b/);
+  });
+
+  it("honors explicit stickyMinutes from VendorAdapterOptions", () => {
+    const url = new SmartproxyVendorAdapter({ stickyMinutes: 30 }).buildProxyUrl(
+      SMART_CREDS,
+      baseOpts,
+    );
+    expect(url).toMatch(/-sesstime-30\b/);
+  });
+
+  it("clamps stickyMinutes into [1, 1440] at construction", () => {
+    expect(
+      new SmartproxyVendorAdapter({ stickyMinutes: 0 }).buildProxyUrl(
+        SMART_CREDS,
+        baseOpts,
+      ),
+    ).toMatch(/-sesstime-1\b/);
+    expect(
+      new SmartproxyVendorAdapter({ stickyMinutes: -7 }).buildProxyUrl(
+        SMART_CREDS,
+        baseOpts,
+      ),
+    ).toMatch(/-sesstime-1\b/);
+    expect(
+      new SmartproxyVendorAdapter({ stickyMinutes: 5000 }).buildProxyUrl(
+        SMART_CREDS,
+        baseOpts,
+      ),
+    ).toMatch(/-sesstime-1440\b/);
+    expect(
+      new SmartproxyVendorAdapter({ stickyMinutes: 12.9 }).buildProxyUrl(
+        SMART_CREDS,
+        baseOpts,
+      ),
+    ).toMatch(/-sesstime-12\b/);
+  });
+
+  it("createVendorAdapter passes stickyMinutes through from VendorConfig", () => {
+    const adapter = createVendorAdapter({
+      vendor: "smartproxy",
+      config: {
+        vendor: "smartproxy",
+        username: "sp-user-1",
+        password: "sppass",
+        host: SMARTPROXY_DEFAULT_HOST,
+        port: SMARTPROXY_DEFAULT_PORT,
+        stickyMinutes: 45,
+      },
+    });
+    const url = adapter.buildProxyUrl(SMART_CREDS, baseOpts);
+    expect(url).toMatch(/-sesstime-45\b/);
+  });
+});
+
 describe("T1.1: GenericVendorAdapter URL construction", () => {
   const adapter = new GenericVendorAdapter();
 

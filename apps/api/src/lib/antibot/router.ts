@@ -117,6 +117,7 @@ function readVendorConfigFromEnv(
     password: config.FIRECRAWL_SMARTPROXY_PASSWORD,
     host: config.FIRECRAWL_SMARTPROXY_HOST,
     port: config.FIRECRAWL_SMARTPROXY_PORT,
+    stickyMinutes: config.FIRECRAWL_SMARTPROXY_STICKY_MINUTES,
   };
 }
 

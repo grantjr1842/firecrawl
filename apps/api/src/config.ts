@@ -262,6 +262,17 @@ const configSchema = z.object({
   FIRECRAWL_SMARTPROXY_PASSWORD: z.string().optional(),
   FIRECRAWL_SMARTPROXY_HOST: z.string().optional(),
   FIRECRAWL_SMARTPROXY_PORT: z.coerce.number().optional(),
+  // SMARTPROXY-STICKY-MISSING-ENV: the vendor-side `-sesstime-N`
+  // sticky-session minutes appended to the username. Default 10
+  // (matches the historical hardcoded value in
+  // lib/antibot/vendors/smartproxy.ts). Clamped to [1, 1440] in the
+  // adapter so a bad .env can't pin a session for days.
+  FIRECRAWL_SMARTPROXY_STICKY_MINUTES: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(1440)
+    .default(10),
   FIRECRAWL_ANTIBOT_TIERS: z.string().optional(),
   FIRECRAWL_ANTIBOT_RETRY_ON_STATUS: z.string().default("403,429,503"),
   FIRECRAWL_ANTIBOT_BYPASS_PREFIXES: z.string().optional(),

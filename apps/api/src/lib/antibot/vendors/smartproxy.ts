@@ -28,10 +28,16 @@ export class SmartproxyVendorAdapter implements VendorAdapter {
   private readonly stickyMinutes: number;
 
   constructor(opts: VendorAdapterOptions = {}) {
-    // For now the sticky TTL is fixed; future work will surface it as
-    // an env var (FIRECRAWL_SMARTPROXY_STICKY_MINUTES) once production
-    // tuning lands.
-    this.stickyMinutes = SMARTPROXY_DEFAULT_STICKY_MINUTES;
+    // SMARTPROXY-STICKY-MISSING-ENV: the sticky-session TTL is now
+    // operator-tunable through VendorAdapterOptions (sourced from
+    // FIRECRAWL_SMARTPROXY_STICKY_MINUTES via the vendor factory).
+    // Clamp to [1, 1440] so a misconfigured .env can't pin a request
+    // to a 30-day vendor-side session.
+    if (typeof opts.stickyMinutes === "number" && Number.isFinite(opts.stickyMinutes)) {
+      this.stickyMinutes = Math.max(1, Math.min(1440, Math.floor(opts.stickyMinutes)));
+    } else {
+      this.stickyMinutes = SMARTPROXY_DEFAULT_STICKY_MINUTES;
+    }
   }
 
   validate(creds: VendorCredentials): void {

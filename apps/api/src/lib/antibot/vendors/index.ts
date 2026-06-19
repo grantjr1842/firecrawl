@@ -39,6 +39,8 @@ export interface VendorConfig {
   port?: number;
   zone?: string;
   product?: string;
+  /** SMARTPROXY-STICKY-MISSING-ENV: see VendorAdapterOptions.stickyMinutes */
+  stickyMinutes?: number;
 }
 
 export interface CreateVendorAdapterOptions {
@@ -102,6 +104,7 @@ export function createVendorAdapter(
     port: opts.config.port,
     zone: opts.config.zone,
     product: opts.config.product,
+    stickyMinutes: opts.config.stickyMinutes,
   };
   let adapter: VendorAdapter;
   switch (vendor) {

@@ -98,4 +98,12 @@ export interface VendorAdapterOptions {
   zone?: string;
   /** Pass-through to the adapter; vendor-specific. */
   product?: string;
+  /**
+   * SMARTPROXY-STICKY-MISSING-ENV: pass-through for the vendor-side
+   * sticky-session TTL (the `-sesstime-N` minutes token appended to
+   * the smartproxy username). Currently only Smartproxy reads this;
+   * other vendors ignore it. Smartproxy's own default
+   * (`SMARTPROXY_DEFAULT_STICKY_MINUTES`) applies when omitted.
+   */
+  stickyMinutes?: number;
 }

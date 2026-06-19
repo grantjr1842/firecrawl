@@ -69,18 +69,18 @@ export async function renderScrapeToPDF(
       tmpDir,
     });
 
-    // 3. Spawn weasyprint.
-    const result = await runWeasyprint(htmlPath, pdfPath, correlationId);
-
-    // 4. Read the PDF bytes back.
-    const pdf = await fs.readFile(pdfPath);
+    // 3. Spawn weasyprint. `runWeasyprint` reads the rendered PDF
+    // back from disk itself, so we don't need a second fs.readFile
+    // here — that was the double-read bug fixed in
+    // PDF-RENDERER-RACE-001.
+    const pdf = await runWeasyprint(htmlPath, pdfPath, correlationId);
 
     devTrace("pdf.render.success", {
       correlationId,
       pdfBytes: pdf.length,
       durationMs: Date.now() - startedAt,
     });
-    return result ?? pdf;
+    return pdf;
   } catch (err) {
     devTrace("pdf.render.error", {
       correlationId,
@@ -146,9 +146,7 @@ export async function renderBookToPDF(input: BookPdfInput): Promise<Buffer> {
       tmpDir,
     });
 
-    await runWeasyprint(htmlPath, pdfPath, correlationId);
-
-    const pdf = await fs.readFile(pdfPath);
+    const pdf = await runWeasyprint(htmlPath, pdfPath, correlationId);
     devTrace("pdf.book.render.success", {
       correlationId,
       pdfBytes: pdf.length,
@@ -190,6 +188,11 @@ async function runWeasyprint(
     const proc = spawn(weasyprintBin, [htmlPath, pdfPath], {
       stdio: ["ignore", "pipe", "pipe"],
     });
+    // PDF-RENDERER-RACE-001: an orphaned weasyprint child must not
+    // pin the worker event loop past graceful shutdown. Without
+    // `unref`, a stuck render could keep a worker alive indefinitely
+    // (and, in tests, prevent vitest from exiting).
+    proc.unref();
 
     let stdout = "";
     let stderr = "";
@@ -211,6 +214,9 @@ async function runWeasyprint(
         ),
       );
     }, config.PDF_RENDER_TIMEOUT_MS);
+    // PDF-RENDERER-RACE-001: same reason as the spawn unref above —
+    // a pending SIGKILL timer shouldn't keep the event loop alive.
+    timer.unref();
 
     proc.on("error", err => {
       if (settled) return;
