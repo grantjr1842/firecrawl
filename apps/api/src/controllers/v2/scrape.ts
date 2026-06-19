@@ -18,6 +18,10 @@ import { withSpan, setSpanAttributes, SpanKind } from "../../lib/otel-tracer";
 import { processJobInternal } from "../../services/worker/scrape-worker";
 import { ScrapeJobData } from "../../types";
 import { teamConcurrencySemaphore } from "../../services/worker/team-semaphore";
+import {
+  acquireApiEdgeSlot,
+  releaseApiEdgeSlot,
+} from "../../services/api-edge-concurrency";
 import { getJobPriority } from "../../lib/job-priority";
 import { logRequest } from "../../services/logging/log_job";
 import { getErrorContactMessage } from "../../lib/deployment";
@@ -60,501 +64,562 @@ export async function scrapeController(
         isAgentInterop: !!req.body.__agentInterop,
       });
 
-      // Set initial span attributes
-      setSpanAttributes(span, {
-        "scrape.job_id": jobId,
-        "scrape.url": req.body.url,
-        "scrape.team_id": req.auth.team_id,
-        "scrape.api_key_id": req.acuc?.api_key_id,
-        "scrape.middleware_time_ms": controllerStartTime - middlewareStartTime,
-      });
-
-      // Validation span
-      await withSpan("api.scrape.validate", async validateSpan => {
-        req.body = scrapeRequestSchema.parse(req.body);
-        setSpanAttributes(validateSpan, {
-          "validation.success": true,
-        });
-      });
-
-      // Permission check span
-      const permissions = await withSpan(
-        "api.scrape.check_permissions",
-        async permSpan => {
-          const perms = checkPermissions(req.body, req.acuc?.flags);
-          setSpanAttributes(permSpan, {
-            "permissions.success": !perms.error,
-            "permissions.error": perms.error,
-          });
-          return perms;
-        },
-      );
-
-      if (permissions.error) {
-        setSpanAttributes(span, {
-          "scrape.error": permissions.error,
-          "scrape.status_code": 403,
-        });
-        return res.status(403).json({
-          success: false,
-          error: permissions.error,
-        });
-      }
-
-      const zeroDataRetention =
-        getScrapeZDR(req.acuc?.flags) === "forced" ||
-        (req.body.zeroDataRetention ?? false) ||
-        (req.body.lockdown ?? false);
-      const billing: BillingMetadata = req.body.__agentInterop
-        ? { endpoint: "agent" as const, jobId }
-        : { endpoint: "scrape" as const, jobId };
-
-      if (
-        req.body.__agentInterop &&
-        config.AGENT_INTEROP_SECRET &&
-        req.body.__agentInterop.auth !== config.AGENT_INTEROP_SECRET
-      ) {
-        return res.status(403).json({
-          success: false,
-          error: "Invalid agent interop.",
-        });
-      } else if (req.body.__agentInterop && !config.AGENT_INTEROP_SECRET) {
-        return res.status(403).json({
-          success: false,
-          error: "Agent interop is not enabled.",
-        });
-      }
-
-      const shouldBill = req.body.__agentInterop?.shouldBill ?? true;
-      const agentRequestId = req.body.__agentInterop?.requestId ?? null;
-      const boostConcurrency =
-        req.body.__agentInterop?.boostConcurrency ?? false;
-      const isDirectToBullMQ =
-        config.SEARCH_PREVIEW_TOKEN !== undefined &&
-        config.SEARCH_PREVIEW_TOKEN === req.body.__searchPreviewToken;
-      const projectedKeylessCredits =
-        shouldBill && !isDirectToBullMQ
-          ? projectScrapeCredits(
-              req.body,
-              req.acuc?.flags ?? null,
-              zeroDataRetention,
-            )
-          : 0;
-      let reservedKeylessCredits = 0;
-      let reconciledKeylessCredits = false;
-
-      if (projectedKeylessCredits > 0) {
-        const reservation = await reserveKeylessCredits(
-          req.auth.team_id,
-          projectedKeylessCredits,
-        );
-        if (!reservation.ok) {
-          applyAgentAuthDiscoveryHeader(res);
-          return res.status(429).json({
-            success: false,
-            error: KEYLESS_CREDITS_MESSAGE,
-          });
-        }
-        reservedKeylessCredits = projectedKeylessCredits;
-      }
-
-      const logger = _logger.child({
-        method: "scrapeController",
-        jobId,
-        noq: true,
-        scrapeId: jobId,
-        teamId: req.auth.team_id,
-        team_id: req.auth.team_id,
-        zeroDataRetention,
-      });
-
-      const middlewareTime = controllerStartTime - middlewareStartTime;
-
-      logger.debug("Scrape " + jobId + " starting", {
-        version: "v2",
-        scrapeId: jobId,
-        request: req.body,
-        originalRequest: preNormalizedBody,
-        account: req.account,
-      });
-
-      let logRequestPromise: Promise<any> | undefined = undefined;
-
-      if (!agentRequestId) {
-        logRequestPromise = logRequest({
-          id: jobId,
-          kind: "scrape",
-          api_version: "v2",
-          team_id: req.auth.team_id,
-          origin: req.body.origin ?? "api",
-          integration: req.body.integration,
-          target_hint: req.body.url,
-          zeroDataRetention: zeroDataRetention || false,
-          api_key_id: req.acuc?.api_key_id ?? null,
-        }).catch(err =>
-          logger.warn("Background request log failed", { error: err, jobId }),
-        );
-      }
-
-      setSpanAttributes(span, {
-        "scrape.zero_data_retention": zeroDataRetention,
-        "scrape.origin": req.body.origin,
-        "scrape.timeout": req.body.timeout,
-      });
-
-      const origin = req.body.origin;
-      const timeout = req.body.timeout;
-
-      const totalWait =
-        (req.body.waitFor ?? 0) +
-        (req.body.actions ?? []).reduce(
-          (a, x) => (x.type === "wait" ? (x.milliseconds ?? 0) : 0) + a,
-          0,
-        );
-
-      let lockTime: number | null = null;
-      let concurrencyLimited: boolean = false;
-
-      let timeoutHandle: NodeJS.Timeout | null = null;
-      let doc: Document | null = null;
-
-      try {
-        const lockStart = Date.now();
-        const aborter = new AbortController();
-        if (timeout) {
-          // Semaphore has 2/3 of the timeout time to get a lock to allow for scrape time
-          timeoutHandle = setTimeout(() => {
-            aborter.abort();
-          }, timeout * 0.667);
-        }
-        req.on("close", () => aborter.abort());
-
-        const baseConcurrency = req.acuc?.concurrency || 1;
-        const concurrency = boostConcurrency
-          ? baseConcurrency * AGENT_INTEROP_CONCURRENCY_BOOST
-          : baseConcurrency;
-
-        doc = await teamConcurrencySemaphore.withSemaphore(
+      // QR-001(b): API-edge load-shedding. Reject fast (429 + Retry-After)
+      // before we spend any work on validation, billing, or NuQ enqueue
+      // when the team is already at its in-flight cap. Self-hosted
+      // installs bypass the limiter entirely -- the existing
+      // team-semaphore inside the worker handles local concurrency.
+      let edgeSlotHeld = false;
+      if (!isSelfHosted() && config.SCRAPE_API_CONCURRENCY_PER_TEAM > 0) {
+        const leaseTtlMs =
+          (req.body.timeout ?? 60_000) + (req.body.waitFor ?? 0) + 10_000; // small grace over the request budget
+        const acquireResult = await acquireApiEdgeSlot(
+          "scrape",
           req.auth.team_id,
           jobId,
-          concurrency,
-          aborter.signal,
-          timeout ?? 60_000,
-          async limited => {
-            const jobPriority = await getJobPriority({
-              team_id: req.auth.team_id,
-              basePriority: 10,
+          config.SCRAPE_API_CONCURRENCY_PER_TEAM,
+          leaseTtlMs,
+        );
+        if (!acquireResult.granted) {
+          const now = Date.now();
+          const retryAfterSec = Math.max(
+            1,
+            Math.ceil((acquireResult.nextExpiryMs - now) / 1000),
+          );
+          setSpanAttributes(span, {
+            "scrape.error": "API_EDGE_CONCURRENCY_LIMITED",
+            "scrape.status_code": 429,
+            "scrape.edge_in_flight": acquireResult.count,
+            "scrape.edge_cap": config.SCRAPE_API_CONCURRENCY_PER_TEAM,
+          });
+          devTrace("scrape.complete", {
+            jobId,
+            teamId: req.auth.team_id,
+            success: false,
+            errorCode: "API_EDGE_CONCURRENCY_LIMITED",
+            statusCode: 429,
+            inFlight: acquireResult.count,
+          });
+          return res
+            .status(429)
+            .set("Retry-After", String(retryAfterSec))
+            .json({
+              success: false,
+              error: "Team is at scrape concurrency limit. Try again later.",
+              code: "API_EDGE_CONCURRENCY_LIMITED",
+              retryAfterSeconds: retryAfterSec,
             });
+        }
+        edgeSlotHeld = true;
+      }
 
-            lockTime = Date.now() - lockStart;
-            concurrencyLimited = limited;
+      try {
+        // Set initial span attributes
+        setSpanAttributes(span, {
+          "scrape.job_id": jobId,
+          "scrape.url": req.body.url,
+          "scrape.team_id": req.auth.team_id,
+          "scrape.api_key_id": req.acuc?.api_key_id,
+          "scrape.middleware_time_ms":
+            controllerStartTime - middlewareStartTime,
+        });
 
-            logger.debug(`Lock acquired for team: ${req.auth.team_id}`, {
-              teamId: req.auth.team_id,
-              lockTime,
-              limited,
+        // Validation span
+        await withSpan("api.scrape.validate", async validateSpan => {
+          req.body = scrapeRequestSchema.parse(req.body);
+          setSpanAttributes(validateSpan, {
+            "validation.success": true,
+          });
+        });
+
+        // Permission check span
+        const permissions = await withSpan(
+          "api.scrape.check_permissions",
+          async permSpan => {
+            const perms = checkPermissions(req.body, req.acuc?.flags);
+            setSpanAttributes(permSpan, {
+              "permissions.success": !perms.error,
+              "permissions.error": perms.error,
             });
-
-            // Wait for job completion span
-            const doc = await withSpan(
-              "api.scrape.wait_for_job",
-              async waitSpan => {
-                setSpanAttributes(waitSpan, {
-                  "wait.timeout":
-                    timeout !== undefined ? timeout + totalWait : undefined,
-                  "wait.job_id": jobId,
-                });
-
-                const job: NuQJob<ScrapeJobData> = {
-                  id: jobId,
-
-                  status: "active",
-                  createdAt: new Date(),
-                  priority: jobPriority,
-                  data: {
-                    url: req.body.url,
-                    mode: "single_urls",
-                    team_id: req.auth.team_id,
-                    scrapeOptions: {
-                      ...req.body,
-                      ...((req.body as any).__experimental_cache
-                        ? {
-                            maxAge: req.body.maxAge ?? 4 * 60 * 60 * 1000, // 4 hours
-                          }
-                        : {}),
-                    },
-                    internalOptions: {
-                      teamId: req.auth.team_id,
-                      saveScrapeResultToGCS: process.env
-                        .GCS_FIRE_ENGINE_BUCKET_NAME
-                        ? true
-                        : false,
-                      unnormalizedSourceURL: preNormalizedBody.url,
-                      bypassBilling: isDirectToBullMQ || !shouldBill,
-                      zeroDataRetention,
-                      teamFlags: req.acuc?.flags ?? null,
-                      agentIndexOnly: (req as any).agentIndexOnly ?? false,
-                    },
-                    skipNuq: true,
-                    origin,
-                    integration: req.body.integration,
-                    billing,
-                    startTime: controllerStartTime,
-                    zeroDataRetention,
-                    apiKeyId: req.acuc?.api_key_id ?? null,
-                    concurrencyLimited: limited,
-                    keylessReserved: reservedKeylessCredits > 0,
-                    requestId: agentRequestId ?? undefined,
-                    logRequestPromise: logRequestPromise,
-                  },
-                };
-
-                const result = await processJobInternal(job);
-
-                setSpanAttributes(waitSpan, {
-                  "wait.success": true,
-                });
-
-                return result ?? null;
-              },
-            );
-
-            return doc;
+            return perms;
           },
         );
-      } catch (e) {
+
+        if (permissions.error) {
+          setSpanAttributes(span, {
+            "scrape.error": permissions.error,
+            "scrape.status_code": 403,
+          });
+          return res.status(403).json({
+            success: false,
+            error: permissions.error,
+          });
+        }
+
+        const zeroDataRetention =
+          getScrapeZDR(req.acuc?.flags) === "forced" ||
+          (req.body.zeroDataRetention ?? false) ||
+          (req.body.lockdown ?? false);
+        const billing: BillingMetadata = req.body.__agentInterop
+          ? { endpoint: "agent" as const, jobId }
+          : { endpoint: "scrape" as const, jobId };
+
+        if (
+          req.body.__agentInterop &&
+          config.AGENT_INTEROP_SECRET &&
+          req.body.__agentInterop.auth !== config.AGENT_INTEROP_SECRET
+        ) {
+          return res.status(403).json({
+            success: false,
+            error: "Invalid agent interop.",
+          });
+        } else if (req.body.__agentInterop && !config.AGENT_INTEROP_SECRET) {
+          return res.status(403).json({
+            success: false,
+            error: "Agent interop is not enabled.",
+          });
+        }
+
+        const shouldBill = req.body.__agentInterop?.shouldBill ?? true;
+        const agentRequestId = req.body.__agentInterop?.requestId ?? null;
+        const boostConcurrency =
+          req.body.__agentInterop?.boostConcurrency ?? false;
+        const isDirectToBullMQ =
+          config.SEARCH_PREVIEW_TOKEN !== undefined &&
+          config.SEARCH_PREVIEW_TOKEN === req.body.__searchPreviewToken;
+        const projectedKeylessCredits =
+          shouldBill && !isDirectToBullMQ
+            ? projectScrapeCredits(
+                req.body,
+                req.acuc?.flags ?? null,
+                zeroDataRetention,
+              )
+            : 0;
+        let reservedKeylessCredits = 0;
+        let reconciledKeylessCredits = false;
+
+        if (projectedKeylessCredits > 0) {
+          const reservation = await reserveKeylessCredits(
+            req.auth.team_id,
+            projectedKeylessCredits,
+          );
+          if (!reservation.ok) {
+            applyAgentAuthDiscoveryHeader(res);
+            return res.status(429).json({
+              success: false,
+              error: KEYLESS_CREDITS_MESSAGE,
+            });
+          }
+          reservedKeylessCredits = projectedKeylessCredits;
+        }
+
+        const logger = _logger.child({
+          method: "scrapeController",
+          jobId,
+          noq: true,
+          scrapeId: jobId,
+          teamId: req.auth.team_id,
+          team_id: req.auth.team_id,
+          zeroDataRetention,
+        });
+
+        const middlewareTime = controllerStartTime - middlewareStartTime;
+
+        logger.debug("Scrape " + jobId + " starting", {
+          version: "v2",
+          scrapeId: jobId,
+          request: req.body,
+          originalRequest: preNormalizedBody,
+          account: req.account,
+        });
+
+        let logRequestPromise: Promise<any> | undefined = undefined;
+
+        if (!agentRequestId) {
+          logRequestPromise = logRequest({
+            id: jobId,
+            kind: "scrape",
+            api_version: "v2",
+            team_id: req.auth.team_id,
+            origin: req.body.origin ?? "api",
+            integration: req.body.integration,
+            target_hint: req.body.url,
+            zeroDataRetention: zeroDataRetention || false,
+            api_key_id: req.acuc?.api_key_id ?? null,
+          }).catch(err =>
+            logger.warn("Background request log failed", { error: err, jobId }),
+          );
+        }
+
+        setSpanAttributes(span, {
+          "scrape.zero_data_retention": zeroDataRetention,
+          "scrape.origin": req.body.origin,
+          "scrape.timeout": req.body.timeout,
+        });
+
+        const origin = req.body.origin;
+        const timeout = req.body.timeout;
+
+        const totalWait =
+          (req.body.waitFor ?? 0) +
+          (req.body.actions ?? []).reduce(
+            (a, x) => (x.type === "wait" ? (x.milliseconds ?? 0) : 0) + a,
+            0,
+          );
+
+        let lockTime: number | null = null;
+        let concurrencyLimited: boolean = false;
+
+        let timeoutHandle: NodeJS.Timeout | null = null;
+        let doc: Document | null = null;
+
+        try {
+          const lockStart = Date.now();
+          const aborter = new AbortController();
+          if (timeout) {
+            // Semaphore has 2/3 of the timeout time to get a lock to allow for scrape time
+            timeoutHandle = setTimeout(() => {
+              aborter.abort();
+            }, timeout * 0.667);
+          }
+          req.on("close", () => aborter.abort());
+
+          const baseConcurrency = req.acuc?.concurrency || 1;
+          const concurrency = boostConcurrency
+            ? baseConcurrency * AGENT_INTEROP_CONCURRENCY_BOOST
+            : baseConcurrency;
+
+          doc = await teamConcurrencySemaphore.withSemaphore(
+            req.auth.team_id,
+            jobId,
+            concurrency,
+            aborter.signal,
+            timeout ?? 60_000,
+            async limited => {
+              const jobPriority = await getJobPriority({
+                team_id: req.auth.team_id,
+                basePriority: 10,
+              });
+
+              lockTime = Date.now() - lockStart;
+              concurrencyLimited = limited;
+
+              logger.debug(`Lock acquired for team: ${req.auth.team_id}`, {
+                teamId: req.auth.team_id,
+                lockTime,
+                limited,
+              });
+
+              // Wait for job completion span
+              const doc = await withSpan(
+                "api.scrape.wait_for_job",
+                async waitSpan => {
+                  setSpanAttributes(waitSpan, {
+                    "wait.timeout":
+                      timeout !== undefined ? timeout + totalWait : undefined,
+                    "wait.job_id": jobId,
+                  });
+
+                  const job: NuQJob<ScrapeJobData> = {
+                    id: jobId,
+
+                    status: "active",
+                    createdAt: new Date(),
+                    priority: jobPriority,
+                    data: {
+                      url: req.body.url,
+                      mode: "single_urls",
+                      team_id: req.auth.team_id,
+                      scrapeOptions: {
+                        ...req.body,
+                        ...((req.body as any).__experimental_cache
+                          ? {
+                              maxAge: req.body.maxAge ?? 4 * 60 * 60 * 1000, // 4 hours
+                            }
+                          : {}),
+                      },
+                      internalOptions: {
+                        teamId: req.auth.team_id,
+                        saveScrapeResultToGCS: process.env
+                          .GCS_FIRE_ENGINE_BUCKET_NAME
+                          ? true
+                          : false,
+                        unnormalizedSourceURL: preNormalizedBody.url,
+                        bypassBilling: isDirectToBullMQ || !shouldBill,
+                        zeroDataRetention,
+                        teamFlags: req.acuc?.flags ?? null,
+                        agentIndexOnly: (req as any).agentIndexOnly ?? false,
+                      },
+                      skipNuq: true,
+                      origin,
+                      integration: req.body.integration,
+                      billing,
+                      startTime: controllerStartTime,
+                      zeroDataRetention,
+                      apiKeyId: req.acuc?.api_key_id ?? null,
+                      concurrencyLimited: limited,
+                      keylessReserved: reservedKeylessCredits > 0,
+                      requestId: agentRequestId ?? undefined,
+                      logRequestPromise: logRequestPromise,
+                    },
+                  };
+
+                  const result = await processJobInternal(job);
+
+                  setSpanAttributes(waitSpan, {
+                    "wait.success": true,
+                  });
+
+                  return result ?? null;
+                },
+              );
+
+              return doc;
+            },
+          );
+        } catch (e) {
+          if (reservedKeylessCredits > 0 && !reconciledKeylessCredits) {
+            reconciledKeylessCredits = true;
+            adjustKeylessCredits(
+              req.auth.team_id,
+              -reservedKeylessCredits,
+            ).catch(() => {});
+          }
+
+          const timeoutErr =
+            e instanceof TransportableError && e.code === "SCRAPE_TIMEOUT";
+
+          setSpanAttributes(span, {
+            "scrape.error": e instanceof Error ? e.message : String(e),
+            "scrape.error_type":
+              e instanceof TransportableError ? e.code : "unknown",
+          });
+
+          if (e instanceof TransportableError) {
+            if (!timeoutErr) {
+              logger.error(`Error in scrapeController`, {
+                version: "v2",
+                error: e,
+              });
+            }
+            // DNS resolution errors should return 200 with success: false
+            if (e.code === "SCRAPE_DNS_RESOLUTION_ERROR") {
+              setSpanAttributes(span, {
+                "scrape.status_code": 200,
+              });
+              return res.status(200).json({
+                success: false,
+                code: e.code,
+                error: e.message,
+              });
+            }
+
+            if (e.code === "SCRAPE_NO_CACHED_DATA") {
+              setSpanAttributes(span, {
+                "scrape.status_code": 404,
+              });
+              return res.status(404).json({
+                success: false,
+                code: e.code,
+                error: e.message,
+              });
+            }
+
+            if (e.code === "SCRAPE_LOCKDOWN_CACHE_MISS") {
+              setSpanAttributes(span, {
+                "scrape.status_code": 404,
+              });
+              return res.status(404).json({
+                success: false,
+                code: e.code,
+                error: e.message,
+              });
+            }
+
+            if (e.code === "AGENT_INDEX_ONLY") {
+              setSpanAttributes(span, {
+                "scrape.status_code": 403,
+              });
+              return res.status(403).json({
+                success: false,
+                code: e.code,
+                error: e.message,
+                sponsor_status: "pending",
+                login_url: "https://firecrawl.dev/signin",
+              });
+            }
+
+            if (e.code === "SCRAPE_ACTIONS_NOT_SUPPORTED") {
+              setSpanAttributes(span, {
+                "scrape.status_code": 400,
+              });
+              return res.status(400).json({
+                success: false,
+                code: e.code,
+                error: e.message,
+              });
+            }
+
+            const statusCode = e.code === "SCRAPE_TIMEOUT" ? 408 : 500;
+            setSpanAttributes(span, {
+              "scrape.status_code": statusCode,
+            });
+            devTrace("scrape.complete", {
+              jobId,
+              teamId: req.auth.team_id,
+              success: false,
+              errorCode: e.code,
+              statusCode,
+            });
+            return res.status(statusCode).json({
+              success: false,
+              code: e.code,
+              error: e.message,
+            });
+          } else {
+            const id = uuidv7();
+            logger.error(`Error in scrapeController`, {
+              version: "v2",
+              error: e,
+              errorId: id,
+              path: req.path,
+              teamId: req.auth.team_id,
+            });
+            captureExceptionWithZdrCheck(e, {
+              tags: {
+                errorId: id,
+                version: "v2",
+                teamId: req.auth.team_id,
+              },
+              extra: {
+                path: req.path,
+                url: req.body.url,
+              },
+              zeroDataRetention,
+            });
+            setSpanAttributes(span, {
+              "scrape.status_code": 500,
+              "scrape.error_id": id,
+            });
+            devTrace("scrape.complete", {
+              jobId,
+              teamId: req.auth.team_id,
+              success: false,
+              errorCode: "UNKNOWN_ERROR",
+              statusCode: 500,
+              errorId: id,
+            });
+            return res.status(500).json({
+              success: false,
+              code: "UNKNOWN_ERROR",
+              error: getErrorContactMessage(id),
+            });
+          }
+        } finally {
+          if (timeoutHandle) {
+            clearTimeout(timeoutHandle);
+          }
+        }
+
+        if (!hasFormatOfType(req.body.formats, "rawHtml")) {
+          if (doc && doc.rawHtml) {
+            delete doc.rawHtml;
+          }
+        }
+
         if (reservedKeylessCredits > 0 && !reconciledKeylessCredits) {
           reconciledKeylessCredits = true;
-          adjustKeylessCredits(req.auth.team_id, -reservedKeylessCredits).catch(
+          const actualKeylessCredits = doc?.metadata?.creditsUsed ?? 0;
+          adjustKeylessCredits(
+            req.auth.team_id,
+            actualKeylessCredits - reservedKeylessCredits,
+          ).catch(() => {});
+          logKeylessCreditUsage(req.auth.team_id, actualKeylessCredits).catch(
             () => {},
           );
         }
 
-        const timeoutErr =
-          e instanceof TransportableError && e.code === "SCRAPE_TIMEOUT";
+        const totalRequestTime = new Date().getTime() - middlewareStartTime;
+        const controllerTime = new Date().getTime() - controllerStartTime;
 
+        // Set final span attributes
         setSpanAttributes(span, {
-          "scrape.error": e instanceof Error ? e.message : String(e),
-          "scrape.error_type":
-            e instanceof TransportableError ? e.code : "unknown",
+          "scrape.success": true,
+          "scrape.status_code": 200,
+          "scrape.total_request_time_ms": totalRequestTime,
+          "scrape.controller_time_ms": controllerTime,
+          "scrape.total_wait_time_ms": totalWait,
+          "scrape.document.status_code": doc?.metadata?.statusCode,
+          "scrape.document.content_type": doc?.metadata?.contentType,
+          "scrape.document.error": doc?.metadata?.error,
         });
 
-        if (e instanceof TransportableError) {
-          if (!timeoutErr) {
-            logger.error(`Error in scrapeController`, {
-              version: "v2",
-              error: e,
-            });
-          }
-          // DNS resolution errors should return 200 with success: false
-          if (e.code === "SCRAPE_DNS_RESOLUTION_ERROR") {
-            setSpanAttributes(span, {
-              "scrape.status_code": 200,
-            });
-            return res.status(200).json({
-              success: false,
-              code: e.code,
-              error: e.message,
-            });
-          }
+        let usedLlm =
+          !!hasFormatOfType(req.body.formats, "json") ||
+          !!hasFormatOfType(req.body.formats, "summary") ||
+          !!hasFormatOfType(req.body.formats, "branding") ||
+          !!hasFormatOfType(req.body.formats, "question") ||
+          !!hasFormatOfType(req.body.formats, "highlights") ||
+          !!hasFormatOfType(req.body.formats, "query");
 
-          if (e.code === "SCRAPE_NO_CACHED_DATA") {
-            setSpanAttributes(span, {
-              "scrape.status_code": 404,
-            });
-            return res.status(404).json({
-              success: false,
-              code: e.code,
-              error: e.message,
-            });
-          }
+        if (!usedLlm) {
+          const ct = hasFormatOfType(req.body.formats, "changeTracking");
 
-          if (e.code === "SCRAPE_LOCKDOWN_CACHE_MISS") {
-            setSpanAttributes(span, {
-              "scrape.status_code": 404,
-            });
-            return res.status(404).json({
-              success: false,
-              code: e.code,
-              error: e.message,
-            });
+          if (ct && ct.modes?.includes("json")) {
+            usedLlm = true;
           }
+        }
 
-          if (e.code === "AGENT_INDEX_ONLY") {
-            setSpanAttributes(span, {
-              "scrape.status_code": 403,
-            });
-            return res.status(403).json({
-              success: false,
-              code: e.code,
-              error: e.message,
-              sponsor_status: "pending",
-              login_url: "https://firecrawl.dev/signin",
-            });
-          }
+        const formats: string[] =
+          req.body.formats?.map((f: FormatObject) => f?.type) ?? [];
 
-          if (e.code === "SCRAPE_ACTIONS_NOT_SUPPORTED") {
-            setSpanAttributes(span, {
-              "scrape.status_code": 400,
-            });
-            return res.status(400).json({
-              success: false,
-              code: e.code,
-              error: e.message,
-            });
-          }
+        logger.info("Request metrics", {
+          version: "v2",
+          scrapeId: jobId,
+          mode: "scrape",
+          middlewareStartTime,
+          controllerStartTime,
+          middlewareTime,
+          controllerTime,
+          totalRequestTime,
+          totalWait,
+          usedLlm,
+          formats,
+          concurrencyLimited,
+          concurrencyQueueDurationMs: lockTime || undefined,
+        });
 
-          const statusCode = e.code === "SCRAPE_TIMEOUT" ? 408 : 500;
-          setSpanAttributes(span, {
-            "scrape.status_code": statusCode,
-          });
-          devTrace("scrape.complete", {
-            jobId,
-            teamId: req.auth.team_id,
-            success: false,
-            errorCode: e.code,
-            statusCode,
-          });
-          return res.status(statusCode).json({
-            success: false,
-            code: e.code,
-            error: e.message,
-          });
-        } else {
-          const id = uuidv7();
-          logger.error(`Error in scrapeController`, {
-            version: "v2",
-            error: e,
-            errorId: id,
-            path: req.path,
-            teamId: req.auth.team_id,
-          });
-          captureExceptionWithZdrCheck(e, {
-            tags: {
-              errorId: id,
-              version: "v2",
-              teamId: req.auth.team_id,
+        devTrace("scrape.complete", {
+          jobId,
+          teamId: req.auth.team_id,
+          success: true,
+          creditsUsed: doc?.metadata?.creditsUsed,
+          totalRequestTime,
+        });
+
+        return res.status(200).json({
+          success: true,
+          data: {
+            ...doc!,
+            metadata: {
+              ...doc!.metadata,
+              concurrencyLimited,
+              concurrencyQueueDurationMs: concurrencyLimited
+                ? lockTime || 0
+                : undefined,
             },
-            extra: {
-              path: req.path,
-              url: req.body.url,
-            },
-            zeroDataRetention,
-          });
-          setSpanAttributes(span, {
-            "scrape.status_code": 500,
-            "scrape.error_id": id,
-          });
-          devTrace("scrape.complete", {
-            jobId,
-            teamId: req.auth.team_id,
-            success: false,
-            errorCode: "UNKNOWN_ERROR",
-            statusCode: 500,
-            errorId: id,
-          });
-          return res.status(500).json({
-            success: false,
-            code: "UNKNOWN_ERROR",
-            error: getErrorContactMessage(id),
-          });
-        }
-      } finally {
-        if (timeoutHandle) {
-          clearTimeout(timeoutHandle);
-        }
-      }
-
-      if (!hasFormatOfType(req.body.formats, "rawHtml")) {
-        if (doc && doc.rawHtml) {
-          delete doc.rawHtml;
-        }
-      }
-
-      if (reservedKeylessCredits > 0 && !reconciledKeylessCredits) {
-        reconciledKeylessCredits = true;
-        const actualKeylessCredits = doc?.metadata?.creditsUsed ?? 0;
-        adjustKeylessCredits(
-          req.auth.team_id,
-          actualKeylessCredits - reservedKeylessCredits,
-        ).catch(() => {});
-        logKeylessCreditUsage(req.auth.team_id, actualKeylessCredits).catch(
-          () => {},
-        );
-      }
-
-      const totalRequestTime = new Date().getTime() - middlewareStartTime;
-      const controllerTime = new Date().getTime() - controllerStartTime;
-
-      // Set final span attributes
-      setSpanAttributes(span, {
-        "scrape.success": true,
-        "scrape.status_code": 200,
-        "scrape.total_request_time_ms": totalRequestTime,
-        "scrape.controller_time_ms": controllerTime,
-        "scrape.total_wait_time_ms": totalWait,
-        "scrape.document.status_code": doc?.metadata?.statusCode,
-        "scrape.document.content_type": doc?.metadata?.contentType,
-        "scrape.document.error": doc?.metadata?.error,
-      });
-
-      let usedLlm =
-        !!hasFormatOfType(req.body.formats, "json") ||
-        !!hasFormatOfType(req.body.formats, "summary") ||
-        !!hasFormatOfType(req.body.formats, "branding") ||
-        !!hasFormatOfType(req.body.formats, "question") ||
-        !!hasFormatOfType(req.body.formats, "highlights") ||
-        !!hasFormatOfType(req.body.formats, "query");
-
-      if (!usedLlm) {
-        const ct = hasFormatOfType(req.body.formats, "changeTracking");
-
-        if (ct && ct.modes?.includes("json")) {
-          usedLlm = true;
-        }
-      }
-
-      const formats: string[] =
-        req.body.formats?.map((f: FormatObject) => f?.type) ?? [];
-
-      logger.info("Request metrics", {
-        version: "v2",
-        scrapeId: jobId,
-        mode: "scrape",
-        middlewareStartTime,
-        controllerStartTime,
-        middlewareTime,
-        controllerTime,
-        totalRequestTime,
-        totalWait,
-        usedLlm,
-        formats,
-        concurrencyLimited,
-        concurrencyQueueDurationMs: lockTime || undefined,
-      });
-
-      devTrace("scrape.complete", {
-        jobId,
-        teamId: req.auth.team_id,
-        success: true,
-        creditsUsed: doc?.metadata?.creditsUsed,
-        totalRequestTime,
-      });
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          ...doc!,
-          metadata: {
-            ...doc!.metadata,
-            concurrencyLimited,
-            concurrencyQueueDurationMs: concurrencyLimited
-              ? lockTime || 0
-              : undefined,
           },
-        },
-        scrape_id: origin?.includes("website") ? jobId : undefined,
-      });
+          scrape_id: origin?.includes("website") ? jobId : undefined,
+        });
+      } finally {
+        // Always release the API-edge slot, including on early-return
+        // paths (permission denied, keyless 429, etc.). The lease TTL
+        // is a backstop but releasing explicitly keeps the team's
+        // window open for the next request without waiting for expiry.
+        if (edgeSlotHeld) {
+          releaseApiEdgeSlot("scrape", req.auth.team_id, jobId).catch(() => {});
+        }
+      }
     },
     {
       attributes: {

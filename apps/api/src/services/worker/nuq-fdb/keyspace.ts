@@ -338,6 +338,37 @@ export class NuqFdbKeyspace {
     return this.pack(["sweep", "lock"]);
   }
 
+  // === DLQ (dead-letter queue)
+  //
+  // Per-queue dead-letter entries for jobs that exhausted MAX_STALLS. Each
+  // entry is keyed by the original job id so admin replay can fetch a single
+  // record. Errors are time-ordered inside a small ring of buckets so we can
+  // page newest-first and trim old entries via the bucket range. The jobId is
+  // the trailing tuple element so per-job error scans can walk a prefix that
+  // includes the time component.
+  dlqError(bucket: number, tsMs: number, jobId: string): Buffer {
+    return this.pack(["dlq", "err", bucket, tsMs, jobId]);
+  }
+  dlqErrorRange(bucket: number, untilMs: number) {
+    return {
+      begin: this.pack(["dlq", "err", bucket]),
+      end: this.pack(["dlq", "err", bucket, untilMs]),
+    };
+  }
+  dlqErrorJobPrefix(jobId: string): Buffer {
+    // packs [dlq, err, jobId] — used as a low-bound for that job's history.
+    return this.pack(["dlq", "err", jobId]);
+  }
+  dlqErrorJobRange(jobId: string) {
+    return this.packRange(["dlq", "err", jobId]);
+  }
+  dlqRecord(jobId: string): Buffer {
+    return this.pack(["dlq", "rec", jobId]);
+  }
+  dlqRecordRange() {
+    return this.packRange(["dlq", "rec"]);
+  }
+
   unpackId(key: Buffer, indexFromEnd: number = 0): string {
     const parts = getFdb().tuple.unpack(key);
     return String(parts[parts.length - 1 - indexFromEnd]);

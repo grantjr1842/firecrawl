@@ -91,9 +91,20 @@ async function closeAmqpResource(
 
 // === Queue
 
-class NuQ<JobData = any, JobReturnValue = any> {
+export class NuQ<JobData = any, JobReturnValue = any> {
   private listenChannelId: string =
     config.NUQ_POD_NAME + "-" + crypto.randomUUID();
+
+  /**
+   * Returns the unique listener channel id assigned to this pod's NuQ
+   * instance. Exposed so multi-pod tests can address a specific pod when
+   * invoking the private sender path. Production callers should not rely
+   * on this; it's the routing key/header that {@link NuQ} uses internally
+   * to deliver completion notifications to the originating pod.
+   */
+  public getListenChannelId(): string {
+    return this.listenChannelId;
+  }
 
   constructor(
     public readonly queueName: string,
@@ -130,17 +141,38 @@ class NuQ<JobData = any, JobReturnValue = any> {
         const connection = await amqp.connect(config.NUQ_RABBITMQ_URL);
         const channel = await connection.createChannel();
         await channel.prefetch(5);
-        const queue = await channel.assertQueue(
-          this.queueName + ".listen." + this.listenChannelId,
-          {
-            exclusive: true,
-            autoDelete: true,
-            durable: false,
-            arguments: {
-              "x-queue-type": "classic",
-              "x-message-ttl": 60000,
-            },
+
+        // QR-001(e): route job-end notifications via the shared listener
+        // exchange using the listenChannelId as the routing key. Each pod
+        // owns an exclusive, auto-deleted, non-durable queue bound to the
+        // exchange on its own listenChannelId. The sender publishes to the
+        // exchange with the recipient pod's listenChannelId and also stamps
+        // it as the `x-listen-channel` header for observability / audit.
+        //
+        // Previously, the listener queue name embedded listenChannelId
+        // (queueName + ".listen." + listenChannelId) and the sender used
+        // sendToQueue() against that name. That tied routing to queue names
+        // and forced the queue to be re-asserted per channel id. Moving
+        // routing onto the exchange keeps the same per-pod isolation while
+        // letting the listener queue itself be a single, durable-agnostic
+        // entity bound on its channel id.
+        const listenerExchange = this.queueName + ".listen";
+        await channel.assertExchange(listenerExchange, "direct", {
+          durable: true,
+        });
+        const queue = await channel.assertQueue("", {
+          exclusive: true,
+          autoDelete: true,
+          durable: false,
+          arguments: {
+            "x-queue-type": "classic",
+            "x-message-ttl": 60000,
           },
+        });
+        await channel.bindQueue(
+          queue.queue,
+          listenerExchange,
+          this.listenChannelId,
         );
 
         this.listener = {
@@ -195,6 +227,34 @@ class NuQ<JobData = any, JobReturnValue = any> {
 
           const jobId = msg.properties.correlationId as string;
           const status = msg.content.toString() as "completed" | "failed";
+
+          // Defense-in-depth: with the exchange + per-pod binding the only
+          // messages that should land here are for this pod, but verify the
+          // header matches our listenChannelId so a misrouted message can't
+          // trigger a callback on the wrong pod.
+          const headersRecord =
+            msg.properties.headers && typeof msg.properties.headers === "object"
+              ? (msg.properties.headers as Record<string, unknown>)
+              : null;
+          const headerChannel =
+            headersRecord !== null
+              ? headersRecord["x-listen-channel"]
+              : undefined;
+          if (
+            typeof headerChannel === "string" &&
+            headerChannel !== this.listenChannelId
+          ) {
+            logger.warn("NuQ listener received message for different channel", {
+              module: "nuq/rabbitmq",
+              jobId,
+              expectedChannel: this.listenChannelId,
+              actualChannel: headerChannel,
+            });
+            if (this.listener && this.listener.type === "rabbitmq") {
+              this.listener.channel.nack(msg, false, true);
+            }
+            return;
+          }
 
           if (jobId in this.listens) {
             this.listens[jobId].forEach(listener => listener(status));
@@ -388,11 +448,20 @@ class NuQ<JobData = any, JobReturnValue = any> {
     await this.startSender();
 
     if (this.sender) {
-      this.sender.channel.sendToQueue(
-        this.queueName + ".listen." + listenChannelId,
+      // QR-001(e): publish to the shared listener exchange with the
+      // recipient pod's listenChannelId as both the routing key (so the
+      // exchange routes to that pod's bound queue) and the
+      // `x-listen-channel` header (so the listener can audit/verify and
+      // nack misrouted messages defensively).
+      this.sender.channel.publish(
+        this.queueName + ".listen",
+        listenChannelId,
         Buffer.from(status, "utf8"),
         {
           correlationId: id,
+          headers: {
+            "x-listen-channel": listenChannelId,
+          },
         },
       );
       _logger.info("NuQ job sent", { module: "nuq/rabbitmq" });

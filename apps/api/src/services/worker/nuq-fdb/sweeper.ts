@@ -1,6 +1,8 @@
 import { randomUUID } from "crypto";
 import { Logger } from "winston";
+import * as Sentry from "@sentry/node";
 import { logger as _logger } from "../../../lib/logger";
+import { config } from "../../../config";
 import { getNuqFdbDatabase } from "./client";
 import {
   NuqFdbKeyspace,
@@ -23,6 +25,7 @@ import {
   MINUS_ONE,
   EMPTY,
   MAX_STALLS,
+  STALL_FAILED_REASON,
   FAILED_STANDALONE_RETENTION_MS,
   newTxContext,
   pushReady,
@@ -37,13 +40,17 @@ import {
   bumpGroupStatusCount,
   bumpTeamActive,
   GroupJobIndexValue,
+  pushDlqRecord,
+  appendDlqError,
+  sweepDlqRecords,
+  readJobDataJson,
+  DlqRecord,
 } from "./ops";
 import { NuQFdbQueue } from "./queue";
 import { NuqFdbExternalSlots } from "./slots";
 
 const SWEEP_LOCK_TTL_MS = 15_000;
 const SWEEP_BATCH = 50;
-const STALL_FAILED_REASON = "Job stalled too many times";
 
 type SweepLagStats = {
   dueCount: number;
@@ -166,6 +173,7 @@ export class NuqFdbSweeper {
       await this.sweepTeamRaiseTasks(queue, now, logger);
       await this.sweepJobExpiry(queue, now, logger);
       await this.sweepGroupExpiry(queue, now, logger);
+      await this.sweepDlq(queue, now);
     }
     for (const slots of this.externalSlots) {
       await slots.sweepExpired(now, TIME_BUCKETS);
@@ -259,6 +267,34 @@ export class NuqFdbSweeper {
               ks.jobFailedReason(id),
               Buffer.from(STALL_FAILED_REASON, "utf8"),
             );
+            // Capture the original payload before any later shed/GC erases
+            // it, then write the DLQ record + an error entry. The failed-
+            // reason retention path still applies (group members exempt).
+            const data = await readJobDataJson(tn, ks, id);
+            const dlqRec: DlqRecord = {
+              jobId: id,
+              ownerId: meta.o,
+              groupId: meta.g,
+              enqueuedAtMs: meta.c,
+              failedAtMs: now,
+              stalls: st.st,
+              data,
+              meta,
+            };
+            pushDlqRecord(tn, ks, dlqRec);
+            appendDlqError(
+              tn,
+              ks,
+              {
+                tsMs: now,
+                reason: STALL_FAILED_REASON,
+                stalls: st.st,
+                source: "sweeper",
+              },
+              id,
+            );
+            logDlqEntry(logger, queue.queueName, dlqRec);
+            emitDlqSentryWarning(dlqRec);
             if (meta.g && meta.f & F_GACC && queue.groupOps) {
               await queue.groupOps.terminalAccounting(
                 tn,
@@ -608,4 +644,59 @@ export class NuqFdbSweeper {
       });
     }
   }
+
+  // === DLQ retention: drop records + error history past DLQ_RECORD_TTL_MS
+
+  private async sweepDlq(queue: NuQFdbQueue, now: number): Promise<void> {
+    const ks = queue.ks;
+    try {
+      const removed = await this.db.doTn(tn =>
+        sweepDlqRecords(tn, ks, now, TIME_BUCKETS),
+      );
+      if (removed > 0) {
+        _logger.debug("NuQ FDB DLQ trim", {
+          canonicalLog: "nuq-fdb/dlq_trim",
+          queueName: queue.queueName,
+          removed,
+        });
+      }
+    } catch (error) {
+      _logger.warn("NuQ FDB DLQ trim failed", {
+        module: "nuq-fdb/sweeper",
+        queueName: queue.queueName,
+        error,
+      });
+    }
+  }
+}
+
+function logDlqEntry(logger: Logger, queueName: string, rec: DlqRecord): void {
+  logger.warn("NuQ FDB job dead-lettered", {
+    canonicalLog: "nuq-fdb/dlq_entry",
+    queueName,
+    jobId: rec.jobId,
+    ownerId: rec.ownerId,
+    groupId: rec.groupId,
+    stalls: rec.stalls,
+    failedAtMs: rec.failedAtMs,
+    enqueuedAtMs: rec.enqueuedAtMs,
+  });
+}
+
+function emitDlqSentryWarning(rec: DlqRecord): void {
+  if (!config.SENTRY_DSN) return;
+  Sentry.withScope(scope => {
+    scope.setTag("nuq_fdb_dlq", "true");
+    scope.setTag("nuq_fdb_queue", rec.ownerId ? rec.ownerId : "<no-owner>");
+    scope.setExtra("jobId", rec.jobId);
+    scope.setExtra("ownerId", rec.ownerId);
+    scope.setExtra("groupId", rec.groupId);
+    scope.setExtra("stalls", rec.stalls);
+    scope.setExtra("enqueuedAtMs", rec.enqueuedAtMs);
+    scope.setExtra("failedAtMs", rec.failedAtMs);
+    Sentry.captureMessage(
+      `nuq-fdb dlq: job ${rec.jobId} stalled ${rec.stalls} times`,
+      "warning",
+    );
+  });
 }

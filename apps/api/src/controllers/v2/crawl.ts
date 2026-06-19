@@ -26,6 +26,11 @@ import {
 } from "../../services/worker/nuq-router";
 import { logRequest } from "../../services/logging/log_job";
 import { getScrapeZDR } from "../../lib/zdr-helpers";
+import {
+  acquireApiEdgeSlot,
+  releaseApiEdgeSlot,
+} from "../../services/api-edge-concurrency";
+import { isSelfHosted } from "../../lib/deployment";
 
 export async function crawlController(
   req: RequestWithAuth<{}, CrawlResponse, CrawlRequest>,
@@ -45,6 +50,68 @@ export async function crawlController(
     });
   }
 
+  // QR-001(b): API-edge load-shedding. Crawl caps are intentionally
+  // tighter than scrape caps because each crawl spins up a multi-page
+  // group job that consumes worker slots for the lifetime of the
+  // crawl. Self-hosted installs bypass the limiter.
+  const crawlJobId = uuidv7();
+  let edgeSlotHeld = false;
+  if (!isSelfHosted() && config.CRAWL_API_CONCURRENCY_PER_TEAM > 0) {
+    const leaseTtlMs =
+      (req.body.crawlerOptions?.limit ?? 100) * 60_000 + 5 * 60_000; // cap-aware upper bound + grace
+    const acquireResult = await acquireApiEdgeSlot(
+      "crawl",
+      req.auth.team_id,
+      crawlJobId,
+      config.CRAWL_API_CONCURRENCY_PER_TEAM,
+      Math.min(leaseTtlMs, 6 * 60 * 60 * 1000), // hard ceiling at 6h
+    );
+    if (!acquireResult.granted) {
+      const now = Date.now();
+      const retryAfterSec = Math.max(
+        1,
+        Math.ceil((acquireResult.nextExpiryMs - now) / 1000),
+      );
+      devTrace("crawl.complete", {
+        crawlId: crawlJobId,
+        teamId: req.auth.team_id,
+        success: false,
+        errorCode: "API_EDGE_CONCURRENCY_LIMITED",
+        statusCode: 429,
+        inFlight: acquireResult.count,
+      });
+      return res.status(429).set("Retry-After", String(retryAfterSec)).json({
+        success: false,
+        error: "Team is at crawl concurrency limit. Try again later.",
+        code: "API_EDGE_CONCURRENCY_LIMITED",
+        retryAfterSeconds: retryAfterSec,
+      });
+    }
+    edgeSlotHeld = true;
+  }
+
+  try {
+    return await runCrawlController(
+      req,
+      res,
+      preNormalizedBody,
+      crawlJobId,
+      edgeSlotHeld,
+    );
+  } finally {
+    if (edgeSlotHeld) {
+      releaseApiEdgeSlot("crawl", req.auth.team_id, crawlJobId).catch(() => {});
+    }
+  }
+}
+
+async function runCrawlController(
+  req: RequestWithAuth<{}, CrawlResponse, CrawlRequest>,
+  res: Response<CrawlResponse>,
+  preNormalizedBody: any,
+  crawlJobId: string,
+  _edgeSlotHeld: boolean,
+) {
   const zeroDataRetention =
     getScrapeZDR(req.acuc?.flags) === "forced" || req.body.zeroDataRetention;
 

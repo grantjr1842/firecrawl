@@ -384,6 +384,24 @@ const configSchema = z.object({
   RATE_LIMIT_TEST_API_KEY_SCRAPE: z.coerce.number().optional(),
   RATE_LIMIT_TEST_API_KEY_CRAWL: z.coerce.number().optional(),
 
+  // QR-001(b): API-edge load-shedding concurrency caps. A request that
+  // would push a team's in-flight count over the cap is rejected with
+  // 429 + Retry-After (in seconds). 0 disables the limiter for that
+  // endpoint. The caps sit at the API edge (controllers/v2/scrape.ts,
+  // controllers/v2/crawl.ts) and act as a fast-fail before the team
+  // semaphore does its blocking acquire, so a thundering herd from one
+  // team can't tie up controller slots waiting on NuQ.
+  SCRAPE_API_CONCURRENCY_PER_TEAM: z.coerce
+    .number()
+    .int()
+    .nonnegative()
+    .default(50),
+  CRAWL_API_CONCURRENCY_PER_TEAM: z.coerce
+    .number()
+    .int()
+    .nonnegative()
+    .default(5),
+
   // Testing
   TEST_API_KEY: z.string().optional(),
   TEST_API_URL: z.string().default("http://127.0.0.1:3002"),

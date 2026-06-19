@@ -58,6 +58,12 @@ x-common-env: &common-env
   # Set NUQ_BACKEND=fdb to run the queue on FoundationDB instead of Postgres
   NUQ_BACKEND: ${NUQ_BACKEND}
   FDB_CLUSTER_FILE: ${NUQ_BACKEND:+/var/fdb/fdb.cluster}
+  # Map domain patterns to a specific scrape engine. See
+  # apps/api/src/scraper/WebScraper/utils/ENGINE_FORCING.md for syntax.
+  # Default routes heavy-JS SPAs (e.g. threejs.org docs) at the playwright
+  # microservice so we don't waste fire-engine quota on sites that the
+  # dedicated playwright headless can render fine.
+  FORCED_ENGINE_DOMAINS: ${FORCED_ENGINE_DOMAINS:-'{"threejs.org":"playwright"}'}
 
 services:
   playwright-service:

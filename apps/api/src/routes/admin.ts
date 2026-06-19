@@ -12,6 +12,10 @@ import {
   metricsController,
   nuqMetricsController,
 } from "../controllers/v0/admin/metrics";
+import {
+  nuqFdbDlqListController,
+  nuqFdbDlqReplayController,
+} from "../controllers/v0/admin/nuq-fdb-dlq";
 import { realtimeSearchController } from "../controllers/v2/f-search";
 import { concurrencyQueueBackfillController } from "../controllers/v0/admin/concurrency-queue-backfill";
 import { crawlMonitorController } from "../controllers/v0/admin/crawl-monitor";
@@ -95,6 +99,19 @@ adminRouter.post(
   authMiddleware(RateLimiterMode.Crawl),
   checkCreditsMiddleware(2),
   wrap(crawlMonitorController),
+);
+
+// QR-001(d): NuQ FDB dead-letter queue admin surface. Listing is GET;
+// replay is POST so adminAuthMiddleware enforces the X-Admin-Actor-Email
+// header (mutating-method requirement) — see lib/adminAuth.ts.
+adminRouter.get(
+  `/admin/${config.BULL_AUTH_KEY}/nuq-fdb/dlq/list`,
+  wrap(nuqFdbDlqListController),
+);
+
+adminRouter.post(
+  `/admin/${config.BULL_AUTH_KEY}/nuq-fdb/dlq/replay/:jobId`,
+  wrap(nuqFdbDlqReplayController),
 );
 
 adminRouter.post(

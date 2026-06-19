@@ -6,6 +6,7 @@ import {
   JobStatusRecord,
   GroupMeta,
   PendingLoc,
+  JobMeta,
   encodeI64,
   decodeI64,
   encodeJson,
@@ -27,6 +28,29 @@ export const LEASE_MS = 90_000;
 export const MAX_STALLS = 9;
 export const COMPLETED_STANDALONE_RETENTION_MS = 60 * 60 * 1000;
 export const FAILED_STANDALONE_RETENTION_MS = 6 * 60 * 60 * 1000;
+export const STALL_FAILED_REASON = "Job stalled too many times";
+export const DLQ_RECORD_TTL_MS = 24 * 60 * 60 * 1000;
+export const DLQ_MAX_ERRORS_PER_JOB = 50;
+
+// DLQ entry: the original job payload (so admin replay can re-queue it) plus
+// a per-job error history so an operator can see why the job kept stalling.
+export type DlqRecord = {
+  jobId: string;
+  ownerId: string;
+  groupId?: string;
+  enqueuedAtMs: number;
+  failedAtMs: number;
+  stalls: number;
+  data: unknown;
+  meta: JobMeta;
+};
+
+export type DlqErrorEntry = {
+  tsMs: number;
+  reason: string;
+  stalls: number;
+  source: "sweeper" | "manual";
+};
 
 export function bumpTeamActive(
   tn: Transaction,
@@ -430,4 +454,129 @@ export function bumpGroupStatusCount(
   delta: 1 | -1,
 ): void {
   tn.add(ks.groupStatusCount(gid, status), delta === 1 ? ONE : MINUS_ONE);
+}
+
+// === DLQ (dead-letter queue) helpers
+//
+// DLQ records carry the original job payload so admin replay can re-queue
+// them without touching the original job's storage. The error log is a tiny
+// bounded ring per job -- the sweeper caps the write count and a separate
+// trim pass drops entries older than DLQ_RECORD_TTL_MS.
+
+export function pushDlqRecord(
+  tn: Transaction,
+  ks: NuqFdbKeyspace,
+  rec: DlqRecord,
+): void {
+  tn.set(ks.dlqRecord(rec.jobId), encodeJson(rec));
+}
+
+export function deleteDlqRecord(
+  tn: Transaction,
+  ks: NuqFdbKeyspace,
+  jobId: string,
+): void {
+  tn.clear(ks.dlqRecord(jobId));
+  const r = ks.dlqErrorJobRange(jobId);
+  tn.clearRange(r.begin, r.end);
+}
+
+export function appendDlqError(
+  tn: Transaction,
+  ks: NuqFdbKeyspace,
+  entry: DlqErrorEntry,
+  jobId: string,
+): void {
+  const bucket = timeBucket(jobId);
+  tn.set(ks.dlqError(bucket, entry.tsMs, jobId), encodeJson(entry));
+}
+
+// Reads the job's original payload + meta + accumulated error history. Used
+// by admin list/replay. Returns null when no DLQ record exists for the id.
+export async function readDlqRecord(
+  tn: Transaction,
+  ks: NuqFdbKeyspace,
+  jobId: string,
+): Promise<{ record: DlqRecord; errors: DlqErrorEntry[] } | null> {
+  const recBuf = await tn.get(ks.dlqRecord(jobId));
+  if (!recBuf) return null;
+  const record = decodeJson<DlqRecord>(recBuf);
+  if (!record) return null;
+  const errRange = ks.dlqErrorJobRange(jobId);
+  const rows = await tn.snapshot().getRangeAll(errRange.begin, errRange.end);
+  const errors: DlqErrorEntry[] = [];
+  for (const [, value] of rows) {
+    const e = decodeJson<DlqErrorEntry>(value as Buffer);
+    if (e) errors.push(e);
+  }
+  errors.sort((a, b) => b.tsMs - a.tsMs);
+  return { record, errors };
+}
+
+// Lists all DLQ records, newest-failed first. limit caps the result count;
+// the full keyspace scan is bounded by per-queue DLQ_RECORD_TTL_MS trimming.
+export async function listDlqRecords(
+  tn: Transaction,
+  ks: NuqFdbKeyspace,
+  limit: number,
+): Promise<DlqRecord[]> {
+  const r = ks.dlqRecordRange();
+  const rows = await tn.snapshot().getRangeAll(r.begin, r.end, { limit });
+  const out: DlqRecord[] = [];
+  for (const [, value] of rows) {
+    const rec = decodeJson<DlqRecord>(value as Buffer);
+    if (rec) out.push(rec);
+  }
+  out.sort((a, b) => b.failedAtMs - a.failedAtMs);
+  return out;
+}
+
+// Trims DLQ records and their per-job error history older than
+// DLQ_RECORD_TTL_MS. The trim walks the per-bucket time-ordered index so it
+// stops at the first live entry (cheap in steady state).
+export async function sweepDlqRecords(
+  tn: Transaction,
+  ks: NuqFdbKeyspace,
+  now: number,
+  timeBuckets: number,
+): Promise<number> {
+  const cutoff = now - DLQ_RECORD_TTL_MS;
+  let removed = 0;
+  for (let b = 0; b < timeBuckets; b++) {
+    const r = ks.dlqErrorRange(b, cutoff);
+    const rows = await tn
+      .snapshot()
+      .getRangeAll(r.begin, r.end, { limit: 200 });
+    for (const [key, value] of rows) {
+      const e = decodeJson<DlqErrorEntry>(value as Buffer);
+      tn.clear(key as Buffer);
+      if (!e) continue;
+      const jobId = ks.unpackId(key as Buffer);
+      // If a record still exists for the job, drop it too — it is past TTL.
+      const recBuf = await tn.get(ks.dlqRecord(jobId));
+      if (recBuf) {
+        tn.clear(ks.dlqRecord(jobId));
+        removed++;
+      }
+    }
+  }
+  return removed;
+}
+
+// Captures the original job data chunks from the live keyspace and folds them
+// back into a single JSON object. Used when promoting a stalled job into the
+// DLQ so admin replay can re-queue the exact payload.
+export async function readJobDataJson(
+  tn: Transaction,
+  ks: NuqFdbKeyspace,
+  id: string,
+): Promise<unknown> {
+  const dataRange = ks.jobDataRange(id);
+  const dataParts = await tn
+    .snapshot()
+    .getRangeAll(dataRange.begin, dataRange.end);
+  if (dataParts.length === 0) return null;
+  return JSON.parse(
+    Buffer.concat(dataParts.map(([, v]) => v as Buffer)).toString("utf8"),
+  );
 }

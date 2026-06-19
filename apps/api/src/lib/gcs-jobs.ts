@@ -13,6 +13,7 @@ import type {
 import { config } from "../config";
 import crypto from "crypto";
 import { Logger } from "winston";
+import { executeWithRetry } from "./retry-utils";
 
 const credentials = config.GCS_CREDENTIALS
   ? JSON.parse(atob(config.GCS_CREDENTIALS))
@@ -28,13 +29,20 @@ const storageManualRetries = new Storage({
   },
 });
 
+// QR-001(c): centralized backoff schedules for GCS writes. The GCS
+// client already retries idempotent operations on its own (which we
+// disable above for fine-grained control). The two schedules let us
+// ramp up to a slower cadence when the upstream is rate-limiting us
+// (429) or overloaded (503).
 const BACKOFF_PARAMS = [0, 250, 1000];
 const BACKOFF_SLOWDOWN_PARAMS = [0, 2000, 4000];
+const SLOWDOWN_ERROR_CODES = new Set([429, 503]);
 
 type GCSOperationAttempt = {
   error: any;
   timeMs: number;
   backoffMs: number;
+  slowdown: boolean;
 };
 
 /**
@@ -109,7 +117,7 @@ async function saveJobToGCS(params: {
     const bucket = storageManualRetries.bucket(config.GCS_BUCKET_NAME);
     const blob = bucket.file(filename);
 
-    let backoffUsed = BACKOFF_PARAMS;
+    let slowdown = false;
 
     const data = JSON.stringify(params.data);
 
@@ -117,43 +125,82 @@ async function saveJobToGCS(params: {
     // Due to retries and resumable uploads, this is:
     //  if data is smaller than or exactly 3MB: best case 1 request, worst case 3 requests
     //  if data is larger than 3MB: best case 2 requests, worst case 6 requests
-    for (let i = 0; i < backoffUsed.length; i++) {
-      const backoffMs = backoffUsed[i];
-      if (backoffMs > 0) {
-        await new Promise(resolve => setTimeout(resolve, backoffMs));
-      }
+    //
+    // QR-001(c): the retry loop now routes through `executeWithRetry`
+    // so the schedule is interchangeable with the rest of the codebase
+    // (jitter, exponential backoff, idempotent-only retries, etc.).
+    // We pin `retryDelays = []` here because the GCS client already does
+    // its own resumable upload retries underneath us, and we apply the
+    // *actual* inter-attempt delay inside the operation closure so we
+    // can switch to the slowdown schedule mid-loop when a 429/503
+    // surfaces.
+    const SUCCESS = "ok" as const;
+    type Success = typeof SUCCESS;
+    try {
+      await executeWithRetry<Success>(
+        async () => {
+          // Sleep BEFORE the attempt using the *current* slowdown
+          // state. This mirrors the legacy loop where
+          // BACKOFF_PARAMS[i] was applied before attempt i.
+          const schedule = slowdown ? BACKOFF_SLOWDOWN_PARAMS : BACKOFF_PARAMS;
+          const attemptIdx = attempts.length;
+          // `attemptIdx` is the index of the attempt we're about to
+          // run (0-indexed). The legacy loop read
+          // `backoffUsed[attemptIdx]` and slept that long — so attempt
+          // 0 had no sleep, attempt 1 slept schedule[1], etc. We
+          // therefore sleep `schedule[attemptIdx]` before the call.
+          if (attemptIdx < schedule.length) {
+            const sleepMs = schedule[attemptIdx];
+            if (sleepMs > 0) {
+              await new Promise(resolve => setTimeout(resolve, sleepMs));
+            }
+          }
 
-      const saveStart = Date.now();
-      try {
-        await blob.save(data, {
-          metadata: {
-            contentType: "application/json",
-            metadata: params.metadata,
-          },
-          resumable: data.length > 3 * 1024 * 1024, // 3MB, 5MB official limit
-        });
-        attempts.push({
-          error: null,
-          timeMs: Date.now() - saveStart,
-          backoffMs,
-        });
-        break;
-      } catch (error) {
-        if (
-          error instanceof ApiError &&
-          (error.code === 429 || error.code === 503)
-        ) {
-          // switch to slower backoff parameters for rate limiting or server overloaded errors
-          backoffUsed = BACKOFF_SLOWDOWN_PARAMS;
-        }
+          const saveStart = Date.now();
+          try {
+            await blob.save(data, {
+              metadata: {
+                contentType: "application/json",
+                metadata: params.metadata,
+              },
+              resumable: data.length > 3 * 1024 * 1024, // 3MB, 5MB official limit
+            });
+            attempts.push({
+              error: null,
+              timeMs: Date.now() - saveStart,
+              backoffMs:
+                attemptIdx < schedule.length ? schedule[attemptIdx] : 0,
+              slowdown,
+            });
+            return SUCCESS;
+          } catch (error) {
+            if (
+              error instanceof ApiError &&
+              SLOWDOWN_ERROR_CODES.has(error.code)
+            ) {
+              // switch to slower backoff parameters for rate limiting
+              // or server overloaded errors
+              slowdown = true;
+            }
 
-        attempts.push({ error, timeMs: Date.now() - saveStart, backoffMs });
-
-        if (i === BACKOFF_PARAMS.length - 1) {
-          setSpanAttributes(span, { "gcs.save_successful": false });
-          throw error;
-        }
-      }
+            attempts.push({
+              error,
+              timeMs: Date.now() - saveStart,
+              backoffMs:
+                attemptIdx < schedule.length ? schedule[attemptIdx] : 0,
+              slowdown,
+            });
+            throw error;
+          }
+        },
+        (result): result is Success => result === SUCCESS,
+        undefined,
+        BACKOFF_PARAMS.length,
+        [],
+      );
+    } catch (error) {
+      setSpanAttributes(span, { "gcs.save_successful": false });
+      throw error;
     }
 
     setSpanAttributes(span, { "gcs.save_successful": true });

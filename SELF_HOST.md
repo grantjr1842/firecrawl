@@ -125,6 +125,47 @@ BULL_AUTH_KEY=CHANGEME
 # REDIS_URL=redis://redis:6379
 # REDIS_RATE_LIMIT_URL=redis://redis:6379
 
+### Playwright service (JS rendering for SPAs)
+
+Some sites — most notably JS-heavy SPA documentation sites like
+`https://threejs.org/docs/...` — require a real browser to fully render
+their DOM. The default scraper engine returns only the static HTML, which
+for a SPA is a near-empty shell. To render these pages, Firecrawl ships
+a separate `playwright-service` microservice that wraps a headless
+Chromium instance.
+
+The `playwright-service` container is already defined in
+`docker-compose.yaml` and is automatically started by `docker compose up`
+(it's a `depends_on` of the `api` service). The API container is wired
+to it via the `PLAYWRIGHT_MICROSERVICE_URL` environment variable:
+
+```bash
+# Default for the bundled compose stack — points at the playwright-service
+# container that lives on the same Docker network. You should not need to
+# override this when running the default docker-compose stack.
+PLAYWRIGHT_MICROSERVICE_URL=http://playwright-service:3000/scrape
+```
+
+To verify the wiring is working:
+
+```bash
+# 1. Confirm the playwright-service container is up
+docker compose ps playwright-service
+
+# 2. Hit the API and ask for the playwright engine on a SPA page
+curl -X POST http://localhost:3002/v1/scrape \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "url": "https://threejs.org/docs/AnimationAction.html",
+    "engine": "playwright"
+  }'
+```
+
+If `PLAYWRIGHT_MICROSERVICE_URL` is empty or unset, the API
+automatically falls back to the static HTML engine — the API never
+fails a request because the microservice is missing, it just
+silently degrades to non-JS rendering.
+
 ## === Log aggregation ===
 
 By default the API and worker write **one JSON object per line** to stdout.
