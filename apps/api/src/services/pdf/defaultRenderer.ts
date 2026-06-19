@@ -4,7 +4,8 @@ import os from "os";
 import path from "path";
 import { config } from "../../config";
 import { devTrace } from "../../lib/logger";
-import { buildScrapeHTML, ScrapePdfInput } from "./template";
+import { buildBookHTML, buildScrapeHTML, ScrapePdfInput } from "./template";
+import type { BookPdfInput } from "./template";
 
 /**
  * Default PDF renderer: markdown → HTML via pandoc → PDF via weasyprint.
@@ -57,9 +58,7 @@ export async function renderScrapeToPDF(
     });
 
     // 2. Write to a temp file.
-    const tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), "firecrawl-pdf-"),
-    );
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "firecrawl-pdf-"));
     htmlPath = path.join(tmpDir, "input.html");
     pdfPath = path.join(tmpDir, "output.pdf");
     await fs.writeFile(htmlPath, html, "utf8");
@@ -104,6 +103,78 @@ export async function renderScrapeToPDF(
 }
 
 /**
+ * Render a multi-chapter "book" PDF. Mirrors `renderScrapeToPDF` —
+ * the same write-temp + spawn-weasyprint + read-back pipeline, but
+ * the HTML comes from `buildBookHTML` instead of `buildScrapeHTML`.
+ * Used for API-reference-book mode where each chapter is its own
+ * page.
+ */
+export async function renderBookToPDF(input: BookPdfInput): Promise<Buffer> {
+  const startedAt = Date.now();
+  const correlationId = `book-pdf-${startedAt.toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+
+  devTrace("pdf.book.render.start", {
+    correlationId,
+    sourceURL: input.sourceURL,
+    chapterCount: input.chapters.length,
+    renderer: "weasyprint",
+  });
+
+  let htmlPath: string | null = null;
+  let pdfPath: string | null = null;
+
+  try {
+    const html = await buildBookHTML(input);
+    devTrace("pdf.book.template.built", {
+      correlationId,
+      htmlBytes: html.length,
+      chapterCount: input.chapters.length,
+    });
+
+    const tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "firecrawl-book-pdf-"),
+    );
+    htmlPath = path.join(tmpDir, "input.html");
+    pdfPath = path.join(tmpDir, "output.pdf");
+    await fs.writeFile(htmlPath, html, "utf8");
+    devTrace("pdf.book.temp.written", {
+      correlationId,
+      htmlPath,
+      pdfPath,
+      tmpDir,
+    });
+
+    await runWeasyprint(htmlPath, pdfPath, correlationId);
+
+    const pdf = await fs.readFile(pdfPath);
+    devTrace("pdf.book.render.success", {
+      correlationId,
+      pdfBytes: pdf.length,
+      durationMs: Date.now() - startedAt,
+    });
+    return pdf;
+  } catch (err) {
+    devTrace("pdf.book.render.error", {
+      correlationId,
+      durationMs: Date.now() - startedAt,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  } finally {
+    if (htmlPath) {
+      const dir = path.dirname(htmlPath);
+      try {
+        await fs.rm(dir, { recursive: true, force: true });
+      } catch {
+        // ignore — tmpdir reaper will catch it
+      }
+    }
+  }
+}
+
+/**
  * Internal helper: invoke weasyprint and resolve on success. Returns
  * the PDF buffer on success; throws on any non-zero exit, spawn error,
  * or timeout. The buffer is read here so the caller doesn't have to
@@ -115,8 +186,7 @@ async function runWeasyprint(
   correlationId: string,
 ): Promise<Buffer> {
   return new Promise<Buffer>((resolve, reject) => {
-    const weasyprintBin =
-      process.env.WEASYPRINT_BIN ?? "/usr/bin/weasyprint";
+    const weasyprintBin = process.env.WEASYPRINT_BIN ?? "/usr/bin/weasyprint";
     const proc = spawn(weasyprintBin, [htmlPath, pdfPath], {
       stdio: ["ignore", "pipe", "pipe"],
     });

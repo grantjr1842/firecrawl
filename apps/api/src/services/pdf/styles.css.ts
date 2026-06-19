@@ -337,6 +337,30 @@ figcaption {
 }
 
 /* ------------------------------------------------------------------ */
+/* Chapters (book mode)                                              */
+/* ------------------------------------------------------------------ */
+.chapter {
+  page-break-before: always;
+}
+
+.chapter h2 {
+  font-size: 24pt;
+  margin-top: 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+
+.chapter .chapter-meta {
+  font-size: 9pt;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+
+.chapter .chapter-meta a {
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------------------ */
 /* Appendices                                                        */
 /* ------------------------------------------------------------------ */
 .appendix {

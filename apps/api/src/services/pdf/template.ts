@@ -118,9 +118,10 @@ function buildLinksList(links: string[] | undefined): string {
         `<li><a href="${escapeHtml(l)}">${escapeHtml(truncate(l, 120))}</a></li>`,
     )
     .join("\n");
-  const extra = more > 0
-    ? `<li class="muted">…and ${more} more link${more === 1 ? "" : "s"} not shown.</li>`
-    : "";
+  const extra =
+    more > 0
+      ? `<li class="muted">…and ${more} more link${more === 1 ? "" : "s"} not shown.</li>`
+      : "";
   return items + extra;
 }
 
@@ -260,12 +261,13 @@ function buildTocSection(bodyHtml: string): string {
 
 /** Generate a URL-safe id from heading text. `seen` keeps ids unique. */
 function slugify(text: string, seen: Set<string>): string {
-  const base = text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .slice(0, 60) || "section";
+  const base =
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .slice(0, 60) || "section";
   let id = base;
   let n = 1;
   while (seen.has(id)) {
@@ -300,10 +302,15 @@ function injectHeadingIds(bodyHtml: string): string {
  * timestamp below.
  */
 function buildCoverSection(input: ScrapePdfInput): string {
-  const title = (input.metadata?.title ?? input.markdown.split("\n")[0] ?? "Untitled document")
-    .toString()
-    .replace(/^#+\s*/, "")
-    .trim() || "Untitled document";
+  const title =
+    (
+      input.metadata?.title ??
+      input.markdown.split("\n")[0] ??
+      "Untitled document"
+    )
+      .toString()
+      .replace(/^#+\s*/, "")
+      .trim() || "Untitled document";
   const description = input.metadata?.description;
   const scrapedAt = (input.scrapedAt ?? new Date()).toISOString();
 
@@ -314,11 +321,7 @@ function buildCoverSection(input: ScrapePdfInput): string {
   <div class="eyebrow">Scraped from the web</div>
   <div class="accent-rule"></div>
   <h1 class="title">${escapeHtml(title)}</h1>
-  ${
-    description
-      ? `<div class="subtitle">${escapeHtml(description)}</div>`
-      : ""
-  }
+  ${description ? `<div class="subtitle">${escapeHtml(description)}</div>` : ""}
   <div class="meta">
     <div class="source-url">${escapeHtml(input.sourceURL)}</div>
     <div>Captured ${escapeHtml(scrapedAt)}</div>
@@ -359,6 +362,223 @@ export async function buildScrapeHTML(input: ScrapePdfInput): Promise<string> {
     ${toc}
     ${body}
     ${appendices}
+  </div>
+</body>
+</html>`;
+}
+
+/**
+ * Shape of the input the multi-chapter "book" PDF template builder
+ * accepts. The renderer is a sibling of `buildScrapeHTML` — it
+ * produces a cover + TOC + N chapter pages, where each chapter is
+ * an independent scrape result.
+ */
+export interface BookPdfInput {
+  /** Book title used on the cover and in the document `<title>`. */
+  title: string;
+  /** Optional subtitle shown below the title on the cover. */
+  subtitle?: string;
+  /** The aggregate source URL — typically the index page that
+   *  listed all the chapters. */
+  sourceURL: string;
+  /** Timestamp the book was assembled; surfaced on the cover. */
+  scrapedAt: Date;
+  /** Ordered list of chapters. Each chapter renders on its own page
+   *  with an h2 heading, a small URL caption, and the chapter body
+   *  (already rendered HTML — see `markdownToHtmlBatch`). */
+  chapters: {
+    /** Stable id used for the per-chapter anchor (`chapter-1`, `chapter-2`, …). */
+    id: string;
+    /** Display title (e.g. "AnimationAction"). */
+    title: string;
+    /** Per-chapter URL, shown as a small caption under the title. */
+    url: string;
+    /** Already-rendered HTML body for the chapter. */
+    contentHtml: string;
+  }[];
+}
+
+/**
+ * Run pandoc in a single batch invocation to convert N markdown
+ * documents to N HTML fragments. Much faster than calling
+ * `markdownToHtml` per-chapter because pandoc only has to spin up
+ * once. Each input is separated by the sentinel line
+ * `@@FIRECRAWL_PANDOC_BREAK@@` on its own line, which pandoc
+ * faithfully emits into the output stream; we split on the sentinel
+ * to recover the per-document HTML. If a single document fails to
+ * parse the whole batch fails — that's intentional, books shouldn't
+ * be assembled from partially-rendered chapters.
+ */
+export async function markdownToHtmlBatch(
+  markdowns: string[],
+): Promise<string[]> {
+  if (markdowns.length === 0) return [];
+  if (markdowns.length === 1) {
+    return [await markdownToHtml(markdowns[0])];
+  }
+
+  const SENTINEL = "@@FIRECRAWL_PANDOC_BREAK@@";
+  const combined = markdowns
+    .map(md => md + "\n\n" + SENTINEL + "\n\n")
+    .join("");
+
+  return new Promise<string[]>((resolve, reject) => {
+    const proc = spawn(
+      "pandoc",
+      ["-f", "markdown", "-t", "html", "--no-highlight"],
+      { stdio: ["pipe", "pipe", "pipe"] },
+    );
+
+    let stdout = "";
+    let stderr = "";
+    proc.stdout.on("data", (chunk: Buffer) => {
+      stdout += chunk.toString("utf8");
+    });
+    proc.stderr.on("data", (chunk: Buffer) => {
+      stderr += chunk.toString("utf8");
+    });
+
+    proc.on("error", err => {
+      reject(
+        new Error(
+          `pandoc failed to start: ${err.message}. ` +
+            `Is pandoc installed and on PATH?`,
+        ),
+      );
+    });
+
+    proc.on("close", code => {
+      if (code !== 0) {
+        reject(
+          new Error(
+            `pandoc exited with code ${code}: ${stderr.slice(0, 2000)}`,
+          ),
+        );
+        return;
+      }
+      // Split on the sentinel. We emit "<sentinel>" so the marker is
+      // recoverable even if pandoc wraps it in surrounding whitespace.
+      const parts = stdout.split(SENTINEL).map(s => s.trim());
+      // The trailing chunk after the last sentinel is empty / whitespace;
+      // drop it so the returned array aligns 1:1 with `markdowns`.
+      while (parts.length > markdowns.length) parts.pop();
+      // If pandoc dropped a sentinel (shouldn't happen with a faithful
+      // passthrough but be defensive) pad so callers don't index out of
+      // range.
+      while (parts.length < markdowns.length) parts.push("");
+      resolve(parts);
+    });
+
+    proc.stdin.write(combined, "utf8");
+    proc.stdin.end();
+  });
+}
+
+/**
+ * Build the book cover. Matches the cover from `buildScrapeHTML` but
+ * doesn't try to read a title out of the markdown body — the book
+ * caller always supplies an explicit title.
+ */
+function buildBookCoverSection(input: BookPdfInput): string {
+  const scrapedAt = (input.scrapedAt ?? new Date()).toISOString();
+  return `<div class="cover">
+  <div class="eyebrow">API Reference Book</div>
+  <div class="accent-rule"></div>
+  <h1 class="title">${escapeHtml(input.title)}</h1>
+  ${
+    input.subtitle
+      ? `<div class="subtitle">${escapeHtml(input.subtitle)}</div>`
+      : ""
+  }
+  <div class="meta">
+    <div class="source-url">${escapeHtml(input.sourceURL)}</div>
+    <div>Captured ${escapeHtml(scrapedAt)}</div>
+  </div>
+</div>`;
+}
+
+/**
+ * Build the book's table of contents. The TOC is hand-rolled (same
+ * approach as `buildTocSection`) so we can keep the leader-dotted
+ * page numbers and the chapter ordering under our control.
+ */
+function buildBookTocSection(input: BookPdfInput): string {
+  const items = input.chapters
+    .map(
+      ch =>
+        `<li><a href="#chapter-${escapeHtml(ch.id)}">${escapeHtml(
+          ch.title,
+        )}</a></li>`,
+    )
+    .join("\n        ");
+
+  return `<div class="toc">
+  <h1>Table of Contents</h1>
+  <div class="toc-body">
+    <ul>
+      ${items || '<li class="muted">No chapters in this book.</li>'}
+    </ul>
+  </div>
+</div>`;
+}
+
+/**
+ * Build the chapter body. Each chapter is a `<section class="chapter">`
+ * that starts on a new page (driven by the stylesheet's
+ * `.chapter { page-break-before: always; }` rule), with a numbered
+ * h2 heading, a small URL caption, and the pre-rendered chapter
+ * HTML. We use the supplied chapter `id` for the anchor so the TOC
+ * links resolve.
+ */
+function buildBookChaptersSection(input: BookPdfInput): string {
+  const sections = input.chapters
+    .map((ch, idx) => {
+      const chapterNumber = idx + 1;
+      const heading = `Chapter ${chapterNumber}: ${escapeHtml(ch.title)}`;
+      const caption = `<div class="chapter-meta"><a href="${escapeHtml(
+        ch.url,
+      )}">${escapeHtml(ch.url)}</a></div>`;
+      return `<section class="chapter" id="chapter-${escapeHtml(ch.id)}">
+  <h2>${heading}</h2>
+  ${caption}
+  <div class="chapter-body">
+    ${ch.contentHtml}
+  </div>
+</section>`;
+    })
+    .join("\n");
+
+  return `<div class="body book-body">
+${sections}
+</div>`;
+}
+
+/**
+ * Build the full self-contained HTML document for a multi-chapter
+ * "book" PDF. Same cover + TOC structure as `buildScrapeHTML` so
+ * the two renderers feel like a single family; the body is replaced
+ * with a series of per-chapter sections, each starting on a new
+ * page. The chapter body HTML is expected to be pre-rendered
+ * (use `markdownToHtmlBatch` to batch-render all chapters in a
+ * single pandoc invocation).
+ */
+export async function buildBookHTML(input: BookPdfInput): Promise<string> {
+  const cover = buildBookCoverSection(input);
+  const toc = buildBookTocSection(input);
+  const chapters = buildBookChaptersSection(input);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(input.title)}</title>
+  <style>${stylesCss}</style>
+</head>
+<body>
+  <div class="doc-root">
+    ${cover}
+    ${toc}
+    ${chapters}
   </div>
 </body>
 </html>`;
