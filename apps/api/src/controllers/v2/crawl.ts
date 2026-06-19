@@ -58,7 +58,7 @@ export async function crawlController(
   let edgeSlotHeld = false;
   if (!isSelfHosted() && config.CRAWL_API_CONCURRENCY_PER_TEAM > 0) {
     const leaseTtlMs =
-      (req.body.crawlerOptions?.limit ?? 100) * 60_000 + 5 * 60_000; // cap-aware upper bound + grace
+      (req.body.limit ?? 100) * 60_000 + 5 * 60_000; // cap-aware upper bound + grace
     const acquireResult = await acquireApiEdgeSlot(
       "crawl",
       req.auth.team_id,
@@ -82,9 +82,8 @@ export async function crawlController(
       });
       return res.status(429).set("Retry-After", String(retryAfterSec)).json({
         success: false,
-        error: "Team is at crawl concurrency limit. Try again later.",
-        code: "API_EDGE_CONCURRENCY_LIMITED",
-        retryAfterSeconds: retryAfterSec,
+        error: `Team is at crawl concurrency limit. Retry in ${retryAfterSec}s.`,
+        code: "API_EDGE_CONCURRENCY_LIMITED" as any,
       });
     }
     edgeSlotHeld = true;

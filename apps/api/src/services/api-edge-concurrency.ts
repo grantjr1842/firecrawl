@@ -33,13 +33,6 @@ const PREFIX = "api-edge-conc:";
 const key = (endpoint: string, teamId: string) =>
   `${PREFIX}${endpoint}:${teamId}`;
 
-const trimScript = `
-local t = redis.call('TIME')
-local now_ms = t[1] * 1000 + math.floor(t[2] / 1000)
-local removed = redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', now_ms)
-return {removed, redis.call('ZCARD', KEYS[1])}
-`;
-
 const acquireScript = `
 local t = redis.call('TIME')
 local now_ms = t[1] * 1000 + math.floor(t[2] / 1000)
@@ -80,7 +73,6 @@ redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', now_ms)
 return redis.call('ZCARD', KEYS[1])
 `;
 
-const trimHash = { script: "LOAD", trim: "" } as { trim: string };
 const acquireHash = { acquire: "" } as { acquire: string };
 const releaseHash = { release: "" } as { release: string };
 const countHash = { count: "" } as { count: string };
@@ -89,10 +81,6 @@ let initPromise: Promise<void> | null = null;
 async function ensureScriptsLoaded(): Promise<void> {
   if (initPromise) return initPromise;
   initPromise = (async () => {
-    trimHash.trim = (await redisRateLimitClient.script(
-      "LOAD",
-      trimScript,
-    )) as string;
     acquireHash.acquire = (await redisRateLimitClient.script(
       "LOAD",
       acquireScript,

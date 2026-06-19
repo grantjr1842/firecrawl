@@ -231,19 +231,13 @@ function createInMemoryConnection(): any {
   return connection;
 }
 
-vi.mock("amqplib", () => ({
-  default: {
-    async connect(_url: string) {
-      return createInMemoryConnection();
-    },
-    connect(_url: string) {
-      return createInMemoryConnection();
-    },
-  },
-  connect(_url: string) {
-    return createInMemoryConnection();
-  },
-}));
+vi.mock("amqplib", () => {
+  const factory = () => createInMemoryConnection();
+  return {
+    default: { connect: factory },
+    connect: factory,
+  };
+});
 
 vi.mock("../../../config", () => {
   // The NuQRabbitmq listener/sender paths gate on `config.NUQ_RABBITMQ_URL`
@@ -317,9 +311,6 @@ describe("QR-001(e) multi-pod RabbitMQ listener routing", () => {
     const channelB = podB.getListenChannelId();
     expect(channelA).not.toEqual(channelB);
 
-    const seenOnA: Array<{ jobId: string; status: string }> = [];
-    const seenOnB: Array<{ jobId: string; status: string }> = [];
-
     // Use a small private helper to register completion handlers. The
     // class exposes `addListener` via the public API indirectly: it is
     // private, but the test can reach the same behavior by triggering
@@ -378,9 +369,6 @@ describe("QR-001(e) multi-pod RabbitMQ listener routing", () => {
     expect(routedB.properties.correlationId).toBe("job-B-1");
     expect(routedB.content.toString()).toBe("failed");
     expect(routedB.deliveryQueueNames).toEqual([bQueue!.name]);
-
-    expect(seenOnA).toHaveLength(0);
-    expect(seenOnB).toHaveLength(0);
 
     // Cleanup so the next test starts from a clean slate.
     await podA.shutdown();

@@ -25,6 +25,7 @@ import {
 import { getJobPriority } from "../../lib/job-priority";
 import { logRequest } from "../../services/logging/log_job";
 import { getErrorContactMessage } from "../../lib/deployment";
+import { isSelfHosted } from "../../lib/deployment";
 import { captureExceptionWithZdrCheck } from "../../services/sentry";
 import type { BillingMetadata } from "../../services/billing/types";
 import { getScrapeZDR } from "../../lib/zdr-helpers";
@@ -105,9 +106,8 @@ export async function scrapeController(
             .set("Retry-After", String(retryAfterSec))
             .json({
               success: false,
-              error: "Team is at scrape concurrency limit. Try again later.",
-              code: "API_EDGE_CONCURRENCY_LIMITED",
-              retryAfterSeconds: retryAfterSec,
+              error: `Team is at scrape concurrency limit. Retry in ${retryAfterSec}s.`,
+              code: "API_EDGE_CONCURRENCY_LIMITED" as any,
             });
         }
         edgeSlotHeld = true;
