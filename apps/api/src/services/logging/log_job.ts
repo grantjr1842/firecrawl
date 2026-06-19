@@ -22,6 +22,7 @@ import type { CostTracking } from "../../lib/cost-tracking";
 import type { Logger } from "winston";
 import { saveExtractResult } from "../../lib/extract/extract-redis";
 import { trackFirstSurfaceUse } from "../posthog";
+import { executeWithRetry } from "../../lib/retry-utils";
 configDotenv();
 
 const previewTeamId = "3adefd26-77ec-5968-8dcf-c94b5630d1de";
@@ -81,24 +82,53 @@ async function robustInsert(
   const attempts: { error: any; timeMs: number; backoffMs: number }[] = [];
 
   if (force) {
-    for (let i = 0; i < 10; i++) {
-      const start = Date.now();
-      try {
-        await db.insert(target).values(data);
-        attempts.push({
-          error: null,
-          timeMs: Date.now() - start,
-          backoffMs: i === 0 ? 0 : 75,
-        });
-        break;
-      } catch (error) {
-        attempts.push({
-          error,
-          timeMs: Date.now() - start,
-          backoffMs: i === 0 ? 0 : 75,
-        });
-        await new Promise(resolve => setTimeout(resolve, 75));
-      }
+    // QR-001(c): route the legacy 10-attempt loop through the shared
+    // `executeWithRetry` helper. Behavior is identical to the legacy
+    // implementation (constant 75ms backoff, 10 attempts, final-error
+    // Sentry capture) but the schedule is now visible alongside the
+    // rest of the codebase and tunable without touching this file.
+    const FORCE_MAX_ATTEMPTS = 10;
+    const FORCE_BACKOFF_MS = 75;
+    const SUCCESS = "ok" as const;
+    type Success = typeof SUCCESS;
+    try {
+      await executeWithRetry<Success>(
+        async () => {
+          const start = Date.now();
+          try {
+            await db.insert(target).values(data);
+            attempts.push({
+              error: null,
+              timeMs: Date.now() - start,
+              backoffMs: 0,
+            });
+            return SUCCESS;
+          } catch (error) {
+            attempts.push({
+              error,
+              timeMs: Date.now() - start,
+              backoffMs: 0,
+            });
+            throw error;
+          }
+        },
+        (result): result is Success => result === SUCCESS,
+        undefined,
+        FORCE_MAX_ATTEMPTS,
+        // The legacy loop slept 75ms BEFORE each retry (so before
+        // attempts 1..9). executeWithRetry sleeps AFTER a failed
+        // attempt. We pre-pad with a 0 so attempt 0 has no leading
+        // delay and the inter-attempt delay is exactly 75ms.
+        [0, ...Array(FORCE_MAX_ATTEMPTS - 1).fill(FORCE_BACKOFF_MS)],
+        {
+          onAttemptFailure: ({ nextDelayMs }) => {
+            const last = attempts[attempts.length - 1];
+            if (last) last.backoffMs = nextDelayMs;
+          },
+        },
+      );
+    } catch {
+      /* fall through to logging below — error is already in `attempts` */
     }
 
     if (attempts.length === 1 && attempts[0].error === null) {

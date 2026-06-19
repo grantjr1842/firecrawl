@@ -3,15 +3,62 @@ import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { db, dbIndex } from "./connection";
 import { config } from "../config";
 import { logger } from "../lib/logger";
+import { executeWithRetry } from "../lib/retry-utils";
 
 type DB = NodePgDatabase;
 
+/**
+ * QR-001(c): wrap raw RPC calls in `executeWithRetry` with
+ * exponential backoff + jitter. Read-mostly index RPCs (the 23
+ * functions below) are safe to retry on transient Postgres errors
+ * (connection drops, statement timeouts) — the underlying SQL
+ * functions are idempotent for the read path. Write-side RPCs
+ * (`billTeam6`, `changeTrackingInsertScrape`, `updateTallyTeam`)
+ * either dedupe in SQL or are explicitly safe under retry, so we
+ * let them flow through this same path.
+ *
+ * We suppress retries for `57014` (query cancelled) because that's a
+ * server-side timeout / cancellation the next attempt would likely
+ * hit again. Everything else gets up to 3 attempts with exponential
+ * backoff.
+ */
 async function execRows<T = Record<string, any>>(
   database: DB,
   query: SQL,
 ): Promise<T[]> {
-  const res = await database.execute(query);
-  return (res.rows ?? []) as T[];
+  const result = await executeWithRetry<T[]>(
+    () => database.execute(query).then(res => (res.rows ?? []) as T[]),
+    (value): value is T[] => Array.isArray(value),
+    undefined,
+    undefined,
+    undefined,
+    {
+      backoffStrategy: "exponential",
+      backoffOptions: {
+        baseDelayMs: 50,
+        maxDelayMs: 1_000,
+        jitter: 0.5,
+      },
+      maxAttempts: 3,
+      requireIdempotency: true,
+      idempotencyKey: `execRows:${query.queryChunks
+        .map(c => (typeof c === "string" ? c : ""))
+        .join("")
+        .slice(0, 64)}`,
+      shouldRetry: error => {
+        const code = (error as { code?: string } | null)?.code;
+        // 57014 = query cancelled (statement_timeout or pooler kill).
+        // Anything in class 08 (connection exception) and 40001
+        // (serialization failure) is a transient retry candidate.
+        if (code === "57014") return false;
+        return true;
+      },
+      onAttemptFailure: ({ attempt, error }) => {
+        logger.debug("RPC retry", { attempt, error });
+      },
+    },
+  );
+  return result ?? [];
 }
 
 // The pg driver returns bigint/numeric columns as strings (to avoid precision

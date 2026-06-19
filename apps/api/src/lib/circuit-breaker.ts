@@ -312,7 +312,9 @@ export class CircuitBreaker<TArgs extends unknown[], TResult> {
     const breadcrumb = {
       category: "circuit-breaker",
       message: `${this.name}: ${previous} -> ${next}`,
-      level: next === "open" ? "warning" : "info",
+      level: (next === "open" ? "warning" : "info") as
+        | "warning"
+        | "info",
       data: {
         breaker: this.name,
         previous,

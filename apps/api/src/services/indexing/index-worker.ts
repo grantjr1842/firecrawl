@@ -26,6 +26,7 @@ import {
 } from "..";
 import { queryTopUrlsForDomain, updateTallyTeam } from "../../db/rpc";
 import { getSearchIndexClient } from "../../lib/search-index-client";
+import { executeWithRetry } from "../../lib/retry-utils";
 // Search indexing is now handled by the separate search service
 // import { processSearchIndexJobs } from "../../lib/search-index/queue";
 import { processWebhookInsertJobs } from "../webhook";
@@ -284,10 +285,51 @@ const processPrecrawlJob = async (token: string, job: Job) => {
         const batch = batches[i];
 
         const batchFutures = batch.map(({ hash, urlsToFetch }) => {
-          return queryTopUrlsForDomain<DomainUrlResult>(
-            hash,
-            "8 days", // increasing window can significantly slow down the query, modify with caution
-            urlsToFetch,
+          // QR-001(c): route the per-domain URL query through the
+          // shared `executeWithRetry` helper. The query is read-only
+          // and idempotent (same params → same result set), so we
+          // mark it with an idempotency key and let the helper retry
+          // on transient Postgres errors. The outer Promise.allSettled
+          // still receives a settled outcome even after retries are
+          // exhausted because the closure resolves with `{ data:
+          // null, error }` instead of throwing.
+          return executeWithRetry<DomainUrlResult[]>(
+            () =>
+              queryTopUrlsForDomain<DomainUrlResult>(
+                hash,
+                "8 days", // increasing window can significantly slow down the query, modify with caution
+                urlsToFetch,
+              ),
+            (value): value is DomainUrlResult[] => Array.isArray(value),
+            undefined,
+            // 3 attempts, exponential with jitter to avoid hammering
+            // a struggling Postgres primary.
+            undefined,
+            undefined,
+            {
+              backoffStrategy: "exponential",
+              backoffOptions: {
+                baseDelayMs: 200,
+                maxDelayMs: 2_000,
+                jitter: 0.5,
+              },
+              requireIdempotency: true,
+              idempotencyKey: `queryTopUrlsForDomain:${hash.toString("hex")}:${urlsToFetch}`,
+              shouldRetry: error => {
+                // Don't retry cancelled queries — the connection
+                // pool killed them on purpose and the next attempt
+                // will likely hit the same fate.
+                const code = (error as { code?: string } | null)?.code;
+                return code !== "57014";
+              },
+              onAttemptFailure: ({ attempt, error }) => {
+                logger.warn("Precrawl RPC retry", {
+                  attempt,
+                  error,
+                  domain_hash: hash.toString("hex"),
+                });
+              },
+            },
           )
             .then(data => ({ data, error: null }))
             .catch(error => ({

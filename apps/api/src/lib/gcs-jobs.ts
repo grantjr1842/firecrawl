@@ -176,6 +176,7 @@ async function saveJobToGCS(params: {
           } catch (error) {
             if (
               error instanceof ApiError &&
+              typeof error.code === "number" &&
               SLOWDOWN_ERROR_CODES.has(error.code)
             ) {
               // switch to slower backoff parameters for rate limiting

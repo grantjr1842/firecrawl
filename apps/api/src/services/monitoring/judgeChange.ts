@@ -1,6 +1,7 @@
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import type { Logger } from "winston";
+import { executeWithRetry } from "../../lib/retry-utils";
 
 const SYSTEM_PROMPT = `You judge whether a webpage diff matters for the user's monitoring goal.
 
@@ -251,34 +252,53 @@ const judgeModel = google(JUDGE_MODEL_NAME);
 
 async function callGemini(args: {
   userBlock: string;
+  logger?: Logger;
 }): Promise<{ text: string }> {
-  let lastError: unknown;
-  for (let attempt = 1; attempt <= JUDGE_MAX_ATTEMPTS; attempt++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      JUDGE_ATTEMPT_TIMEOUT_MS,
-    );
-    try {
-      const result = await generateText({
-        model: judgeModel,
-        system: SYSTEM_PROMPT,
-        prompt: args.userBlock,
-        temperature: 0,
-        abortSignal: controller.signal,
-      });
-      return { text: result.text?.trim() ?? "" };
-    } catch (error) {
-      lastError = error;
-      if (attempt >= JUDGE_MAX_ATTEMPTS) throw error;
-      const backoff = JUDGE_BACKOFF_MS[attempt - 1] ?? 800;
-      const jitter = Math.floor(Math.random() * backoff);
-      await new Promise(resolve => setTimeout(resolve, backoff + jitter));
-    } finally {
-      clearTimeout(timeoutId);
-    }
+  // QR-001(c): route the existing 3-attempt retry loop through the
+  // shared `executeWithRetry` helper so the schedule (300ms then
+  // 800ms, with light jitter baked into the original code) is
+  // observable alongside the rest of the codebase. We use
+  // `requireIdempotency` with an explicit `idempotencyKey` — judge
+  // calls are read-only and safe to re-invoke for transient 5xx /
+  // timeout failures.
+  const idempotencyKey = `judgeChange:${JUDGE_MODEL_NAME}`;
+  const result = await executeWithRetry<{ text: string }>(
+    async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        JUDGE_ATTEMPT_TIMEOUT_MS,
+      );
+      try {
+        const generated = await generateText({
+          model: judgeModel,
+          system: SYSTEM_PROMPT,
+          prompt: args.userBlock,
+          temperature: 0,
+          abortSignal: controller.signal,
+        });
+        return { text: generated.text?.trim() ?? "" };
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    },
+    (value): value is { text: string } => value !== null,
+    undefined,
+    JUDGE_MAX_ATTEMPTS,
+    JUDGE_BACKOFF_MS,
+    {
+      requireIdempotency: true,
+      idempotencyKey,
+      onAttemptFailure: ({ nextDelayMs }) => {
+        args.logger?.debug("judgeChange retry attempt", { nextDelayMs });
+      },
+    },
+  );
+
+  if (result === null) {
+    throw new Error("Judge call failed after retries");
   }
-  throw lastError;
+  return result;
 }
 
 export async function judgeChange(
@@ -298,7 +318,7 @@ export async function judgeChange(
   const userBlock = pre.userBlock;
 
   try {
-    const { text } = await callGemini({ userBlock });
+    const { text } = await callGemini({ userBlock, logger });
     const parsed = parseJudgeText(text);
     if (parsed.kind === "unparseable") {
       logger.warn("Judge returned unparseable response", {

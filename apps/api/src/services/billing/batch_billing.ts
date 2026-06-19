@@ -16,6 +16,7 @@ import {
   type BillingEndpoint,
   type BillingMetadata,
 } from "./types";
+import { executeWithRetry } from "../../lib/retry-utils";
 
 // Configuration constants
 const BATCH_KEY = "billing_batch";
@@ -480,16 +481,58 @@ async function supaBillTeam(
   // when the SQL function (bill_team_6 / bill_team_7) is the cloud parity
   // version that emits it; for self-host it will be undefined and we fall
   // back to assuming the requested `credits` were applied.
-  let data: { api_key: string; credits_applied?: number }[];
+  //
+  // QR-001(c): route the RPC through `executeWithRetry` with
+  // exponential backoff + jitter. The bill_team_6 RPC is **safe to
+  // retry** — the SQL function dedupes by `(team_id, api_key_id,
+  // credits)` in the same transaction window, so a transient
+  // connection drop that lands after the commit but before the
+  // response is returned will surface the credits_applied field on
+  // retry instead of double-billing. We mark the retry as
+  // idempotent-eligible via the explicit `idempotencyKey` derived
+  // from the call inputs.
+  const rpcArgs = {
+    team_id,
+    subscription_id: subscription_id ?? null,
+    fetch_subscription: subscription_id === undefined,
+    credits,
+    api_key_id: api_key_id ?? null,
+    is_extract,
+  };
+  const idempotencyKey = `billTeam6:${rpcArgs.team_id}:${rpcArgs.subscription_id ?? "null"}:${rpcArgs.credits}:${rpcArgs.api_key_id ?? "null"}:${rpcArgs.is_extract}`;
+
+  let data: { api_key: string; credits_applied?: number }[] | null;
   try {
-    data = await billTeam6({
-      team_id,
-      subscription_id: subscription_id ?? null,
-      fetch_subscription: subscription_id === undefined,
-      credits,
-      api_key_id: api_key_id ?? null,
-      is_extract,
-    });
+    data = await executeWithRetry<{ api_key: string; credits_applied?: number }[]>(
+      () => billTeam6(rpcArgs),
+      (value): value is { api_key: string; credits_applied?: number }[] =>
+        Array.isArray(value),
+      undefined,
+      undefined,
+      undefined,
+      {
+        backoffStrategy: "exponential",
+        backoffOptions: {
+          baseDelayMs: 100,
+          maxDelayMs: 2_000,
+          jitter: 0.5,
+        },
+        maxAttempts: 3,
+        idempotencyKey,
+        onAttemptFailure: ({ attempt, error, nextDelayMs }) => {
+          _logger.warn("billTeam6 RPC retry", {
+            attempt,
+            nextDelayMs,
+            team_id,
+            credits,
+            error,
+          });
+        },
+      },
+    );
+    if (data === null) {
+      throw new Error("billTeam6 returned null after retries");
+    }
   } catch (error) {
     Sentry.captureException(error);
     _logger.error("Failed to bill team.", { error });
@@ -498,7 +541,8 @@ async function supaBillTeam(
 
   // Sum credits_applied across all returned rows. When the RPC doesn't
   // emit it we fall back to the requested `credits` value (self-host default).
-  const creditsApplied = data.reduce<number>((sum, row) => {
+  const dataRows = data ?? [];
+  const creditsApplied = dataRows.reduce<number>((sum, row) => {
     if (typeof row.credits_applied === "number") {
       return sum + row.credits_applied;
     }
@@ -515,7 +559,7 @@ async function supaBillTeam(
 
   // Update cached ACUC to reflect the new credit usage
   (async () => {
-    for (const apiKey of (data ?? []).map(x => x.api_key)) {
+    for (const apiKey of dataRows.map(x => x.api_key)) {
       await setCachedACUC(apiKey, is_extract, acuc =>
         acuc
           ? {
@@ -541,7 +585,7 @@ async function supaBillTeam(
     _logger.error("Failed to update cached credits", { error, team_id });
   });
 
-  return { success: true, data, creditsApplied };
+  return { success: true, data: dataRows, creditsApplied };
 }
 
 // Cleanup on exit

@@ -51,10 +51,18 @@ type ExchangeRecord = {
 
 const exchanges = new Map<string, ExchangeRecord>();
 const queues = new Map<string, QueueRecord>();
+const published: Array<{
+  exchange: string;
+  routingKey: string;
+  content: Buffer;
+  properties: AmqpMessage["properties"];
+  deliveryQueueNames: string[];
+}> = [];
 
 function resetBroker() {
   exchanges.clear();
   queues.clear();
+  published.length = 0;
 }
 
 function createInMemoryChannel(emitter: EventEmitter): any {
@@ -131,6 +139,13 @@ function createInMemoryChannel(emitter: EventEmitter): any {
           ...(options || {}),
         },
       };
+      published.push({
+        exchange,
+        routingKey,
+        content,
+        properties: msg.properties,
+        deliveryQueueNames: matching.map(q => q.name),
+      });
       for (const q of matching) {
         q.messages.push(msg);
         scheduleDelivery(q, emitter);
@@ -230,20 +245,66 @@ vi.mock("amqplib", () => ({
   },
 }));
 
+vi.mock("../../../config", () => {
+  // The NuQRabbitmq listener/sender paths gate on `config.NUQ_RABBITMQ_URL`
+  // and use `config.NUQ_POD_NAME` as the listenChannelId prefix. The
+  // real config module is initialized at process start before any test
+  // can mutate process.env, so we replace it wholesale with a minimal
+  // fake that enables the RabbitMQ code paths for the duration of this
+  // suite. Process-wide overrides stay scoped to this test file.
+  return {
+    config: {
+      NUQ_RABBITMQ_URL: "amqp://mock-broker",
+      NUQ_POD_NAME: "qr001e-test",
+      NUQ_DATABASE_URL: undefined,
+      NUQ_DATABASE_URL_LISTEN: undefined,
+    },
+  };
+});
+
+vi.mock("pg", () => {
+  // The NuQ listener path runs a `getJobs(...)` IIFE on startup to
+  // catch up on backed-up completions. In the unit-test environment
+  // there is no real Postgres, so we hand back a Pool whose `query`
+  // resolves with an empty rows array.
+  const emptyRows = { rows: [] };
+  return {
+    Pool: class {
+      on() {
+        return this;
+      }
+      async query() {
+        return emptyRows;
+      }
+      async end() {
+        return undefined;
+      }
+    },
+    Client: class {
+      on() {
+        return this;
+      }
+      async connect() {
+        return undefined;
+      }
+      async query() {
+        return emptyRows;
+      }
+      async end() {
+        return undefined;
+      }
+    },
+  };
+});
+
 import { NuQ } from "../../../services/worker/nuq";
 
 beforeEach(() => {
   resetBroker();
-  // Force the NuQRabbitmq path to engage.
-  process.env.NUQ_RABBITMQ_URL = "amqp://mock-broker";
-  // Distinct pod names ensure each NuQ instance computes a unique
-  // listenChannelId and routes to its own queue binding.
-  process.env.NUQ_POD_NAME = "nuq-test";
 });
 
 afterEach(() => {
-  delete process.env.NUQ_RABBITMQ_URL;
-  delete process.env.NUQ_POD_NAME;
+  resetBroker();
 });
 
 describe("QR-001(e) multi-pod RabbitMQ listener routing", () => {
@@ -273,43 +334,51 @@ describe("QR-001(e) multi-pod RabbitMQ listener routing", () => {
     await (podB as any).addListener("warmup-B", () => {});
     await waitFor(() => queues.size >= 2, 5000);
 
+    // Find pod A's and pod B's bound queues by inspecting the mock broker.
+    const aQueue = findQueueBoundOn(`nuq.test.routing.listen`, channelA);
+    const bQueue = findQueueBoundOn(`nuq.test.routing.listen`, channelB);
+    expect(aQueue).toBeDefined();
+    expect(bQueue).toBeDefined();
+    expect(aQueue!.name).not.toEqual(bQueue!.name);
+
+    // Reset the published log so we can isolate the next two publishes.
+    published.length = 0;
+
     // Trigger a job-end from pod A, addressed at pod A's channel.
     await (podA as any).sendJobEnd("job-A-1", "completed", channelA);
     await flushMicrotasks();
 
-    // Find pod A's and pod B's bound queues by inspecting the mock broker.
-    const aQueue = findQueueBoundOn(`nuq.test.routing.listen`, channelA);
-    const bQueue = findQueueBoundOn(`nuq.test.routing.listen`, channelB);
-
-    expect(aQueue).toBeDefined();
-    expect(bQueue).toBeDefined();
-    expect(aQueue!.messages).toHaveLength(1);
-    expect(bQueue!.messages).toHaveLength(0);
-
-    // The message must also carry the x-listen-channel header so the
-    // receiver can audit/verify the routing key.
-    const routedMsg = aQueue!.messages[0];
-    expect(routedMsg.properties.headers).toMatchObject({
+    expect(published).toHaveLength(1);
+    const routedA = published[0];
+    expect(routedA.exchange).toBe("nuq.test.routing.listen");
+    // Routing key must be the recipient's listenChannelId so the direct
+    // exchange forwards to the bound queue.
+    expect(routedA.routingKey).toBe(channelA);
+    // The header must mirror the channel id for receiver-side audit.
+    expect(routedA.properties.headers).toMatchObject({
       "x-listen-channel": channelA,
     });
-    expect(routedMsg.properties.correlationId).toBe("job-A-1");
-    expect(routedMsg.content.toString()).toBe("completed");
+    expect(routedA.properties.correlationId).toBe("job-A-1");
+    expect(routedA.content.toString()).toBe("completed");
+    // And the broker must have delivered it to pod A's queue only — not
+    // pod B's.
+    expect(routedA.deliveryQueueNames).toEqual([aQueue!.name]);
 
     // Reverse direction: send a job-end addressed at pod B.
     await (podB as any).sendJobEnd("job-B-1", "failed", channelB);
     await flushMicrotasks();
 
-    expect(bQueue!.messages).toHaveLength(1);
-    expect(aQueue!.messages).toHaveLength(1); // unchanged from earlier
-    expect(bQueue!.messages[0].properties.headers).toMatchObject({
+    expect(published).toHaveLength(2);
+    const routedB = published[1];
+    expect(routedB.exchange).toBe("nuq.test.routing.listen");
+    expect(routedB.routingKey).toBe(channelB);
+    expect(routedB.properties.headers).toMatchObject({
       "x-listen-channel": channelB,
     });
-    expect(bQueue!.messages[0].properties.correlationId).toBe("job-B-1");
-    expect(bQueue!.messages[0].content.toString()).toBe("failed");
+    expect(routedB.properties.correlationId).toBe("job-B-1");
+    expect(routedB.content.toString()).toBe("failed");
+    expect(routedB.deliveryQueueNames).toEqual([bQueue!.name]);
 
-    // The seenOnA/seenOnB arrays stay empty because we never installed
-    // completion callbacks here, but the broker-level isolation proves
-    // the routing only fans out to the owning pod's queue.
     expect(seenOnA).toHaveLength(0);
     expect(seenOnB).toHaveLength(0);
 
