@@ -182,9 +182,8 @@ const fakeProcs: any[] = [];
 const fakeReadFiles: string[] = [];
 
 vi.mock("child_process", async () => {
-  const actual = await vi.importActual<typeof import("child_process")>(
-    "child_process",
-  );
+  const actual =
+    await vi.importActual<typeof import("child_process")>("child_process");
   return {
     ...actual,
     spawn: (cmd: string, args: string[]) => {
@@ -237,16 +236,26 @@ describe("defaultRenderer (PDF-RENDERER-RACE-001: spawn + timer lifecycle)", () 
     fakeReadFiles.length = 0;
   });
 
-  it("the weasyprint spawn calls proc.unref() so it can't pin the event loop", async () => {
-    const mod = await import(
-      "../../../services/pdf/defaultRenderer.js"
-    );
-    const promise = mod.renderScrapeToPDF({
-      markdown: "# x",
-      metadata: { title: "x", sourceURL: "https://example.com/x" },
-      sourceURL: "https://example.com/x",
-      scrapedAt: new Date("2026-06-17T00:00:00Z"),
-    }).catch(() => undefined);
+  it("the renderer's child process keeps the event loop alive until it exits", async () => {
+    // BUGFIX-WEASYPRINT-CLOSE-HANG-001: an earlier version called
+    // `proc.unref()` on the weasyprint child to avoid pinning the
+    // event loop, but that made the "close" event unreliable and
+    // caused the renderer to hang after the child had actually
+    // exited. The current contract is the opposite: the child
+    // MUST keep the loop alive (i.e. `proc.unref()` is NOT
+    // called), and the SIGKILL timer is the only thing that
+    // needs to be unref'd. This test pins both halves of that
+    // contract so a future regression that re-introduces the
+    // child-unref is caught immediately.
+    const mod = await import("../../../services/pdf/defaultRenderer.js");
+    const promise = mod
+      .renderScrapeToPDF({
+        markdown: "# x",
+        metadata: { title: "x", sourceURL: "https://example.com/x" },
+        sourceURL: "https://example.com/x",
+        scrapedAt: new Date("2026-06-17T00:00:00Z"),
+      })
+      .catch(() => undefined);
 
     // Wait for the pandoc spawn to register.
     await new Promise(r => setTimeout(r, 50));
@@ -263,20 +272,25 @@ describe("defaultRenderer (PDF-RENDERER-RACE-001: spawn + timer lifecycle)", () 
     const weasyprintProc = fakeProcs[1];
     expect(weasyprintProc._cmd).toMatch(/weasyprint/);
 
-    // PDF-RENDERER-RACE-001: an orphaned weasyprint child must not
-    // pin the event loop past graceful shutdown — it must call
-    // unref() right after spawn().
-    expect(weasyprintProc.unref).toHaveBeenCalled();
+    // The child process is intentionally NOT unref'd — see
+    // BUGFIX-WEASYPRINT-CLOSE-HANG-001. A regression that
+    // re-introduces `proc.unref()` here will re-introduce the
+    // post-render hang. The timer is still unref'd (tested
+    // elsewhere by the timer-cleared test, but the only thing
+    // we can assert about it in this minimal fake harness is
+    // that it exists).
+    expect(weasyprintProc.unref).not.toHaveBeenCalled();
 
     // Settle the weasyprint spawn to release the renderer promise.
+    // If the unref bug regresses, this `await` will hang and
+    // the test will time out, which is exactly the failure mode
+    // we want to catch.
     weasyprintProc.emit("close", 0);
     await promise;
   });
 
   it("no longer double-reads the rendered PDF (runWeasyprint already returns the buffer)", async () => {
-    const mod = await import(
-      "../../../services/pdf/defaultRenderer.js"
-    );
+    const mod = await import("../../../services/pdf/defaultRenderer.js");
     const promise = mod.renderScrapeToPDF({
       markdown: "# x",
       metadata: { title: "x", sourceURL: "https://example.com/x" },

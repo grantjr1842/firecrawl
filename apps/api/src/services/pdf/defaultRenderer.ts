@@ -177,6 +177,20 @@ export async function renderBookToPDF(input: BookPdfInput): Promise<Buffer> {
  * the PDF buffer on success; throws on any non-zero exit, spawn error,
  * or timeout. The buffer is read here so the caller doesn't have to
  * know about the temp file layout.
+ *
+ * BUGFIX-WEASYPRINT-CLOSE-HANG-001: an earlier version called
+ * `proc.unref()` on the weasyprint child, intending to prevent a
+ * stuck render from holding the worker event loop open (see
+ * PDF-RENDERER-RACE-001). That made the `proc.on("close", …)`
+ * handler unreliable: after the child exited, Node would not
+ * reliably deliver the "close" event, and the `await fs.readFile`
+ * inside the handler never resumed, hanging the renderer
+ * indefinitely even after the PDF had been written to disk.
+ * We now let the child process keep the event loop alive for
+ * its lifetime; the existing `PDF_RENDER_TIMEOUT_MS` watchdog
+ * still kills genuinely stuck renders. The SIGKILL timer is
+ * still `.unref()`'d so a pending timer doesn't prolong life
+ * after the child has already exited.
  */
 async function runWeasyprint(
   htmlPath: string,
@@ -188,11 +202,6 @@ async function runWeasyprint(
     const proc = spawn(weasyprintBin, [htmlPath, pdfPath], {
       stdio: ["ignore", "pipe", "pipe"],
     });
-    // PDF-RENDERER-RACE-001: an orphaned weasyprint child must not
-    // pin the worker event loop past graceful shutdown. Without
-    // `unref`, a stuck render could keep a worker alive indefinitely
-    // (and, in tests, prevent vitest from exiting).
-    proc.unref();
 
     let stdout = "";
     let stderr = "";
@@ -214,8 +223,10 @@ async function runWeasyprint(
         ),
       );
     }, config.PDF_RENDER_TIMEOUT_MS);
-    // PDF-RENDERER-RACE-001: same reason as the spawn unref above —
-    // a pending SIGKILL timer shouldn't keep the event loop alive.
+    // The timer is unref'd so a pending SIGKILL timer doesn't
+    // extend the worker's life after the child has already
+    // exited. The process itself is intentionally NOT unref'd —
+    // see BUGFIX-WEASYPRINT-CLOSE-HANG-001.
     timer.unref();
 
     proc.on("error", err => {

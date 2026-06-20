@@ -402,12 +402,24 @@ export interface BookPdfInput {
  * Run pandoc in a single batch invocation to convert N markdown
  * documents to N HTML fragments. Much faster than calling
  * `markdownToHtml` per-chapter because pandoc only has to spin up
- * once. Each input is separated by the sentinel line
- * `@@FIRECRAWL_PANDOC_BREAK@@` on its own line, which pandoc
- * faithfully emits into the output stream; we split on the sentinel
- * to recover the per-document HTML. If a single document fails to
- * parse the whole batch fails — that's intentional, books shouldn't
- * be assembled from partially-rendered chapters.
+ * once. Each input is separated by an HTML-comment-wrapped sentinel
+ * line on its own line, which pandoc faithfully emits into the
+ * output stream; we split on the inner sentinel string to recover
+ * the per-document HTML. If a single document fails to parse the
+ * whole batch fails — that's intentional, books shouldn't be
+ * assembled from partially-rendered chapters.
+ *
+ * BUGFIX-PDF-BATCH-SENTINEL-001: the sentinel used to be a bare
+ * `@@FIRECRAWL_PANDOC_BREAK@@`. Pandoc interprets `@citekey` (and
+ * `@@citekey`) as a Markdown citation, so it would wrap our
+ * sentinel in `<span class="citation" data-cites="…">` instead of
+ * passing it through verbatim — `String.split(SENTINEL)` then found
+ * zero matches and silently collapsed an N-chapter batch into a
+ * single concatenated HTML blob. Wrapping the sentinel in an HTML
+ * comment makes it immune to pandoc's parser: comments are passed
+ * through as-is. We split on the *inner* string so the `<!--` and
+ * `-->` land in the surrounding chunks, where they render as
+ * invisible comments.
  */
 export async function markdownToHtmlBatch(
   markdowns: string[],
@@ -418,8 +430,11 @@ export async function markdownToHtmlBatch(
   }
 
   const SENTINEL = "@@FIRECRAWL_PANDOC_BREAK@@";
+  // Wrap in an HTML comment so pandoc's citation parser leaves it
+  // alone. See BUGFIX-PDF-BATCH-SENTINEL-001.
+  const SENTINEL_HTML = `<!-- ${SENTINEL} -->`;
   const combined = markdowns
-    .map(md => md + "\n\n" + SENTINEL + "\n\n")
+    .map(md => md + "\n\n" + SENTINEL_HTML + "\n\n")
     .join("");
 
   return new Promise<string[]>((resolve, reject) => {
@@ -456,8 +471,11 @@ export async function markdownToHtmlBatch(
         );
         return;
       }
-      // Split on the sentinel. We emit "<sentinel>" so the marker is
-      // recoverable even if pandoc wraps it in surrounding whitespace.
+      // Split on the inner sentinel string. The `<!--` and `-->`
+      // wrappers end up in the surrounding chunks as harmless HTML
+      // comments. See BUGFIX-PDF-BATCH-SENTINEL-001 for the history
+      // (a bare `@@…@@` sentinel was being eaten by pandoc's
+      // citation syntax).
       const parts = stdout.split(SENTINEL).map(s => s.trim());
       // The trailing chunk after the last sentinel is empty / whitespace;
       // drop it so the returned array aligns 1:1 with `markdowns`.

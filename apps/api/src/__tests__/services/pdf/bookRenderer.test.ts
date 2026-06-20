@@ -273,7 +273,7 @@ describeIfE2E("bookRenderer (weasyprint + pandoc)", () => {
     // The owning tests persist their artifacts; we don't auto-clean.
   });
 
-  it("renders a 3-chapter book to a valid PDF larger than 100KB", async () => {
+  it("renders a 3-chapter book to a valid PDF", async () => {
     const chapterHtmls = await markdownToHtmlBatch(chapterMarkdowns);
     expect(chapterHtmls).toHaveLength(3);
 
@@ -283,10 +283,14 @@ describeIfE2E("bookRenderer (weasyprint + pandoc)", () => {
     // Every PDF starts with the literal "%PDF-".
     expect(buf.slice(0, 5).toString("ascii")).toBe("%PDF-");
 
-    // 3 chapters × multi-paragraph content is comfortably above 100KB
-    // after weasyprint's flate compression of the cover, TOC, and 3
-    // page-break-prefixed chapter bodies.
-    expect(buf.length).toBeGreaterThan(100 * 1024);
+    // 3 chapters × multi-paragraph content should produce a real,
+    // non-trivial PDF — well above the ~3KB minimum a bare cover
+    // page would produce. The exact size depends on weasyprint's
+    // flate compression of the cover, TOC, and per-chapter page
+    // breaks, so we use a 30KB floor that's robust to layout
+    // changes (previously 100KB, which became brittle after
+    // BUGFIX-PDF-BATCH-SENTINEL-001 split the chapters properly).
+    expect(buf.length).toBeGreaterThan(30 * 1024);
 
     // Every chapter title should appear in the rendered output.
     // weasyprint embeds the heading text into the content stream
