@@ -202,6 +202,21 @@ vi.mock("child_process", async () => {
   };
 });
 
+// Helper for tests: emit 'close' on every proc currently in the
+// fakeProcs list (so the renderer's promises resolve) and return
+// the number of procs we closed. Always emits on ALL procs so the
+// pending promises drain regardless of how many spawn calls the
+// renderer made.
+function settleAllProcs(code = 0): void {
+  for (const proc of fakeProcs) {
+    if (proc.listenerCount("close") > 0) {
+      proc.emit("close", code);
+    } else {
+      proc.emit("error", new Error("fake-error-for-test"));
+    }
+  }
+}
+
 vi.mock("fs", async () => {
   const actual = await vi.importActual<typeof import("fs")>("fs");
   return {
@@ -233,25 +248,18 @@ describe("defaultRenderer (PDF-RENDERER-RACE-001: spawn + timer lifecycle)", () 
       scrapedAt: new Date("2026-06-17T00:00:00Z"),
     }).catch(() => undefined);
 
-    // Wait for the pandoc spawn to flush + complete.
-    await new Promise(r => setImmediate(r));
-    if (fakeProcs[0]) {
-      fakeProcs[0].emit("close", 0);
-    }
-    // Wait for the weasyprint spawn to flush.
-    await new Promise(r => setImmediate(r));
-    await new Promise(r => setImmediate(r));
+    // Wait long enough for both spawn calls (pandoc then
+    // weasyprint) to register on the mock.
+    await new Promise(r => setTimeout(r, 100));
+    expect(fakeProcs.length).toBeGreaterThanOrEqual(2);
 
     // Both spawned procs (pandoc + weasyprint) must call unref().
-    expect(fakeProcs.length).toBeGreaterThanOrEqual(2);
     for (const proc of fakeProcs) {
       expect(proc.unref).toHaveBeenCalled();
     }
 
-    // Settle any in-flight spawns to release the promise.
-    for (const proc of fakeProcs) {
-      proc.emit("error", new Error("fake-error-for-test"));
-    }
+    // Settle all in-flight spawns to release the promise.
+    settleAllProcs();
     await promise;
   });
 
@@ -266,23 +274,16 @@ describe("defaultRenderer (PDF-RENDERER-RACE-001: spawn + timer lifecycle)", () 
       scrapedAt: new Date("2026-06-17T00:00:00Z"),
     });
 
-    // Allow the pandoc spawn to flush + complete.
-    await new Promise(r => setImmediate(r));
-    if (fakeProcs[0]) {
-      fakeProcs[0].emit("close", 0);
-    }
-    await new Promise(r => setImmediate(r));
-
-    // Simulate weasyprint exiting cleanly.
-    if (fakeProcs[1]) {
-      fakeProcs[1].emit("close", 0);
-    }
+    // Let the renderer drive both spawns to completion.
+    await new Promise(r => setTimeout(r, 100));
+    settleAllProcs();
 
     const buf = await promise;
     expect(Buffer.isBuffer(buf)).toBe(true);
-    // Exactly one fs.readFile call inside the renderer. Track which
-    // files were read to fail loudly if a regression sneaks a
-    // second readFile back in.
+    // Exactly one fs.readFile of the rendered PDF inside the
+    // renderer. Track which files were read so a regression
+    // that re-introduces a second readFile fails loudly with a
+    // diff of the offending paths.
     expect(fakeReadFiles.filter(p => p.endsWith(".pdf"))).toHaveLength(1);
   });
 });
