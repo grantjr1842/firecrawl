@@ -175,44 +175,58 @@ describe("defaultRenderer (E2E gate)", () => {
 // working weasyprint binary. We exercise the spawn/timer plumbing
 // directly via `child_process.spawn` mocks so the assertions hold
 // in CI without the binary present.
+//
+// We do an explicit `vi.resetModules()` + dynamic `import()` per
+// test so mocks don't leak across tests (vitest caches module
+// imports and `vi.spyOn` only patches the local cached reference).
 describe("defaultRenderer (PDF-RENDERER-RACE-001: spawn + timer lifecycle)", () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { EventEmitter } = require("events");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const cp = require("child_process");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const fsPromises = require("fs").promises;
 
-  let spawnSpy: any;
-  let readFileSpy: any;
   let fakeProcs: any[];
 
   beforeEach(() => {
     fakeProcs = [];
-    const makeFakeProc = () => {
-      const proc = new EventEmitter() as any;
-      proc.stdout = new EventEmitter();
-      proc.stderr = new EventEmitter();
-      proc.stdin = { write: vi.fn(), end: vi.fn() };
-      proc.kill = vi.fn();
-      proc.unref = vi.fn();
-      fakeProcs.push(proc);
-      return proc;
-    };
-    spawnSpy = vi
-      .spyOn(cp, "spawn")
-      .mockImplementation(() => makeFakeProc());
-    readFileSpy = vi
-      .spyOn(fsPromises, "readFile")
-      .mockResolvedValue(Buffer.from("%PDF-1.4\n%%EOF\n"));
+    vi.resetModules();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
+  async function loadRendererWithMocks() {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const cp = require("child_process");
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const fsPromises = require("fs").promises;
+
+    const spawnSpy = vi
+      .spyOn(cp, "spawn")
+      .mockImplementation(() => {
+        const proc = new EventEmitter() as any;
+        proc.stdout = new EventEmitter();
+        proc.stderr = new EventEmitter();
+        proc.stdin = { write: vi.fn(), end: vi.fn() };
+        proc.kill = vi.fn();
+        proc.unref = vi.fn();
+        fakeProcs.push(proc);
+        return proc;
+      });
+    const readFileSpy = vi
+      .spyOn(fsPromises, "readFile")
+      .mockResolvedValue(Buffer.from("%PDF-1.4\n%%EOF\n"));
+
+    const mod = await import(
+      "../../../services/pdf/defaultRenderer"
+    );
+    return { renderScrapeToPDF: mod.renderScrapeToPDF, spawnSpy, readFileSpy };
+  }
+
   it("calls proc.unref() and timer.unref() so an orphaned weasyprint can't pin the event loop", async () => {
-    const promise = renderScrapeToPDF({
+    const { renderScrapeToPDF: render, spawnSpy, readFileSpy: _ } =
+      await loadRendererWithMocks();
+    void _;
+    const promise = render({
       markdown: "# x",
       metadata: { title: "x", sourceURL: "https://example.com/x" },
       sourceURL: "https://example.com/x",
@@ -238,7 +252,9 @@ describe("defaultRenderer (PDF-RENDERER-RACE-001: spawn + timer lifecycle)", () 
   });
 
   it("no longer double-reads the rendered PDF (runWeasyprint already returns the buffer)", async () => {
-    const promise = renderScrapeToPDF({
+    const { renderScrapeToPDF: render, readFileSpy } =
+      await loadRendererWithMocks();
+    const promise = render({
       markdown: "# x",
       metadata: { title: "x", sourceURL: "https://example.com/x" },
       sourceURL: "https://example.com/x",
