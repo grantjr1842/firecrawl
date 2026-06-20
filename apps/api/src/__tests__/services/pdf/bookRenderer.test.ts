@@ -335,6 +335,39 @@ describeIfE2E("bookRenderer (weasyprint + pandoc)", () => {
     expect(html).toContain('href="#chapter-2"');
     expect(html).toContain('href="#chapter-3"');
   });
+
+  it("renders fenced code blocks as <pre class=\"sourceCode\"> with syntax classes", async () => {
+    // The chapterMarkdowns fixture includes a fenced ts code block in
+    // every chapter. After rendering through pandoc + our template the
+    // block must surface as <pre class="sourceCode ts"> (the pandoc
+    // highlight-style) so our stylesheet can color the tokens.
+    const chapterHtmls = await markdownToHtmlBatch(chapterMarkdowns);
+    const html = await buildBookHTML(buildTestBookInput(chapterHtmls));
+
+    expect(html).toMatch(/<pre class="sourceCode [^"]+">/);
+    expect(html).toContain('class="sourceCode typescript"');
+    expect(html).toContain('class="kw"'); // keyword (const, function)
+    expect(html).toContain('class="op"'); // operator (:, =, ;)
+    expect(html).toContain('class="dv"'); // number literal (240)
+  });
+
+  it("TOC has <a href=\"#chapter-…\"> linked items so WeasyPrint can resolve them", async () => {
+    const chapterHtmls = await markdownToHtmlBatch(chapterMarkdowns);
+    const html = await buildBookHTML(buildTestBookInput(chapterHtmls));
+
+    // The TOC list items must be real anchors whose href matches the
+    // chapter section id. WeasyPrint uses these to produce internal
+    // link annotations in the rendered PDF, so the hrefs have to match
+    // exactly.
+    const tocAnchorRe =
+      /<li><a href="#chapter-\d+">[^<]+<\/a><\/li>/g;
+    const matches = html.match(tocAnchorRe) ?? [];
+    expect(matches.length).toBeGreaterThanOrEqual(3);
+
+    // Inline <code> from the chapter markdown should also render so
+    // the stylesheet can style it (background, padding, monospace).
+    expect(html).toMatch(/<code>[^<]+<\/code>/);
+  });
 });
 
 // Always include a non-skipped block so the test file is "discovered"

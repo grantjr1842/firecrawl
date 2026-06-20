@@ -43,6 +43,24 @@ a {
   overflow-wrap: break-word;
 }
 
+/* Internal anchor links (TOC, chapter cross-refs) look slightly
+   different from external links: same accent color but a thicker
+   underline so the affordance is obvious in the rendered PDF. */
+a[href^="#"] {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1.5px solid rgba(184, 92, 56, 0.55);
+}
+
+/* External links get a subtle dashed underline so they're visually
+   distinguishable from internal anchors at a glance. */
+a[href^="http"]:not([href^="#"]),
+a[href^="//"] {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(184, 92, 56, 0.55);
+}
+
 hr {
   border: none;
   border-top: 1px solid var(--rule);
@@ -123,6 +141,69 @@ pre code {
   font-size: inherit;
 }
 
+/* Pandoc emits \`<div class="sourceCode"><pre class="sourceCode ts">…</pre></div>\`
+   for fenced code blocks. The outer div is what makes the block break
+   onto its own page cleanly; the inner pre.sourceCode is the visible
+   box. We restyle both for legibility on the warm beige page bg. */
+div.sourceCode {
+  margin: 1em 0;
+  page-break-inside: avoid;
+  overflow: hidden;
+}
+
+pre.sourceCode {
+  background: #f5f5f4;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", "Menlo",
+               "Consolas", "Liberation Mono", monospace;
+  font-size: 9.5pt;
+  line-height: 1.55;
+  white-space: pre;
+  overflow-x: auto;
+  page-break-inside: avoid;
+}
+
+pre.sourceCode code.sourceCode {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* The empty per-line anchor spans pandoc emits (for its own line
+   numbering) are visually noise in our PDFs. We hide the anchor text
+   but keep the span in flow so pandoc's own row structure survives. */
+pre.sourceCode span[id^="cb"] a {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Syntax highlighting (Pygments classes)                             */
+/* ------------------------------------------------------------------ */
+/* Colors are tuned for the warm beige page background (#fafaf9) and
+   the slightly cooler code-block bg (#f5f5f4). All values picked from
+   the warm/neutral palette already used in this stylesheet, plus
+   complementary greens and purples for syntax. */
+.sourceCode .kw { color: #7c3aed; font-weight: 600; }              /* keyword */
+.sourceCode .op { color: #44403c; }                                /* operator */
+.sourceCode .dv { color: #b85c38; }                                /* decimal/number */
+.sourceCode .dt { color: #0e7490; }                                /* builtin type */
+.sourceCode .st { color: #15803d; }                                /* string */
+.sourceCode .co { color: #78716c; font-style: italic; }            /* comment */
+.sourceCode .cf { color: #7c3aed; font-weight: 600; }              /* control flow */
+.sourceCode .fu { color: #1d4ed8; }                                /* function */
+.sourceCode .va { color: #0f766e; }                                /* variable */
+.sourceCode .im { color: #7c3aed; font-weight: 600; }              /* import */
+.sourceCode .pp { color: #78716c; }                                /* preprocessor */
+.sourceCode .ss { color: #b85c38; }                                /* string symbol */
+.sourceCode .bu { color: #1d4ed8; }                                /* builtin */
+.sourceCode .ex { color: #b85c38; }                                /* exception */
+.sourceCode .an { color: #78716c; }                                /* annotation */
+
 /* ------------------------------------------------------------------ */
 /* Tables                                                            */
 /* ------------------------------------------------------------------ */
@@ -168,6 +249,69 @@ blockquote {
 
 ul, ol { margin: 0.8em 0 0.8em 1.4em; padding: 0; }
 li { margin: 0.25em 0; }
+
+/* Definition lists: pandoc emits \`<dl><dt>term</dt><dd>def</dd></dl>\`
+   for \`Term\\n:   Definition\` style blocks. Indent the definition
+   under the term, bold the term. */
+dl {
+  margin: 1em 0;
+  padding: 0;
+}
+dt {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter",
+               "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 0.8em;
+  font-size: 10.5pt;
+}
+dd {
+  margin: 0.2em 0 0 1.4em;
+  color: var(--text);
+}
+
+/* Horizontal rule between major sections. Used in the book chapters to
+   visually separate the "Code Example" / "Constructor" / "Properties"
+   / "Methods" / "Events" / "Source" blocks. */
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 2.4em 0 1.6em 0;
+  height: 0;
+}
+
+/* Section accent: a left-border accent variant. Used for the
+   "Constructor" / "Properties" / "Methods" / "Events" sections in the
+   threejs book so each block has a distinctive visual weight without
+   needing extra markup. */
+section.section-accent {
+  border-left: 3px solid var(--accent);
+  padding-left: 14px;
+  margin: 1.4em 0 1.8em 0;
+  page-break-inside: avoid;
+}
+
+/* Code-example sections: a slightly different left accent (cooler)
+   so the eye reads them as "look at this code" rather than prose. */
+section.code-example {
+  border-left: 3px solid #1d4ed8;
+  padding-left: 14px;
+  margin: 1.4em 0 1.8em 0;
+  page-break-inside: avoid;
+}
+
+/* Eyebrow label that introduces a labeled section (e.g. "Code Example",
+   "Constructor", "Properties"). Sits above the section's h2/h3. */
+.section-label {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter",
+               "Helvetica Neue", Arial, sans-serif;
+  font-size: 8.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  margin: 0 0 6px 0;
+  display: block;
+}
 
 img {
   max-width: 100%;
@@ -310,6 +454,17 @@ figcaption {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter",
                "Helvetica Neue", Arial, sans-serif;
   font-size: 11pt;
+  /* Re-assert the clickable affordance: in a printed PDF the \`<a>\` is
+     still a hyperlink that resolves to the page target via the id
+     pandoc injected. The underline confirms that visually. */
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.toc li a:hover,
+.toc li a:focus {
+  color: var(--accent);
+  border-bottom-color: rgba(184, 92, 56, 0.4);
 }
 
 .toc li a::after {

@@ -40,15 +40,18 @@ export interface ScrapePdfInput {
  * safer than shelling out with a temp file (no fs race, no permission
  * surprises on shared hosts) and gives us a single, atomic transform.
  *
- * `--no-highlight` keeps pandoc from inlining a syntax-highlight CSS that
- * would dwarf our own stylesheet; we rely on the in-page monospace
- * styling instead.
+ * `--highlight-style=pygments` produces semantic class spans (`.kw`, `.op`,
+ * `.dv`, `.st`, `.co`, `.cf`, `.va`, `.im`, `.fu`, `.dt`) that our
+ * stylesheet targets. We deliberately do NOT use `--standalone` (which
+ * would inline the pygments stylesheet and bloat the output) — our own
+ * styles.css.ts provides the syntax colors, calibrated for the warm
+ * beige background (#fafaf9).
  */
 export async function markdownToHtml(markdown: string): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const proc = spawn(
       "pandoc",
-      ["-f", "markdown", "-t", "html", "--no-highlight"],
+      ["-f", "markdown", "-t", "html", "--highlight-style=pygments"],
       { stdio: ["pipe", "pipe", "pipe"] },
     );
 
@@ -420,6 +423,11 @@ export interface BookPdfInput {
  * through as-is. We split on the *inner* string so the `<!--` and
  * `-->` land in the surrounding chunks, where they render as
  * invisible comments.
+ *
+ * Uses `--highlight-style=pygments` so each chapter's code blocks
+ * arrive with semantic class spans (`.kw`, `.op`, `.dv`, `.st`, `.co`,
+ * `.cf`, `.va`, `.im`, `.fu`, `.dt`) that our stylesheet colors. See
+ * the equivalent flag in `markdownToHtml` for the rationale.
  */
 export async function markdownToHtmlBatch(
   markdowns: string[],
@@ -440,7 +448,7 @@ export async function markdownToHtmlBatch(
   return new Promise<string[]>((resolve, reject) => {
     const proc = spawn(
       "pandoc",
-      ["-f", "markdown", "-t", "html", "--no-highlight"],
+      ["-f", "markdown", "-t", "html", "--highlight-style=pygments"],
       { stdio: ["pipe", "pipe", "pipe"] },
     );
 
