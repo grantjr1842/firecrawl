@@ -56,7 +56,7 @@ describe("adminRateLimitMiddleware (ADMIN-RL-BUCKET-FALLBACK)", () => {
       config: { BULL_AUTH_KEY: undefined },
     }));
     const { adminRateLimitMiddleware: mw } = await import(
-      "../../lib/adminAuth"
+      "../../lib/adminAuth.js"
     );
     const middleware = mw(10_000, 1); // max 1 per 10s
     const req = buildReq();

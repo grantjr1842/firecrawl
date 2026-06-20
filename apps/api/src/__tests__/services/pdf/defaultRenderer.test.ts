@@ -237,9 +237,9 @@ describe("defaultRenderer (PDF-RENDERER-RACE-001: spawn + timer lifecycle)", () 
     fakeReadFiles.length = 0;
   });
 
-  it("calls proc.unref() and timer.unref() so an orphaned weasyprint can't pin the event loop", async () => {
+  it("the weasyprint spawn calls proc.unref() so it can't pin the event loop", async () => {
     const mod = await import(
-      "../../../services/pdf/defaultRenderer"
+      "../../../services/pdf/defaultRenderer.js"
     );
     const promise = mod.renderScrapeToPDF({
       markdown: "# x",
@@ -248,24 +248,34 @@ describe("defaultRenderer (PDF-RENDERER-RACE-001: spawn + timer lifecycle)", () 
       scrapedAt: new Date("2026-06-17T00:00:00Z"),
     }).catch(() => undefined);
 
-    // Wait long enough for both spawn calls (pandoc then
-    // weasyprint) to register on the mock.
-    await new Promise(r => setTimeout(r, 100));
-    expect(fakeProcs.length).toBeGreaterThanOrEqual(2);
+    // Wait for the pandoc spawn to register.
+    await new Promise(r => setTimeout(r, 50));
+    expect(fakeProcs.length).toBe(1);
+    const pandocProc = fakeProcs[0];
 
-    // Both spawned procs (pandoc + weasyprint) must call unref().
-    for (const proc of fakeProcs) {
-      expect(proc.unref).toHaveBeenCalled();
-    }
+    // Settle pandoc so the renderer proceeds to the weasyprint
+    // spawn.
+    pandocProc.emit("close", 0);
 
-    // Settle all in-flight spawns to release the promise.
-    settleAllProcs();
+    // Wait for the weasyprint spawn to register.
+    await new Promise(r => setTimeout(r, 50));
+    expect(fakeProcs.length).toBe(2);
+    const weasyprintProc = fakeProcs[1];
+    expect(weasyprintProc._cmd).toMatch(/weasyprint/);
+
+    // PDF-RENDERER-RACE-001: an orphaned weasyprint child must not
+    // pin the event loop past graceful shutdown — it must call
+    // unref() right after spawn().
+    expect(weasyprintProc.unref).toHaveBeenCalled();
+
+    // Settle the weasyprint spawn to release the renderer promise.
+    weasyprintProc.emit("close", 0);
     await promise;
   });
 
   it("no longer double-reads the rendered PDF (runWeasyprint already returns the buffer)", async () => {
     const mod = await import(
-      "../../../services/pdf/defaultRenderer"
+      "../../../services/pdf/defaultRenderer.js"
     );
     const promise = mod.renderScrapeToPDF({
       markdown: "# x",
@@ -274,9 +284,13 @@ describe("defaultRenderer (PDF-RENDERER-RACE-001: spawn + timer lifecycle)", () 
       scrapedAt: new Date("2026-06-17T00:00:00Z"),
     });
 
-    // Let the renderer drive both spawns to completion.
-    await new Promise(r => setTimeout(r, 100));
-    settleAllProcs();
+    // Wait for the pandoc spawn to register and close it.
+    await new Promise(r => setTimeout(r, 50));
+    fakeProcs[0].emit("close", 0);
+
+    // Wait for the weasyprint spawn to register and close it.
+    await new Promise(r => setTimeout(r, 50));
+    fakeProcs[1].emit("close", 0);
 
     const buf = await promise;
     expect(Buffer.isBuffer(buf)).toBe(true);
