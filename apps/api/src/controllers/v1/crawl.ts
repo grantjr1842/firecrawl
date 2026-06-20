@@ -15,7 +15,7 @@ import {
   markCrawlActive,
 } from "../../lib/crawl-redis";
 import { _addScrapeJobToBullMQ } from "../../services/scrape-queue";
-import { logger as _logger } from "../../lib/logger";
+import { logger as _logger, devTrace } from "../../lib/logger";
 import { fromV1ScrapeOptions } from "../v2/types";
 import { checkPermissions } from "../../lib/permissions";
 import {
@@ -37,6 +37,14 @@ export async function crawlController(
     req.acuc?.flags,
   );
   if (permissions.error) {
+    // OBS-DEVTRACE-V1-GAP: terminal permission-denied path.
+    devTrace("scrape.complete", {
+      teamId: req.auth.team_id,
+      version: "v1",
+      controller: "crawl",
+      success: false,
+      errorCode: "PERMISSION_DENIED",
+    });
     return res.status(403).json({
       success: false,
       error: permissions.error,
@@ -47,6 +55,14 @@ export async function crawlController(
     getScrapeZDR(req.acuc?.flags) === "forced" || req.body.zeroDataRetention;
 
   const id = uuidv7();
+  // OBS-DEVTRACE-V1-GAP: crawl lifecycle received event.
+  devTrace("scrape.received", {
+    crawlId: id,
+    teamId: req.auth.team_id,
+    version: "v1",
+    controller: "crawl",
+    url: req.body.url,
+  });
   const logger = _logger.child({
     crawlId: id,
     module: "api/v1",
@@ -198,6 +214,15 @@ export async function crawlController(
   );
 
   const protocol = req.protocol;
+
+  // OBS-DEVTRACE-V1-GAP: terminal success-path for crawl.
+  devTrace("scrape.complete", {
+    crawlId: id,
+    teamId: req.auth.team_id,
+    version: "v1",
+    controller: "crawl",
+    success: true,
+  });
 
   return res.status(200).json({
     success: true,

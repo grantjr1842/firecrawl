@@ -125,6 +125,111 @@ BULL_AUTH_KEY=CHANGEME
 # REDIS_URL=redis://redis:6379
 # REDIS_RATE_LIMIT_URL=redis://redis:6379
 
+## New since v2
+
+The following environment variables were added after the v2 self-host
+docs were written. If you're upgrading from an older self-host image,
+these default to safe values, but operators typically want to set at
+least the admin and metrics ones explicitly.
+
+### Admin endpoint audit (`X-Admin-Actor-Email`)
+
+Mutating `POST` calls to `/admin/*` (queue pause/resume, replay, etc.)
+now require the `X-Admin-Actor-Email` header — the value is recorded
+in the admin audit log alongside the actor IP, action, and status.
+Read-only `GET` requests are unaffected.
+
+```bash
+# Header name is fixed; value is your operator email address.
+curl -H "X-Admin-Actor-Email: ops@example.com" \
+     -H "Authorization: Bearer $BULL_AUTH_KEY" \
+     -X POST https://your-firecrawl.example.com/admin/queue/pause
+```
+
+See `apps/api/src/lib/adminAuth.ts` for the middleware contract.
+
+### Prometheus scrape (`/metrics` + `METRICS_AUTH_KEY`)
+
+The `/metrics` endpoint is mounted outside the `/admin` prefix but is
+gated by `METRICS_AUTH_KEY`. Set this to a long random string and
+configure your Prometheus scrape job to send it as a Bearer token:
+
+```yaml
+scrape_configs:
+  - job_name: firecrawl
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["your-firecrawl.example.com"]
+    bearer_token: ${METRICS_AUTH_KEY}
+```
+
+If `METRICS_AUTH_KEY` is unset, `/metrics` returns 401 — Prometheus
+will surface the scrape failure clearly rather than silently dropping
+samples. See `apps/api/src/routes/metrics.ts`.
+
+### Anti-bot / residential proxy
+
+```bash
+# Which vendor to use for residential proxy credentials. Default:
+# "generic" (preserves existing behaviour).
+FIRECRAWL_ANTIBOT_VENDOR=smartproxy   # or "brightdata", "generic"
+
+# Smartproxy credentials + sticky-session TTL (minutes). The
+# `-sesstime-N` token in the username controls how long Smartproxy
+# pins the egress IP for a given session id. Default 10, clamped to
+# [1, 1440].
+FIRECRAWL_SMARTPROXY_USERNAME=
+FIRECRAWL_SMARTPROXY_PASSWORD=
+FIRECRAWL_SMARTPROXY_HOST=gate.smartproxy.com
+FIRECRAWL_SMARTPROXY_PORT=7000
+FIRECRAWL_SMARTPROXY_STICKY_MINUTES=10
+
+# Bright Data equivalents.
+FIRECRAWL_BRIGHTDATA_USERNAME=
+FIRECRAWL_BRIGHTDATA_PASSWORD=
+FIRECRAWL_BRIGHTDATA_HOST=
+FIRECRAWL_BRIGHTDATA_PORT=
+
+# TLS fingerprint rotation (off by default — enable when targeting
+# fingerprinting-sensitive origins).
+FIRECRAWL_TLS_FINGERPRINT_ENABLED=false
+FIRECRAWL_AKAMAI_H2_ENABLED=false
+```
+
+### Dev lifecycle tracing
+
+`FIRECRAWL_DEV_TRACE` is on by default outside production. It emits
+structured JSON lines for scrape/crawl lifecycle events
+(`scrape.received`, `scrape.complete`, `crawl.*`, `pdf.*`) which Loki
+and Grafana pick up via the existing JSON log transport. Set
+`FIRECRAWL_DEV_TRACE=false` in CI or noisy shared environments to
+silence it.
+
+```bash
+FIRECRAWL_DEV_TRACE=true
+# Include the first 4KB of any 'body' field passed to devTrace —
+# off by default to keep log volume small. Useful for debugging
+# transform failures.
+FIRECRAWL_DEV_TRACE_BODY=false
+
+# Stdout log format. Default "json" so docker/k8s and downstream
+# log shippers can parse every line. Set "text" for local dev.
+FIRECRAWL_LOG_FORMAT=json
+```
+
+### PDF renderer (`PDF_DEFAULT_RENDERER`)
+
+Currently advisory — see PDF-PIPELINE-001 in the project's audit
+notes. The renderer module (`apps/api/src/services/pdf/`) is shipped
+but no v2 controller reaches it yet; the production PDF pipeline
+still routes through `PDF_MU_V2_BASE_URL`. Operators can still set
+the knob to document intent:
+
+```bash
+PDF_DEFAULT_RENDERER=weasyprint   # or "pandoc-pdf", "none"
+PDF_RENDER_TIMEOUT_MS=60000       # SIGKILL boundary per render
+```
+
 ### Playwright service (JS rendering for SPAs)
 
 Some sites — most notably JS-heavy SPA documentation sites like

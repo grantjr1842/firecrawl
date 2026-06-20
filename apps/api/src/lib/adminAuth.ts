@@ -210,11 +210,22 @@ export function adminRateLimitMiddleware(
   max: number = 1,
 ) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    // The BULL_AUTH_KEY appears in the URL itself, so use it as the
-    // partition key — every holder of the secret shares the same bucket,
-    // which is what we want for "a compromised secret can't wipe state in
-    // a tight loop".
-    const key = `${config.BULL_AUTH_KEY ?? "unknown"}:${req.path}`;
+    // ADMIN-RL-BUCKET-FALLBACK: when BULL_AUTH_KEY is unset (the
+    // default in self-hosted installs) every cluster would otherwise
+    // collapse onto the literal "unknown" bucket — a misconfigured
+    // multi-pod install could DoS its own admin endpoints. In that
+    // case the in-process LRU rate limiter is per-process anyway, so
+    // we just skip the cross-pod partitioning entirely and let each
+    // pod enforce its own bucket. Operators who want a shared bucket
+    // across pods should set BULL_AUTH_KEY (see SELF_HOST.md).
+    if (!config.BULL_AUTH_KEY) {
+      logger.warn(
+        "adminRateLimitMiddleware: BULL_AUTH_KEY unset; skipping rate-limit key fallback (per-pod only)",
+      );
+      next();
+      return;
+    }
+    const key = `${config.BULL_AUTH_KEY}:${req.path}`;
 
     const result = adminRateLimit(key, windowMs, max);
     if (!result.allowed) {

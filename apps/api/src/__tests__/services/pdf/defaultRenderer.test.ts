@@ -170,3 +170,96 @@ describe("defaultRenderer (E2E gate)", () => {
     expect(true).toBe(true);
   });
 });
+
+// PDF-RENDERER-RACE-001: structural assertions that don't need a
+// working weasyprint binary. We exercise the spawn/timer plumbing
+// directly via `child_process.spawn` mocks so the assertions hold
+// in CI without the binary present.
+describe("defaultRenderer (PDF-RENDERER-RACE-001: spawn + timer lifecycle)", () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { EventEmitter } = require("events");
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const cp = require("child_process");
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const fsPromises = require("fs").promises;
+
+  let spawnSpy: any;
+  let readFileSpy: any;
+  let fakeProcs: any[];
+
+  beforeEach(() => {
+    fakeProcs = [];
+    const makeFakeProc = () => {
+      const proc = new EventEmitter() as any;
+      proc.stdout = new EventEmitter();
+      proc.stderr = new EventEmitter();
+      proc.stdin = { write: vi.fn(), end: vi.fn() };
+      proc.kill = vi.fn();
+      proc.unref = vi.fn();
+      fakeProcs.push(proc);
+      return proc;
+    };
+    spawnSpy = vi
+      .spyOn(cp, "spawn")
+      .mockImplementation(() => makeFakeProc());
+    readFileSpy = vi
+      .spyOn(fsPromises, "readFile")
+      .mockResolvedValue(Buffer.from("%PDF-1.4\n%%EOF\n"));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("calls proc.unref() and timer.unref() so an orphaned weasyprint can't pin the event loop", async () => {
+    const promise = renderScrapeToPDF({
+      markdown: "# x",
+      metadata: { title: "x", sourceURL: "https://example.com/x" },
+      sourceURL: "https://example.com/x",
+      scrapedAt: new Date("2026-06-17T00:00:00Z"),
+    }).catch(() => undefined);
+
+    // Wait for both spawns (pandoc + weasyprint) to flush.
+    await new Promise(r => setImmediate(r));
+    await new Promise(r => setImmediate(r));
+
+    // Both spawned procs (pandoc + weasyprint) must call unref().
+    expect(spawnSpy).toHaveBeenCalled();
+    expect(fakeProcs.length).toBeGreaterThanOrEqual(2);
+    for (const proc of fakeProcs) {
+      expect(proc.unref).toHaveBeenCalled();
+    }
+
+    // Settle any in-flight spawns to release the promise.
+    for (const proc of fakeProcs) {
+      proc.emit("error", new Error("fake-error-for-test"));
+    }
+    await promise;
+  });
+
+  it("no longer double-reads the rendered PDF (runWeasyprint already returns the buffer)", async () => {
+    const promise = renderScrapeToPDF({
+      markdown: "# x",
+      metadata: { title: "x", sourceURL: "https://example.com/x" },
+      sourceURL: "https://example.com/x",
+      scrapedAt: new Date("2026-06-17T00:00:00Z"),
+    });
+
+    // Allow the pandoc spawn to flush + complete.
+    await new Promise(r => setImmediate(r));
+    if (fakeProcs[0]) {
+      fakeProcs[0].emit("close", 0);
+    }
+    await new Promise(r => setImmediate(r));
+
+    // Simulate weasyprint exiting cleanly.
+    if (fakeProcs[1]) {
+      fakeProcs[1].emit("close", 0);
+    }
+
+    const buf = await promise;
+    expect(Buffer.isBuffer(buf)).toBe(true);
+    // Exactly one fs.readFile call — no double-read.
+    expect(readFileSpy).toHaveBeenCalledTimes(1);
+  });
+});

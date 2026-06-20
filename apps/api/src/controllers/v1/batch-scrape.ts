@@ -21,7 +21,7 @@ import {
 import { getJobPriority } from "../../lib/job-priority";
 import { addScrapeJobs } from "../../services/scrape-queue";
 import { createWebhookSender, WebhookEvent } from "../../services/webhook";
-import { logger as _logger } from "../../lib/logger";
+import { logger as _logger, devTrace } from "../../lib/logger";
 import { UNSUPPORTED_SITE_MESSAGE } from "../../lib/strings";
 import { isUrlBlocked } from "../../scraper/WebScraper/utils/blocklist";
 import { fromV1ScrapeOptions } from "../v2/types";
@@ -53,6 +53,14 @@ export async function batchScrapeController(
 
   const permissions = checkPermissions(req.body, req.acuc?.flags);
   if (permissions.error) {
+    // OBS-DEVTRACE-V1-GAP: terminal permission-denied path.
+    devTrace("scrape.complete", {
+      teamId: req.auth.team_id,
+      version: "v1",
+      controller: "batchScrape",
+      success: false,
+      errorCode: "PERMISSION_DENIED",
+    });
     return res.status(403).json({
       success: false,
       error: permissions.error,
@@ -63,6 +71,14 @@ export async function batchScrapeController(
     getScrapeZDR(req.acuc?.flags) === "forced" || req.body.zeroDataRetention;
 
   const id = req.body.appendToId ?? uuidv7();
+  // OBS-DEVTRACE-V1-GAP: batch-scrape lifecycle received event.
+  devTrace("scrape.received", {
+    crawlId: id,
+    teamId: req.auth.team_id,
+    version: "v1",
+    controller: "batchScrape",
+    urlCount: req.body.urls?.length ?? 0,
+  });
   const logger = _logger.child({
     crawlId: id,
     batchScrapeId: id,
@@ -334,6 +350,16 @@ export async function batchScrapeController(
   }
 
   const protocol = req.protocol;
+
+  // OBS-DEVTRACE-V1-GAP: terminal success-path for batch-scrape.
+  devTrace("scrape.complete", {
+    crawlId: id,
+    teamId: req.auth.team_id,
+    version: "v1",
+    controller: "batchScrape",
+    success: true,
+    invalidURLCount: invalidURLs?.length ?? 0,
+  });
 
   return res.status(200).json({
     success: true,

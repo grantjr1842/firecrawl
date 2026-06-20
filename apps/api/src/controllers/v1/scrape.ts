@@ -268,6 +268,14 @@ export async function scrapeController(
       }
 
       if (e.code === "AGENT_INDEX_ONLY") {
+        // OBS-DEVTRACE-V1-GAP: terminal agent-index-only path.
+        devTrace("scrape.complete", {
+          jobId,
+          teamId: req.auth.team_id,
+          version: "v1",
+          success: false,
+          errorCode: e.code,
+        });
         return res.status(403).json({
           success: false,
           code: e.code,
