@@ -222,8 +222,13 @@ describeIfPandoc("defaultRenderer (template HTML)", () => {
     expect(html).toContain('class="sourceCode typescript"');
     // Inline `<code>` (used for `x` and `` `hello ${name}` `` in the
     // markdown above) must also be present so the stylesheet can style
-    // it as inline code.
-    expect(html).toMatch(/<code>[^<]+<\/code>/);
+    // it as inline code. Note: pandoc attaches a `class="sourceCode
+    // <lang>"` attribute to the inner <code> of fenced blocks, so the
+    // regex allows optional attributes between `<code` and `>`. The
+    // body of fenced-block <code> contains nested <span> elements
+    // (the syntax tokens), so we use a lookahead to confirm a
+    // closing </code> follows, rather than a strict [^<]+ body match.
+    expect(html).toMatch(/<code(\s[^>]*)?>(?:(?!<\/code>)[\s\S])*<\/code>/);
     // Pygments class spans must be present so syntax colors render.
     expect(html).toContain('class="kw"');
     expect(html).toContain('class="dv"');
@@ -306,6 +311,17 @@ vi.mock("child_process", async () => {
   return {
     ...actual,
     spawn: (cmd: string, args: string[]) => {
+      // Route pandoc spawns through the REAL child_process.spawn so
+      // that the `describeIfPandoc("defaultRenderer (template HTML)")`
+      // tests can assert on real pandoc output (e.g. the pygments
+      // <span class="kw"> syntax tokens). Without this routing, the
+      // fake EventEmitter returned below never emits 'close' and the
+      // markdownToHtml promise inside buildScrapeHTML hangs forever.
+      // Weasyprint stays mocked so the RACE tests can drive the
+      // renderer's lifecycle by hand.
+      if (cmd === "pandoc") {
+        return actual.spawn(cmd, args);
+      }
       const proc = new EventEmitter() as any;
       proc.stdout = new EventEmitter();
       proc.stderr = new EventEmitter();
